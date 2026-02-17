@@ -1,0 +1,7 @@
+# Ignore all face images for privacy
+*.jpg
+*.jpeg
+*.png
+
+# Keep README
+!README.md

@@ -1,0 +1,308 @@
+/**
+ * Real-time recipient management component
+ * Handles dynamic recipient updates across all document systems
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRealTimeDocuments } from '@/hooks/useRealTimeDocuments';
+
+interface Recipient {
+  id: string;
+  name: string;
+  role: string;
+  department?: string;
+  email?: string;
+  selected: boolean;
+}
+
+interface RealTimeRecipientManagerProps {
+  documentId?: string;
+  initialRecipients?: string[];
+  initialRecipientIds?: string[];
+  onRecipientsChange?: (recipients: string[], recipientIds: string[]) => void;
+  mode?: 'create' | 'edit';
+}
+
+export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> = ({
+  documentId,
+  initialRecipients = [],
+  initialRecipientIds = [],
+  onRecipientsChange,
+  mode = 'create'
+}) => {
+  const { user } = useAuth();
+  const { updateRecipients, loading } = useRealTimeDocuments();
+  
+  const [availableRecipients, setAvailableRecipients] = useState<Recipient[]>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterRole, setFilterRole] = useState<string>('all');
+
+  // Load available recipients
+  useEffect(() => {
+    const recipients: Recipient[] = [
+      {
+        id: 'principal-dr.-robert-principal',
+        name: 'Dr. Robert Principal',
+        role: 'principal',
+        department: 'Administration',
+        email: 'principal@university.edu',
+        selected: false
+      },
+      {
+        id: 'registrar-prof.-sarah-registrar',
+        name: 'Prof. Sarah Registrar',
+        role: 'registrar',
+        department: 'Administration',
+        email: 'registrar@university.edu',
+        selected: false
+      },
+      {
+        id: 'dean-dr.-maria-dean',
+        name: 'Dr. Maria Dean',
+        role: 'dean',
+        department: 'Academic Affairs',
+        email: 'dean@university.edu',
+        selected: false
+      },
+      {
+        id: 'hod-dr.-cse-hod',
+        name: 'Dr. CSE HOD',
+        role: 'hod',
+        department: 'Computer Science',
+        email: 'cse.hod@university.edu',
+        selected: false
+      },
+      {
+        id: 'hod-dr.-ece-hod',
+        name: 'Dr. ECE HOD',
+        role: 'hod',
+        department: 'Electronics',
+        email: 'ece.hod@university.edu',
+        selected: false
+      },
+      {
+        id: 'controller-prof.-finance-controller',
+        name: 'Prof. Finance Controller',
+        role: 'controller',
+        department: 'Finance',
+        email: 'controller@university.edu',
+        selected: false
+      },
+      {
+        id: 'program-head-dr.-mba-head',
+        name: 'Dr. MBA Program Head',
+        role: 'program head',
+        department: 'Management',
+        email: 'mba.head@university.edu',
+        selected: false
+      }
+    ];
+
+    // Mark initially selected recipients
+    const updatedRecipients = recipients.map(recipient => ({
+      ...recipient,
+      selected: initialRecipientIds.includes(recipient.id) || initialRecipients.includes(recipient.name)
+    }));
+
+    setAvailableRecipients(updatedRecipients);
+    setSelectedRecipients(updatedRecipients.filter(r => r.selected));
+  }, [initialRecipients, initialRecipientIds]);
+
+  // Filter recipients based on search and role
+  const filteredRecipients = availableRecipients.filter(recipient => {
+    const matchesSearch = recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         recipient.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         recipient.department?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesRole = filterRole === 'all' || recipient.role === filterRole;
+    
+    return matchesSearch && matchesRole;
+  });
+
+  // Handle recipient selection
+  const handleRecipientToggle = (recipient: Recipient) => {
+    const updatedRecipients = availableRecipients.map(r => 
+      r.id === recipient.id ? { ...r, selected: !r.selected } : r
+    );
+    
+    setAvailableRecipients(updatedRecipients);
+    
+    const newSelectedRecipients = updatedRecipients.filter(r => r.selected);
+    setSelectedRecipients(newSelectedRecipients);
+    
+    // Notify parent component
+    if (onRecipientsChange) {
+      const recipients = newSelectedRecipients.map(r => r.name);
+      const recipientIds = newSelectedRecipients.map(r => r.id);
+      onRecipientsChange(recipients, recipientIds);
+    }
+  };
+
+  // Handle real-time update
+  const handleUpdateRecipients = async () => {
+    if (!documentId) return;
+    
+    try {
+      const recipients = selectedRecipients.map(r => r.name);
+      const recipientIds = selectedRecipients.map(r => r.id);
+      
+      await updateRecipients(documentId, recipients, recipientIds);
+      
+      // Show success notification
+      window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          title: 'Recipients Updated',
+          description: 'Document recipients have been updated in real-time',
+          type: 'success'
+        }
+      }));
+      
+    } catch (error) {
+      console.error('Failed to update recipients:', error);
+      
+      // Show error notification
+      window.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          title: 'Update Failed',
+          description: 'Failed to update recipients. Please try again.',
+          type: 'error'
+        }
+      }));
+    }
+  };
+
+  // Get unique roles for filter
+  const uniqueRoles = [...new Set(availableRecipients.map(r => r.role))];
+
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          Real-Time Recipient Management
+          {selectedRecipients.length > 0 && (
+            <Badge variant="secondary">{selectedRecipients.length} selected</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Search and Filter */}
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <Label htmlFor="search">Search Recipients</Label>
+            <Input
+              id="search"
+              placeholder="Search by name, role, or department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="w-48">
+            <Label htmlFor="role-filter">Filter by Role</Label>
+            <Select value={filterRole} onValueChange={setFilterRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="All roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {uniqueRoles.map(role => (
+                  <SelectItem key={role} value={role}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Selected Recipients */}
+        {selectedRecipients.length > 0 && (
+          <div className="space-y-2">
+            <Label>Selected Recipients ({selectedRecipients.length})</Label>
+            <div className="flex flex-wrap gap-2">
+              {selectedRecipients.map(recipient => (
+                <Badge key={recipient.id} variant="default" className="flex items-center gap-1">
+                  {recipient.name}
+                  <button
+                    onClick={() => handleRecipientToggle(recipient)}
+                    className="ml-1 hover:bg-white/20 rounded-full p-0.5"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Available Recipients */}
+        <div className="space-y-2">
+          <Label>Available Recipients</Label>
+          <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
+            {filteredRecipients.map(recipient => (
+              <div
+                key={recipient.id}
+                className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                onClick={() => handleRecipientToggle(recipient)}
+              >
+                <Checkbox
+                  checked={recipient.selected}
+                  onChange={() => handleRecipientToggle(recipient)}
+                />
+                <div className="flex-1">
+                  <div className="font-medium">{recipient.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {recipient.role} • {recipient.department}
+                  </div>
+                </div>
+                <Badge variant="outline">{recipient.role}</Badge>
+              </div>
+            ))}
+            
+            {filteredRecipients.length === 0 && (
+              <div className="text-center text-gray-500 py-4">
+                No recipients found matching your criteria
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {mode === 'edit' && documentId && (
+          <div className="flex justify-end gap-2">
+            <Button
+              onClick={handleUpdateRecipients}
+              disabled={loading || selectedRecipients.length === 0}
+              className="flex items-center gap-2"
+            >
+              {loading ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              Update Recipients
+            </Button>
+          </div>
+        )}
+
+        {/* Real-time Status */}
+        <div className="text-xs text-gray-500 flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          Real-time updates enabled
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default RealTimeRecipientManager;
