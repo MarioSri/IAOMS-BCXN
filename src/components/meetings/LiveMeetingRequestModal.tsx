@@ -326,11 +326,11 @@ export const LiveMeetingRequestModal: React.FC<LiveMeetingRequestModalProps> = (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[95vw] sm:max-w-6xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg h-[85vh] sm:h-[75vh] p-0 bg-gray-50">
+        <DialogPrimitive.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[95vw] sm:max-w-6xl translate-x-[-50%] translate-y-[-50%] sm:gap-4 gap-0 sm:border border-none sm:bg-gray-50 bg-white sm:shadow-lg shadow-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg rounded-[28px] overflow-hidden h-[85vh] sm:h-[75vh] p-0">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-white relative rounded-t-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-white relative sm:rounded-t-lg rounded-t-[28px] overflow-hidden">
             <button
-              className="absolute right-6 top-6 text-white hover:text-gray-200 transition-colors"
+              className="absolute right-4 top-4 sm:right-6 sm:top-6 text-white hover:text-gray-200 transition-colors z-10"
               onClick={handleClose}
             >
               <X className="w-6 h-6" />
@@ -347,7 +347,7 @@ export const LiveMeetingRequestModal: React.FC<LiveMeetingRequestModalProps> = (
             </div>
           </div>
 
-          <div className="bg-white shadow-xl h-[calc(75vh-100px)] overflow-hidden rounded-b-lg">
+          <div className="bg-white sm:shadow-xl shadow-none h-[calc(85vh-100px)] sm:h-[calc(75vh-100px)] overflow-hidden sm:rounded-b-lg rounded-b-[28px]">
             {/* Single Column Layout */}
             <div className="p-4 overflow-y-auto h-full">
               {/* Meeting Purpose */}

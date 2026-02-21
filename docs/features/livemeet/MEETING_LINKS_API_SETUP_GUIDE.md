@@ -361,7 +361,7 @@ All Recipients Join SAME Room ✅
 
 ### Recommended Enhancements
 1. **Backend API** - Move API calls server-side for security
-2. **Database Migration** - Move from localStorage to Supabase
+2. **Database Migration** - Move from localStorage to a persistent database
 3. **Email Notifications** - Send meeting invites via email
 4. **Calendar Sync** - Two-way sync with Google/Outlook calendars
 5. **Recording** - Enable meeting recording capabilities

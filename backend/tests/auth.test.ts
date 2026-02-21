@@ -24,8 +24,7 @@ describe('Authentication Routes', () => {
           password: 'password123'
         });
 
-      // Note: This will fail without proper Supabase setup
-      // but demonstrates the test structure
+      // Demonstrates the test structure
       expect(response.status).toBeGreaterThanOrEqual(400);
     });
   });

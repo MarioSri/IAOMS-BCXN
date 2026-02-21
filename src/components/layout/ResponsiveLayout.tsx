@@ -24,9 +24,9 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({ children }) 
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="min-h-screen bg-background overflow-x-hidden p-0 m-0">
         <MobileHeader />
-        <main className="pb-6 px-4 py-6 pt-20 min-h-screen">
+        <main className="pb-6 px-4 pt-16 min-h-screen">
           {children}
         </main>
       </div>

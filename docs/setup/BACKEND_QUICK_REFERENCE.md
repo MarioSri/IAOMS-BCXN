@@ -56,8 +56,6 @@ DELETE /api/files/:id
 Located in: `backend/.env`
 
 **Critical:**
-- `SUPABASE_URL` ✅ Configured
-- `SUPABASE_ANON_KEY` ✅ Configured
 - `JWT_SECRET` ✅ Configured
 
 **Optional:**
@@ -114,10 +112,9 @@ netstat -ano | findstr :3001
 taskkill /PID <PID> /F
 ```
 
-### Cannot Connect to Supabase
-- Check `.env` file has correct `SUPABASE_URL`
-- Verify internet connection
-- Check Supabase dashboard status
+### Server Connection Issues
+- Check `.env` file has correct configuration
+- Verify the backend server is running
 
 ### Email Not Sending
 - Get Resend API key from https://resend.com
@@ -129,7 +126,7 @@ taskkill /PID <PID> /F
 
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
-- **Database**: Supabase (PostgreSQL)
+- **Database**: localStorage / in-memory storage
 - **Real-time**: Socket.IO
 - **Email**: Resend API
 - **Storage**: Google Drive API

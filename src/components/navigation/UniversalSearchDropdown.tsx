@@ -36,17 +36,23 @@ interface SearchResult {
 interface UniversalSearchDropdownProps {
   className?: string;
   placeholder?: string;
+  onExpandChange?: (isExpanded: boolean) => void;
 }
 
 export const UniversalSearchDropdown: React.FC<UniversalSearchDropdownProps> = ({
   className,
-  placeholder = "Search..."
+  placeholder = "Search...",
+  onExpandChange
 }) => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    onExpandChange?.(isExpanded);
+  }, [isExpanded, onExpandChange]);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -228,7 +234,7 @@ export const UniversalSearchDropdown: React.FC<UniversalSearchDropdownProps> = (
 
   return (
     <div ref={searchRef} className={cn("relative flex items-center justify-end", className)}>
-      <div className={cn("transition-all duration-500 ease-in-out origin-right relative", isExpanded ? "w-[calc(100vw-100px)] sm:w-96 mr-2" : "w-0 overflow-hidden")}>
+      <div className={cn("transition-all duration-500 ease-in-out origin-right relative", isExpanded ? "w-[calc(100vw-150px)] sm:w-80 mr-0 sm:mr-2" : "w-0 overflow-hidden")}>
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={query}
@@ -241,13 +247,13 @@ export const UniversalSearchDropdown: React.FC<UniversalSearchDropdownProps> = (
             }
           }}
           placeholder={placeholder}
-          className="w-full pl-10 pr-10 transition-all duration-500 ease-in-out h-9 sm:h-10 text-sm"
+          className="w-full pl-10 pr-10 transition-all duration-500 ease-in-out h-8 sm:h-9 text-xs sm:text-sm"
           autoFocus={isExpanded}
         />
         {query && (
           <button
             onClick={clearSearch}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground hover:text-foreground"
+            className="absolute right-0 sm:right-3 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground"
           >
             <X className="w-4 h-4" />
           </button>
@@ -264,7 +270,7 @@ export const UniversalSearchDropdown: React.FC<UniversalSearchDropdownProps> = (
       )}
 
       {isOpen && (query.trim() !== '' || recentSearches.length > 0) && (
-        <Card className="absolute top-full left-auto -right-12 sm:right-0 w-[calc(100vw-32px)] sm:w-[500px] mt-2 bg-white shadow-xl border rounded-lg z-50 max-h-[80vh] overflow-hidden">
+        <Card className="fixed sm:absolute top-[84px] sm:top-full left-4 sm:left-auto right-4 sm:right-0 w-[calc(100vw-32px)] sm:w-[500px] mt-2 bg-white shadow-xl border rounded-lg z-[60] max-h-[80vh] overflow-hidden sm:origin-top-right">
           <ScrollArea className="max-h-96">
             <div className="p-4 max-h-96 overflow-y-auto">
               {query.trim() === '' && recentSearches.length > 0 && (

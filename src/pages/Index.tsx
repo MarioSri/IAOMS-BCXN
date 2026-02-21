@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
   principal: 'Principal',
+  'demo-work': 'Demo Work Role',
   registrar: 'Registrar',
   hod: 'Head of Department',
   'program-head': 'Program Department Head',

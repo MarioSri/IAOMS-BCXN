@@ -7,7 +7,7 @@ interface RekorEntry {
   integratedTime: number;
 }
 
-export async function submitToRekor(data: any): Promise<{ uuid: string; logIndex: number }> {
+export async function submitToRekor(data: unknown): Promise<{ uuid: string; logIndex: number }> {
   const payload = {
     kind: 'hashedrekord',
     apiVersion: '0.0.1',

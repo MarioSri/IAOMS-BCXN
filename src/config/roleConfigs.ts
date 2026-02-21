@@ -28,7 +28,58 @@ export const roleConfigs: Record<string, RoleConfig> = {
       years: years
     },
     defaultWidgets: [
-      'quickActions', 'documents', 'calendar', 
+      'quickActions', 'documents', 'calendar',
+      'notifications', 'workflow'
+    ],
+    dashboardLayout: {
+      columns: 12,
+      rows: 8,
+      gap: 16,
+      responsive: {
+        mobile: { columns: 1, rows: 12 },
+        tablet: { columns: 2, rows: 8 },
+        desktop: { columns: 3, rows: 6 }
+      }
+    },
+    features: {
+      massDistribution: true,
+      escalationManagement: true,
+      roleManagement: true,
+      emergencyAccess: true,
+      aiSummaries: true,
+      workflowBuilder: true,
+      realTimeChat: true,
+      meetingScheduler: true,
+      signatureDashboard: true,
+      analyticsAccess: true
+    }
+  },
+
+  'demo-work': {
+    role: 'demo-work',
+    displayName: 'Demo Work Role',
+    color: '#22c55e',
+    icon: 'Crown',
+    permissions: {
+      canViewAllDocuments: true,
+      canApproveDocuments: true,
+      canRejectDocuments: true,
+      canMassDistribute: true,
+      canManageRoles: true,
+      canViewAnalytics: true,
+      canScheduleMeetings: true,
+      canAccessEmergency: true,
+      canManageWorkflows: true,
+      canViewAllDepartments: true,
+      canEscalateDocuments: true,
+      canOverrideApprovals: true,
+      canManageUsers: true,
+      departments: ['All'],
+      branches: branches,
+      years: years
+    },
+    defaultWidgets: [
+      'quickActions', 'documents', 'calendar',
       'notifications', 'workflow'
     ],
     dashboardLayout: {
@@ -130,7 +181,7 @@ export const roleConfigs: Record<string, RoleConfig> = {
       years: [] // Set based on user's year
     },
     defaultWidgets: [
-      'quickActions', 'documents', 'calendar', 
+      'quickActions', 'documents', 'calendar',
       'notifications'
     ],
     dashboardLayout: {
@@ -262,16 +313,16 @@ export const roleConfigs: Record<string, RoleConfig> = {
 
 export const getDashboardConfig = (userRole: string, userDepartment?: string, userBranch?: string, userYear?: string) => {
   const config = roleConfigs[userRole] || roleConfigs.employee;
-  
+
   // Customize permissions based on user's specific department/branch/year
   if (userDepartment && userBranch) {
     config.permissions.departments = [userDepartment];
     config.permissions.branches = [userBranch];
-    
+
     if (userYear) {
       config.permissions.years = [userYear];
     }
   }
-  
+
   return config;
 };

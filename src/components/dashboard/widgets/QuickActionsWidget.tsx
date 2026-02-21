@@ -178,6 +178,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
 
     const roleSpecificActions = {
       principal: adminRoleActions,
+      'demo-work': adminRoleActions,
       registrar: adminRoleActions,
       'program-head': adminRoleActions,
       hod: adminRoleActions,
@@ -219,7 +220,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
               onClick={() => navigate(action.path)}
               className={cn(
                 "flex flex-col gap-2 transition-all duration-200 hover:shadow-md animate-scale-in",
-                isMobile ? "h-20 p-3" : "h-24 p-4"
+                isMobile ? "h-auto min-h-[5rem] p-3" : "h-24 p-4"
               )}
               style={{ animationDelay: `${index * 50}ms` }}
             >
@@ -251,7 +252,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
         </div>
 
         {/* Role-specific quick stats */}
-        {(userRole === 'principal' || userRole === 'registrar') && (
+        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
           <div className="mt-4 pt-4 border-t">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="p-2 bg-muted/30 rounded">
@@ -259,7 +260,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-primary",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {userRole === 'principal' ? '8' : '5'}
+                  {(userRole === 'principal' || userRole === 'demo-work') ? '8' : '5'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",
@@ -273,7 +274,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-warning",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {userRole === 'principal' ? '23' : '12'}
+                  {(userRole === 'principal' || userRole === 'demo-work') ? '23' : '12'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",
@@ -287,7 +288,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-success",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {userRole === 'principal' ? '156' : '89'}
+                  {(userRole === 'principal' || userRole === 'demo-work') ? '156' : '89'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",

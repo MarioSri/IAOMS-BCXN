@@ -11,9 +11,7 @@ import {
   Shield,
   Users,
   Building,
-  User,
-  Settings,
-  Zap
+  User
 } from 'lucide-react';
 
 interface ProfileData {
@@ -58,7 +56,8 @@ export const RoleDashboard: React.FC = () => {
 
   const getRoleIcon = () => {
     switch (user.role) {
-      case 'principal': return Crown;
+      case 'principal':
+      case 'demo-work': return Crown;
       case 'registrar': return Shield;
       case 'program-head': return Users;
       case 'hod': return Building;
@@ -71,6 +70,7 @@ export const RoleDashboard: React.FC = () => {
   const getRoleDescription = () => {
     switch (user.role) {
       case 'principal':
+      case 'demo-work':
         return 'Complete institutional oversight with full administrative control, mass distribution capabilities, and system-wide analytics.';
       case 'registrar':
         return 'Academic administration with document approval authority, workflow management, and cross-departmental coordination.';
@@ -140,14 +140,14 @@ export const RoleDashboard: React.FC = () => {
           </div>
 
           {/* Role Description */}
-          <div className="mt-4 p-4 bg-white/10 rounded-lg">
-            <p className={cn(
-              "opacity-90",
-              isMobile ? "text-sm" : "text-base"
-            )}>
-              {getRoleDescription()}
-            </p>
-          </div>
+          {/* Role Description - Hidden on Mobile */}
+          {!isMobile && (
+            <div className="mt-4 p-4 bg-white/10 rounded-lg">
+              <p className="opacity-90 text-base">
+                {getRoleDescription()}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

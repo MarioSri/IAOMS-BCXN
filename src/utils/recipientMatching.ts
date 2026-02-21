@@ -75,7 +75,7 @@ export const isUserInRecipients = (options: RecipientMatchOptions): boolean => {
         (user.department && recipientLower.includes(user.department.toLowerCase())) ||
         (user.branch && recipientLower.includes(user.branch.toLowerCase())) ||
         // Role variations (specific role matching)
-        (currentUserRole === 'principal' && recipientLower.includes('principal')) ||
+        ((currentUserRole === 'principal' || currentUserRole === 'demo-work') && recipientLower.includes('principal')) ||
         (currentUserRole === 'registrar' && recipientLower.includes('registrar')) ||
         (currentUserRole === 'dean' && recipientLower.includes('dean')) ||
         (currentUserRole === 'hod' && recipientLower.includes('hod')) ||
@@ -130,7 +130,7 @@ export const isUserInRecipients = (options: RecipientMatchOptions): boolean => {
         // Direct name match (partial)
         (currentUserName.length > 2 && recipientLower.includes(currentUserName)) ||
         // Role-based matching with known patterns
-        (currentUserRole === 'principal' && (recipientLower.includes('principal') || recipientLower.includes('dr. robert'))) ||
+        ((currentUserRole === 'principal' || currentUserRole === 'demo-work') && (recipientLower.includes('principal') || recipientLower.includes('dr. robert'))) ||
         (currentUserRole === 'registrar' && (recipientLower.includes('registrar') || recipientLower.includes('prof. sarah'))) ||
         (currentUserRole === 'dean' && (recipientLower.includes('dean') || recipientLower.includes('dr. maria'))) ||
         (currentUserRole === 'hod' && (recipientLower.includes('hod') || recipientLower.includes('head of department'))) ||

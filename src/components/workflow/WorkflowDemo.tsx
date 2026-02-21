@@ -25,7 +25,7 @@ export const WorkflowDemo: React.FC = () => {
   const { toast } = useToast();
   const [workflowIntegration, setWorkflowIntegration] = useState<DocumentWorkflowIntegration | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   // Demo document form
   const [documentTitle, setDocumentTitle] = useState('Sample Academic Letter');
   const [documentType, setDocumentType] = useState<'letter' | 'circular' | 'report' | 'form' | 'approval'>('letter');
@@ -38,10 +38,10 @@ export const WorkflowDemo: React.FC = () => {
   useEffect(() => {
     // Initialize the workflow integration
     const chatService = new DecentralizedChatService(
-      import.meta.env.VITE_WS_URL || 'ws://localhost:8080',
-      import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+      import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+      import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
     );
-    
+
     const integration = new DocumentWorkflowIntegration(chatService);
     setWorkflowIntegration(integration);
 
@@ -81,7 +81,7 @@ export const WorkflowDemo: React.FC = () => {
     try {
       const documentId = generateDocumentId();
       const event = createDocumentEvent(step, documentId);
-      
+
       // Add to events list
       setEvents(prev => [...prev, event]);
 
@@ -164,7 +164,7 @@ export const WorkflowDemo: React.FC = () => {
                 placeholder="Enter document title"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="type">Document Type</Label>
               <select
@@ -217,14 +217,14 @@ export const WorkflowDemo: React.FC = () => {
                       </div>
                       <Badge variant="secondary">{index + 1}</Badge>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-medium text-sm">{step.title}</h4>
                       <p className="text-xs text-muted-foreground mt-1">
                         {step.description}
                       </p>
                     </div>
-                    
+
                     <Button
                       onClick={() => simulateWorkflowStep(step.type)}
                       disabled={isProcessing}
@@ -241,7 +241,7 @@ export const WorkflowDemo: React.FC = () => {
                       )}
                     </Button>
                   </CardContent>
-                  
+
                   {index < workflowSteps.length - 1 && (
                     <div className="hidden lg:block absolute -right-2 top-1/2 -translate-y-1/2 z-10">
                       <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -315,7 +315,7 @@ export const WorkflowDemo: React.FC = () => {
                 <li>• View automatic notifications and messages</li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-medium mb-2">⚡ Features Demonstrated</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
@@ -326,11 +326,11 @@ export const WorkflowDemo: React.FC = () => {
               </ul>
             </div>
           </div>
-          
+
           <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <p className="text-sm">
-              <strong>💡 Pro Tip:</strong> In a real implementation, these workflow events would be 
-              triggered automatically by the document management system when users create, share, 
+              <strong>💡 Pro Tip:</strong> In a real implementation, these workflow events would be
+              triggered automatically by the document management system when users create, share,
               or request approvals for documents.
             </p>
           </div>

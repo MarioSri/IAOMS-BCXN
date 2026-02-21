@@ -66,8 +66,8 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushSize, setBrushSize] = useState(2);
   const [brushColor, setBrushColor] = useState('#000000');
-  const [points, setPoints] = useState<Array<{x: number, y: number}>>([]);
-  const [savedSignatures, setSavedSignatures] = useState<Array<{id: string, name: string, data: string, type: 'draw' | 'upload'}>>([]);
+  const [points, setPoints] = useState<Array<{ x: number, y: number }>>([]);
+  const [savedSignatures, setSavedSignatures] = useState<Array<{ id: string, name: string, data: string, type: 'draw' | 'upload' }>>([]);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showFileViewer, setShowFileViewer] = useState(false);
   const [fileContent, setFileContent] = useState<any>(null);
@@ -76,15 +76,16 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const [fileZoom, setFileZoom] = useState(100);
   const [fileRotation, setFileRotation] = useState(0);
   const [faceVerified, setFaceVerified] = useState(false);
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Current page tracking for multi-page documents
   const [currentPageNumber, setCurrentPageNumber] = useState(1); // 1-based page index
-  
+
   // Multi-file navigation state
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const isMultiFile = files && files.length > 1;
   const currentFile = isMultiFile ? files[currentFileIndex] : file;
-  
+
   // Signature placement on document - Using NORMALIZED coordinates (0-1 range) for accuracy
   const [placedSignatures, setPlacedSignatures] = useState<Array<{
     id: string;
@@ -109,10 +110,10 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
   const [resizeCorner, setResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | null>(null);
-  
+
   // Store actual document dimensions for accurate coordinate calculations
   const [actualDocDimensions, setActualDocDimensions] = useState({ width: 800, height: 1200 });
-  
+
   // Signature field state (the green box)
   const [signatureField, setSignatureField] = useState({
     x: 100,
@@ -126,12 +127,12 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const [isFieldResizing, setIsFieldResizing] = useState(false);
   const [fieldResizeCorner, setFieldResizeCorner] = useState<'tl' | 'tr' | 'bl' | 'br' | null>(null);
   const [fieldDragOffset, setFieldDragOffset] = useState({ x: 0, y: 0 });
-  
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  
+
   const documensoAPI = useDocumensoAPI({
     apiKey: 'api_lr6uvchonev0drwc',
     baseUrl: 'https://api.documenso.com',
@@ -160,11 +161,11 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     try {
       const pendingApprovals = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
       const currentDoc = pendingApprovals.find((doc: any) => doc.id === document.id);
-      
+
       if (currentDoc?.signatureMetadata && Array.isArray(currentDoc.signatureMetadata)) {
         console.log('✅ Loading', currentDoc.signatureMetadata.length, 'existing signature(s) from approval chain');
         setPlacedSignatures(currentDoc.signatureMetadata);
-        
+
         // Log signature details for verification
         currentDoc.signatureMetadata.forEach((sig: any, idx: number) => {
           console.log(`  Signature ${idx + 1}:`, {
@@ -183,11 +184,11 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     try {
       const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
       const currentDoc = submittedDocs.find((doc: any) => doc.id === document.id);
-      
+
       if (currentDoc?.signatureMetadata && Array.isArray(currentDoc.signatureMetadata)) {
         console.log('✅ Loading', currentDoc.signatureMetadata.length, 'existing signature(s) from submitted documents');
         setPlacedSignatures(currentDoc.signatureMetadata);
-        
+
         // Log signature details for verification
         currentDoc.signatureMetadata.forEach((sig: any, idx: number) => {
           console.log(`  Signature ${idx + 1}:`, {
@@ -273,7 +274,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     const loadFile = async () => {
       setFileLoading(true);
       setFileError(null);
-      
+
       try {
         const fileType = currentFile.type;
         const fileName = currentFile.name.toLowerCase();
@@ -337,19 +338,19 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const loadPDF = async (file: File) => {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    
+
     const pageCanvases: string[] = [];
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
       const viewport = page.getViewport({ scale: 1.5 });
       const canvasEl = window.document.createElement('canvas');
       const context = canvasEl.getContext('2d');
-      
+
       if (!context) throw new Error('Could not get canvas context');
-      
+
       canvasEl.height = viewport.height;
       canvasEl.width = viewport.width;
-      
+
       await page.render({ canvasContext: context, viewport: viewport } as any).promise;
       pageCanvases.push(canvasEl.toDataURL());
     }
@@ -384,13 +385,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const mergeSignaturesWithDocument = async (): Promise<any[]> => {
     if (placedSignatures.length === 0) {
       console.warn('⚠️ No signatures to merge');
-      return fileContent?.type === 'pdf' && fileContent.pageCanvases 
+      return fileContent?.type === 'pdf' && fileContent.pageCanvases
         ? fileContent.pageCanvases.map((page: string, idx: number) => ({
-            name: `${currentFile?.name || 'document'}_page_${idx + 1}`,
-            type: currentFile?.type || 'application/pdf',
-            size: 0,
-            data: page
-          }))
+          name: `${currentFile?.name || 'document'}_page_${idx + 1}`,
+          type: currentFile?.type || 'application/pdf',
+          size: 0,
+          data: page
+        }))
         : [];
     }
 
@@ -407,7 +408,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       for (let pageIndex = 0; pageIndex < fileContent.pageCanvases.length; pageIndex++) {
         const pageDataUrl = fileContent.pageCanvases[pageIndex];
         const currentPageNum = pageIndex + 1; // 1-based page number
-        
+
         // Create canvas for merging
         const canvas = window.document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -426,13 +427,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
         ctx.drawImage(pageImg, 0, 0);
 
         // Draw ONLY signatures that belong to THIS specific page AND current file
-        const pageSignatures = placedSignatures.filter(sig => 
-          sig.pageNumber === currentPageNum && 
+        const pageSignatures = placedSignatures.filter(sig =>
+          sig.pageNumber === currentPageNum &&
           (sig.fileIndex === undefined || sig.fileIndex === currentFileIndex)
         );
-        
+
         console.log(`📄 Processing PDF page ${currentPageNum}: ${pageSignatures.length} signature(s) to merge`);
-        
+
         for (const signature of pageSignatures) {
           // ✅ Use NORMALIZED coordinates (0-1 range) - multiply by actual canvas dimensions
           // This ensures signatures appear in EXACT same position regardless of zoom/screen size
@@ -440,19 +441,19 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
           const canvasY = signature.yPercent * canvas.height;
           const canvasWidth = signature.widthPercent * canvas.width;
           const canvasHeight = signature.heightPercent * canvas.height;
-          
+
           console.log('📐 PDF Signature NORMALIZED positioning:', {
-            normalized: { 
-              xPercent: signature.xPercent, 
-              yPercent: signature.yPercent, 
-              wPercent: signature.widthPercent, 
-              hPercent: signature.heightPercent 
+            normalized: {
+              xPercent: signature.xPercent,
+              yPercent: signature.yPercent,
+              wPercent: signature.widthPercent,
+              hPercent: signature.heightPercent
             },
             canvas: { x: canvasX, y: canvasY, w: canvasWidth, h: canvasHeight },
             canvasSize: { w: canvas.width, h: canvas.height },
             docSize: { w: signature.docWidth, h: signature.docHeight }
           });
-          
+
           const sigImg = new Image();
           await new Promise((resolve) => {
             sigImg.onload = resolve;
@@ -493,31 +494,31 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       ctx.drawImage(img, 0, 0);
 
       // Draw signatures for this image file (filter by file index if multi-file)
-      const imageSignatures = placedSignatures.filter(sig => 
+      const imageSignatures = placedSignatures.filter(sig =>
         sig.fileIndex === undefined || sig.fileIndex === currentFileIndex
       );
-      
+
       console.log(`📷 Processing image file: ${imageSignatures.length} signature(s) to merge`);
-      
+
       for (const signature of imageSignatures) {
         // ✅ Use NORMALIZED coordinates (0-1 range) - multiply by actual canvas dimensions
         const canvasX = signature.xPercent * canvas.width;
         const canvasY = signature.yPercent * canvas.height;
         const canvasWidth = signature.widthPercent * canvas.width;
         const canvasHeight = signature.heightPercent * canvas.height;
-        
+
         console.log('📐 Image Signature NORMALIZED positioning:', {
-          normalized: { 
-            xPercent: signature.xPercent, 
-            yPercent: signature.yPercent, 
-            wPercent: signature.widthPercent, 
-            hPercent: signature.heightPercent 
+          normalized: {
+            xPercent: signature.xPercent,
+            yPercent: signature.yPercent,
+            wPercent: signature.widthPercent,
+            hPercent: signature.heightPercent
           },
           canvas: { x: canvasX, y: canvasY, w: canvasWidth, h: canvasHeight },
           canvasSize: { w: canvas.width, h: canvas.height },
           docSize: { w: signature.docWidth, h: signature.docHeight }
         });
-        
+
         const sigImg = new Image();
         await new Promise((resolve) => {
           sigImg.onload = resolve;
@@ -550,7 +551,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
   const handleSign = async () => {
     setIsProcessing(true);
-    
+
     try {
       // Enhanced Documenso signing process
       const steps = [
@@ -572,7 +573,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       // Merge signatures with document
       console.log('🔄 Starting signature merge process for document:', document.id);
       const signedFiles = await mergeSignaturesWithDocument();
-      
+
       if (signedFiles.length > 0) {
         // Store signature metadata instead of full signed files to avoid quota issues
         const signatureMetadata = placedSignatures.map(sig => ({
@@ -590,7 +591,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
           signedBy: sig.signedBy || user.name, // Ensure we have signer info
           signedAt: sig.signedAt || new Date().toISOString() // Ensure we have timestamp
         }));
-        
+
         // Update submitted-documents (Track Documents) - store metadata only
         try {
           const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
@@ -619,7 +620,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
             variant: "default"
           });
         }
-        
+
         // Update pending-approvals (Approval Center) - store metadata only
         try {
           const pendingApprovals = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
@@ -643,15 +644,15 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
         } catch (quotaError) {
           console.error('⚠️ LocalStorage quota exceeded for pending-approvals:', quotaError);
         }
-        
+
         // Calculate recipient counts for dynamic tracking
         const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
         const currentDoc = submittedDocs.find((doc: any) => doc.id === document.id);
-        const totalRecipients = currentDoc?.workflow?.steps?.filter((step: any) => 
+        const totalRecipients = currentDoc?.workflow?.steps?.filter((step: any) =>
           step.name !== 'Submission' && step.assignee !== currentDoc.submittedBy
         ).length || 1;
         const currentSignedCount = (currentDoc?.signedBy?.length || 0) + 1; // +1 for current signature
-        
+
         // Dispatch events for real-time updates with tracking data
         console.log('📢 Dispatching document-signed event with tracking data:', {
           documentId: document.id,
@@ -659,7 +660,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
           totalSigned: currentSignedCount,
           totalRecipients: totalRecipients
         });
-        
+
         window.dispatchEvent(new CustomEvent('document-signed', {
           detail: {
             documentId: document.id,
@@ -670,7 +671,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
             totalRecipients: totalRecipients
           }
         }));
-        
+
         // Also dispatch Documenso-specific event for compatibility
         window.dispatchEvent(new CustomEvent('documenso-signature-completed', {
           detail: {
@@ -680,7 +681,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
             totalRecipients: totalRecipients
           }
         }));
-        
+
         console.log('✅ Document signature update complete:', {
           documentId: document.id,
           signedFileCount: signedFiles.length,
@@ -690,13 +691,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
       setIsCompleted(true);
       setIsProcessing(false);
-      
+
       toast({
         title: "Document Signed Successfully",
         description: `✅ Signed by 1 Recipient • ${placedSignatures.length} Signature${placedSignatures.length > 1 ? 's' : ''}`,
         duration: 5000,
       });
-      
+
     } catch (error) {
       console.error('❌ Signature merge failed:', error);
       setIsProcessing(false);
@@ -708,13 +709,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     }
   };
 
-  const smoothSignature = (pts: Array<{x: number, y: number}>) => {
+  const smoothSignature = (pts: Array<{ x: number, y: number }>) => {
     const canvas = canvasRef.current;
     if (!canvas || pts.length < 2) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = brushColor;
     ctx.lineWidth = brushSize;
@@ -723,16 +724,16 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     ctx.shadowColor = brushColor;
     ctx.shadowBlur = 0.5;
     ctx.globalCompositeOperation = 'source-over';
-    
+
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
-    
+
     for (let i = 1; i < pts.length - 2; i++) {
       const xc = (pts[i].x + pts[i + 1].x) / 2;
       const yc = (pts[i].y + pts[i + 1].y) / 2;
       ctx.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
     }
-    
+
     if (pts.length > 2) {
       ctx.quadraticCurveTo(
         pts[pts.length - 2].x,
@@ -741,34 +742,44 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
         pts[pts.length - 1].y
       );
     }
-    
+
     ctx.stroke();
+  };
+
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    let clientX, clientY;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+
+    return { x, y };
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    setPoints([{x, y}]);
+    setPoints([getCanvasCoordinates(e, canvas)]);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
-    
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
+
     setPoints(prev => {
-      const newPoints = [...prev, {x, y}];
+      const newPoints = [...prev, getCanvasCoordinates(e, canvas)];
       smoothSignature(newPoints);
       return newPoints;
     });
@@ -786,29 +797,17 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
-    setPoints([{x, y}]);
+    setPoints([getCanvasCoordinates(e, canvas)]);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!isDrawing) return;
-    
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
+
     setPoints(prev => {
-      const newPoints = [...prev, {x, y}];
+      const newPoints = [...prev, getCanvasCoordinates(e, canvas)];
       smoothSignature(newPoints);
       return newPoints;
     });
@@ -825,10 +824,10 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const clearSignature = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setPoints([]);
   };
@@ -839,22 +838,22 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       console.error('Canvas not found');
       return;
     }
-    
+
     const dataUrl = canvas.toDataURL();
     console.log('Drawn signature data URL length:', dataUrl.length);
-    
+
     const newSignature = {
       id: Date.now().toString(),
       name: `Signature ${savedSignatures.length + 1}`,
       data: dataUrl,
       type: 'draw' as const
     };
-    
+
     setSavedSignatures(prev => [...prev, newSignature]);
-    
+
     // Automatically place signature on document
     placeSignatureOnDocument(dataUrl);
-    
+
     toast({
       title: "Signature Saved and Placed",
       description: "Signature has been saved to library and placed on document."
@@ -866,27 +865,27 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     // Use pre-calculated ACTUAL document dimensions (not preview container!)
     const docWidth = actualDocDimensions.width;
     const docHeight = actualDocDimensions.height;
-    
+
     console.log('📐 Using document dimensions:', { width: docWidth, height: docHeight });
-    
+
     // Normalize coordinates to zoom level 100%
     const zoomFactor = fileZoom / 100;
     const normalizedX = signatureField.x / zoomFactor;
     const normalizedY = signatureField.y / zoomFactor;
     const normalizedWidth = signatureField.width / zoomFactor;
     const normalizedHeight = signatureField.height / zoomFactor;
-    
+
     // Convert to percentage-based coordinates (0-1 range)
     const xPercent = normalizedX / docWidth;
     const yPercent = normalizedY / docHeight;
     const widthPercent = normalizedWidth / docWidth;
     const heightPercent = normalizedHeight / docHeight;
-    
+
     // Determine page number for multi-page documents (PDFs only)
-    const pageNumber = fileContent?.type === 'pdf' && fileContent?.totalPages > 1 
-      ? currentPageNumber 
+    const pageNumber = fileContent?.type === 'pdf' && fileContent?.totalPages > 1
+      ? currentPageNumber
       : undefined;
-    
+
     const newPlacedSignature = {
       id: Date.now().toString(),
       data: signatureData,
@@ -903,13 +902,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       signedBy: user.name, // Track who placed this signature
       signedAt: new Date().toISOString() // Track when signature was placed
     };
-    
+
     console.log('🎨 Placing signature with NORMALIZED coordinates:', {
-      normalized: { 
-        xPercent: xPercent?.toFixed(4), 
-        yPercent: yPercent?.toFixed(4), 
-        wPercent: widthPercent?.toFixed(4), 
-        hPercent: heightPercent?.toFixed(4) 
+      normalized: {
+        xPercent: xPercent?.toFixed(4),
+        yPercent: yPercent?.toFixed(4),
+        wPercent: widthPercent?.toFixed(4),
+        hPercent: heightPercent?.toFixed(4)
       },
       absoluteAtZoom100: { x: normalizedX, y: normalizedY, w: normalizedWidth, h: normalizedHeight },
       documentSize: { width: docWidth, height: docHeight },
@@ -919,7 +918,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       fileIndex: newPlacedSignature.fileIndex,
       fileType: fileContent?.type
     });
-    
+
     setPlacedSignatures(prev => {
       const updated = [...prev, newPlacedSignature];
       console.log('📝 Updated signatures array - Total signatures:', updated.length);
@@ -929,7 +928,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       return updated;
     });
     setSelectedSignatureId(newPlacedSignature.id);
-    
+
     toast({
       title: "Signature Placed",
       description: `Signature #${placedSignatures.length + 1} placed at (${Math.round(signatureField.x)}, ${Math.round(signatureField.y)}) on ${fileContent?.type?.toUpperCase() || 'document'}`
@@ -951,7 +950,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
     setSelectedSignatureId(sigId);
     setIsDragging(true);
-    
+
     const rect = previewContainerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
@@ -965,7 +964,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     const zoomFactor = fileZoom / 100;
     const docMouseX = mouseX / zoomFactor;
     const docMouseY = mouseY / zoomFactor;
-    
+
     // Convert normalized coordinates to absolute coordinates for dragging
     const sigAbsoluteX = signature.xPercent * docWidth;
     const sigAbsoluteY = signature.yPercent * docHeight;
@@ -1067,8 +1066,8 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
       setPlacedSignatures(prev => prev.map(sig => {
         if (sig.id === selectedSignatureId) {
-          return { 
-            ...sig, 
+          return {
+            ...sig,
             xPercent: Math.max(0, Math.min(1, newXPercent)),
             yPercent: Math.max(0, Math.min(1, newYPercent)),
             widthPercent: Math.max(0.05, Math.min(1, newWidthPercent)), // Min 5% width
@@ -1093,7 +1092,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       console.log('🚫 Cannot rotate signature from another user:', signature.signedBy);
       return;
     }
-    
+
     setPlacedSignatures(prev => prev.map(sig => {
       if (sig.id === sigId) {
         return { ...sig, rotation: (sig.rotation + 90) % 360 };
@@ -1114,13 +1113,13 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       console.log('🚫 Cannot delete signature from another user:', signature.signedBy);
       return;
     }
-    
+
     setPlacedSignatures(prev => prev.filter(sig => sig.id !== sigId));
     setSelectedSignatureId(null);
   };
 
   // ===== SIGNATURE FIELD HANDLERS =====
-  
+
   // Handle signature field drag
   const handleFieldMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1215,7 +1214,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       rotation: 0
     });
     setIsFieldSelected(false);
-    
+
     toast({
       title: "Signature Field Reset",
       description: "The signature field has been reset to default position"
@@ -1248,20 +1247,20 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
           const canvas = window.document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           if (!ctx) return resolve(imageData);
-          
+
           canvas.width = img.width;
           canvas.height = img.height;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
-          
+
           const imageDataObj = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageDataObj.data;
-          
+
           // Complete background removal + ink enhancement
           for (let i = 0; i < data.length; i += 4) {
             const r = data[i], g = data[i + 1], b = data[i + 2];
             const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-            
+
             // Remove ALL light backgrounds - 100% transparent
             if (luminance > 160) {
               data[i + 3] = 0; // Completely transparent
@@ -1281,7 +1280,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
               data[i + 3] = 255; // Fully opaque
             }
           }
-          
+
           ctx.putImageData(imageDataObj, 0, 0);
           resolve(canvas.toDataURL('image/png'));
         } catch (error) {
@@ -1298,22 +1297,22 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     const reader = new FileReader();
     reader.onload = async (e) => {
       const originalData = e.target?.result as string;
-      
+
       // Remove white background automatically
       const transparentData = await removeWhiteBackground(originalData);
-      
+
       const newSignature = {
         id: Date.now().toString(),
         name: file.name,
         data: transparentData,
         type: 'upload' as const
       };
-      
+
       setSavedSignatures(prev => [...prev, newSignature]);
-      
+
       // Automatically place signature on document
       placeSignatureOnDocument(transparentData);
-      
+
       toast({
         title: "Signature Saved and Placed",
         description: "Background removed and signature placed on document."
@@ -1325,7 +1324,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const loadSavedSignature = (signature: typeof savedSignatures[0]) => {
     // Place signature directly on document
     placeSignatureOnDocument(signature.data);
-    
+
     toast({
       title: "Signature Placed",
       description: `${signature.name} has been placed on the document`
@@ -1334,18 +1333,18 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
           facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
-        } 
+        }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setCameraActive(true);
-        
+
         toast({
           title: "Camera Started",
           description: "Position your signature in the frame and capture",
@@ -1372,26 +1371,26 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const captureSignature = async () => {
     const video = videoRef.current;
     if (!video) return;
-    
+
     const canvas = window.document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.drawImage(video, 0, 0);
     const originalData = canvas.toDataURL('image/png');
-    
+
     // Remove white background from captured image
     const transparentData = await removeWhiteBackground(originalData);
-    
+
     setCapturedSignature(transparentData);
     stopCamera();
-    
+
     // Automatically place signature on document
     placeSignatureOnDocument(transparentData);
-    
+
     toast({
       title: "Signature Captured and Placed",
       description: "Background removed and signature placed on document."
@@ -1418,921 +1417,969 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
   return (
     <>
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" />
-            Digital Signature Platform
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-2 gap-6 h-[80vh]">
-          {/* Left Column - Document Preview */}
-          <div className="border-r pr-6">
-            <Card className="h-full flex flex-col">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Document Preview
-                  </div>
-                  
-                  {/* Multi-File Navigation Controls */}
-                  {isMultiFile && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePreviousFile}
-                        disabled={currentFileIndex === 0}
-                        title="Previous File"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      
-                      <Badge variant="secondary" className="text-xs">
-                        {currentFileIndex + 1} of {files?.length}
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="w-screen h-screen sm:w-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] p-0 sm:p-6 gap-0 sm:gap-4 border-0 sm:border rounded-none sm:rounded-lg overflow-hidden flex flex-col [&>button:last-child]:top-2 [&>button:last-child]:right-2 [&>button:last-child]:bg-gray-100 [&>button:last-child]:opacity-100 sm:[&>button:last-child]:top-6 sm:[&>button:last-child]:right-4 sm:[&>button:last-child]:bg-white sm:[&>button:last-child]:opacity-90">
+          <DialogHeader className="p-4 sm:p-0 border-b sm:border-b-0 m-0">
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-blue-600" />
+              Digital Signature Platform
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-0 lg:gap-6 h-full lg:h-[80vh] w-full overflow-hidden relative bg-background border-none">
+            {/* Left Column - Document Preview */}
+            <div className="h-full lg:h-full lg:border-r lg:pr-6 border-b lg:border-b-0 flex flex-col w-full relative z-0">
+              <Card className="h-full flex flex-col border-0 sm:border shadow-none sm:shadow-sm rounded-none sm:rounded-xl m-0 bg-transparent">
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm sm:text-lg">
+                      <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                      Document Preview
+                    </div>
+
+                    {/* Multi-File Navigation Controls */}
+                    {isMultiFile && (
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handlePreviousFile}
+                          disabled={currentFileIndex === 0}
+                          title="Previous File"
+                          className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+
+                        <Badge variant="secondary" className="text-xs">
+                          {currentFileIndex + 1} of {files?.length}
+                        </Badge>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleNextFile}
+                          disabled={currentFileIndex === (files?.length ?? 1) - 1}
+                          title="Next File"
+                          className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+
+                        <div className="h-4 sm:h-6 w-px bg-gray-300 mx-0.5 sm:mx-1" />
+                      </div>
+                    )}
+                  </CardTitle>
+                  {/* Current File Name Display */}
+                  {currentFile && (
+                    <div className="px-4 pb-2 flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs max-w-full truncate">
+                        <FileText className="w-3 h-3 mr-1 inline" />
+                        {currentFile.name}
                       </Badge>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleNextFile}
-                        disabled={currentFileIndex === (files?.length ?? 1) - 1}
-                        title="Next File"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      
-                      <div className="h-6 w-px bg-gray-300 mx-1" />
+
+                      {/* Signature Count Indicator */}
+                      {placedSignatures.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          <PenTool className="w-3 h-3 mr-1 inline" />
+                          {placedSignatures.length} signature{placedSignatures.length !== 1 ? 's' : ''}
+                          {placedSignatures.filter(sig => sig.signedBy && sig.signedBy !== user.name).length > 0 && (
+                            <span className="ml-1 text-blue-600">
+                              ({placedSignatures.filter(sig => sig.signedBy && sig.signedBy !== user.name).length} from chain)
+                            </span>
+                          )}
+                        </Badge>
+                      )}
                     </div>
                   )}
-                </CardTitle>
-                {/* Current File Name Display */}
-                {currentFile && (
-                  <div className="px-4 pb-2 flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs max-w-full truncate">
-                      <FileText className="w-3 h-3 mr-1 inline" />
-                      {currentFile.name}
-                    </Badge>
-                    
-                    {/* Signature Count Indicator */}
-                    {placedSignatures.length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        <PenTool className="w-3 h-3 mr-1 inline" />
-                        {placedSignatures.length} signature{placedSignatures.length !== 1 ? 's' : ''}
-                        {placedSignatures.filter(sig => sig.signedBy && sig.signedBy !== user.name).length > 0 && (
-                          <span className="ml-1 text-blue-600">
-                            ({placedSignatures.filter(sig => sig.signedBy && sig.signedBy !== user.name).length} from chain)
-                          </span>
-                        )}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
-                {currentFile ? (
-                  <div className="h-full flex flex-col">
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
+                  {currentFile ? (
+                    <div className="h-full flex flex-col">
 
 
-                    {/* Embedded Document Preview - Enhanced Scrolling with Increased Height */}
-                    <div 
-                      ref={previewContainerRef}
-                      className="flex-1 overflow-y-auto overflow-x-hidden border-t bg-gray-50 scroll-smooth relative" 
-                      style={{ maxHeight: 'calc(80vh - 180px)', minHeight: '500px' }}
-                      onMouseMove={handleCombinedMouseMove}
-                      onMouseUp={handleCombinedMouseUp}
-                      onMouseLeave={handleCombinedMouseUp}
-                      onClick={() => { setIsFieldSelected(false); setSelectedSignatureId(null); }}
-                    >
-                      {fileLoading ? (
-                        <div className="flex items-center justify-center h-full p-8 min-h-[400px]">
-                          <div className="text-center">
-                            <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-500" />
-                            <p className="text-sm text-gray-600">Loading document...</p>
+                      {/* Embedded Document Preview - Enhanced Scrolling with Increased Height */}
+                      <div
+                        ref={previewContainerRef}
+                        className="flex-1 overflow-y-auto overflow-x-hidden border-t bg-gray-50 scroll-smooth relative"
+                        style={{ maxHeight: '100%', minHeight: '200px' }}
+                        onMouseMove={handleCombinedMouseMove}
+                        onMouseUp={handleCombinedMouseUp}
+                        onMouseLeave={handleCombinedMouseUp}
+                        onClick={() => { setIsFieldSelected(false); setSelectedSignatureId(null); }}
+                      >
+                        {fileLoading ? (
+                          <div className="flex items-center justify-center h-full p-4 sm:p-8 min-h-[200px] sm:min-h-[400px]">
+                            <div className="text-center">
+                              <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 animate-spin mx-auto mb-4 text-blue-500" />
+                              <p className="text-xs sm:text-sm text-gray-600">Loading document...</p>
+                            </div>
                           </div>
-                        </div>
-                      ) : fileError ? (
-                        <div className="flex items-center justify-center h-full p-8 min-h-[400px]">
-                          <div className="text-center">
-                            <FileText className="h-12 w-12 mx-auto mb-4 text-red-500" />
-                            <p className="text-sm font-medium text-red-600 mb-2">Error Loading File</p>
-                            <p className="text-xs text-gray-500 break-words">{fileError}</p>
+                        ) : fileError ? (
+                          <div className="flex items-center justify-center h-full p-4 sm:p-8 min-h-[200px] sm:min-h-[400px]">
+                            <div className="text-center">
+                              <FileText className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-4 text-red-500" />
+                              <p className="text-sm font-medium text-red-600 mb-2">Error Loading File</p>
+                              <p className="text-xs text-gray-500 break-words">{fileError}</p>
+                            </div>
                           </div>
-                        </div>
-                      ) : fileContent ? (
-                        <div className="p-4 pb-8 w-full relative">
-                          {/* Zoom, Rotation, and Page Navigation Controls */}
-                          <div className="flex items-center justify-center gap-2 mb-4 sticky top-0 bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-sm z-10">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setFileZoom(Math.max(50, fileZoom - 10))}
-                              disabled={fileZoom <= 50}
-                              title="Zoom Out"
-                            >
-                              <ZoomOut className="h-4 w-4" />
-                            </Button>
-                            <Badge variant="secondary" className="px-3 font-mono">{fileZoom}%</Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setFileZoom(Math.min(200, fileZoom + 10))}
-                              disabled={fileZoom >= 200}
-                              title="Zoom In"
-                            >
-                              <ZoomIn className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setFileRotation((fileRotation + 90) % 360)}
-                              title="Rotate 90°"
-                            >
-                              <RotateCw className="h-4 w-4" />
-                            </Button>
-                            
-                            {/* Page Navigation for Multi-Page PDFs */}
-                            {fileContent.type === 'pdf' && fileContent.totalPages && fileContent.totalPages > 1 && (
-                              <>
-                                <div className="h-6 w-px bg-gray-300 mx-1" />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setCurrentPageNumber(Math.max(1, currentPageNumber - 1))}
-                                  disabled={currentPageNumber <= 1}
-                                  title="Previous Page"
-                                >
-                                  <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <Badge variant="default" className="px-3 font-mono bg-blue-600">
-                                  Page {currentPageNumber} / {fileContent.totalPages}
-                                </Badge>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setCurrentPageNumber(Math.min(fileContent.totalPages, currentPageNumber + 1))}
-                                  disabled={currentPageNumber >= fileContent.totalPages}
-                                  title="Next Page"
-                                >
-                                  <ChevronRight className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                            
-                            {fileContent.type === 'pdf' && fileContent.totalPages && (
-                              <Badge variant="outline">{fileContent.totalPages} page{fileContent.totalPages > 1 ? 's' : ''}</Badge>
-                            )}
-                          </div>
+                        ) : fileContent ? (
+                          <div className="p-2 sm:p-4 pb-8 w-full relative">
+                            {/* Zoom, Rotation, and Page Navigation Controls */}
+                            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-4 sticky top-0 bg-white/95 backdrop-blur-sm p-1.5 sm:p-2 rounded-lg shadow-sm z-10 scale-90 sm:scale-100 origin-top">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFileZoom(Math.max(50, fileZoom - 10))}
+                                disabled={fileZoom <= 50}
+                                title="Zoom Out"
+                                className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                              >
+                                <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                              <Badge variant="secondary" className="px-1.5 sm:px-3 font-mono text-xs">{fileZoom}%</Badge>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFileZoom(Math.min(200, fileZoom + 10))}
+                                disabled={fileZoom >= 200}
+                                title="Zoom In"
+                                className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                              >
+                                <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setFileRotation((fileRotation + 90) % 360)}
+                                title="Rotate 90°"
+                                className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                              >
+                                <RotateCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
 
-                          {/* File Content Rendering with Overflow Protection - Wrapped with signature overlay container */}
-                          <div className="space-y-4 pb-4 w-full relative" style={{
-                            transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
-                            transformOrigin: 'top center',
-                            transition: 'transform 0.3s ease',
-                          }}>
-                            {fileContent.type === 'pdf' && fileContent.pageCanvases?.map((pageDataUrl: string, index: number) => (
-                              <div key={index} className="relative mb-6 overflow-hidden" id={`pdf-page-${index}`}>
-                                <img
-                                  src={pageDataUrl}
-                                  alt={`Page ${index + 1}`}
-                                  style={{
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                  }}
-                                  className="border shadow-lg rounded mx-auto block"
-                                />
-                                <Badge variant="secondary" className="absolute top-2 right-2 bg-background/95 backdrop-blur z-20">
-                                  Page {index + 1} of {fileContent.totalPages}
-                                </Badge>
-                                
-                                {/* Render signatures ONLY for this specific PDF page */}
-                                {placedSignatures
-                                  .filter(sig => sig.pageNumber === index + 1 && (sig.fileIndex === undefined || sig.fileIndex === currentFileIndex))
-                                  .map((signature) => {
-                                    // ✅ Convert NORMALIZED coordinates (0-1) to pixel coordinates for display
-                                    // Multiply by document dimensions, then apply zoom
-                                    const zoomFactor = fileZoom / 100;
-                                    const displayX = signature.xPercent * signature.docWidth * zoomFactor;
-                                    const displayY = signature.yPercent * signature.docHeight * zoomFactor;
-                                    const displayWidth = signature.widthPercent * signature.docWidth * zoomFactor;
-                                    const displayHeight = signature.heightPercent * signature.docHeight * zoomFactor;
-                                    
-                                    return <div
-                                    key={`${signature.id}-page-${index}`}
-                                    className={`absolute cursor-pointer select-none transition-all duration-200 ${selectedSignatureId === signature.id ? 'ring-2 ring-blue-400/60 shadow-lg border-2 border-blue-500' : 'hover:shadow-sm border border-transparent'}`}
-                                    style={{
-                                      left: `${displayX}px`,
-                                      top: `${displayY}px`,
-                                      width: `${displayWidth}px`,
-                                      height: `${displayHeight}px`,
-                                      transform: `rotate(${signature.rotation}deg)`,
-                                      transformOrigin: 'center',
-                                      zIndex: selectedSignatureId === signature.id ? 100 : 50,
-                                      pointerEvents: 'auto',
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedSignatureId(signature.id);
-                                      console.log('📝 PDF Signature clicked on page', index + 1, ':', signature.id);
-                                    }}
-                                    onMouseDown={(e) => handleSignatureMouseDown(e, signature.id)}
+                              {/* Page Navigation for Multi-Page PDFs */}
+                              {fileContent.type === 'pdf' && fileContent.totalPages && fileContent.totalPages > 1 && (
+                                <>
+                                  <div className="h-4 sm:h-6 w-px bg-gray-300 mx-0.5 sm:mx-1" />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPageNumber(Math.max(1, currentPageNumber - 1))}
+                                    disabled={currentPageNumber <= 1}
+                                    title="Previous Page"
+                                    className="h-7 w-7 sm:h-9 sm:w-9 p-0"
                                   >
-                                    <img
-                                      src={signature.data}
-                                      alt="Signature"
-                                      className="w-full h-full object-contain pointer-events-none"
-                                      style={{ 
-                                        background: 'transparent',
-                                        mixBlendMode: 'multiply',
-                                        opacity: 1
-                                      }}
-                                      draggable={false}
-                                    />
-                                    
-                                    {/* Signature Attribution Badge - Shows who signed */}
-                                    {signature.signedBy && (
-                                      <div className="absolute -bottom-6 left-0 right-0 flex justify-center pointer-events-none">
-                                        <Badge 
-                                          variant={signature.signedBy === user.name ? "default" : "secondary"}
-                                          className="text-xs px-2 py-0.5 bg-white/95 backdrop-blur-sm border shadow-sm"
-                                        >
-                                          {signature.signedBy === user.name ? '✓ You' : signature.signedBy}
-                                        </Badge>
-                                      </div>
-                                    )}
-                                    
-                                    {/* Control Buttons (when selected) - Only for current user's signatures */}
-                                    {selectedSignatureId === signature.id && signature.signedBy === user.name && (
-                                      <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white/95 backdrop-blur-sm rounded-t-lg border border-b-0 border-blue-500 p-1">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            rotateSignature(signature.id);
+                                    <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  </Button>
+                                  <Badge variant="default" className="px-1.5 sm:px-3 font-mono bg-blue-600 text-[10px] sm:text-xs">
+                                    {currentPageNumber}/{fileContent.totalPages}
+                                  </Badge>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPageNumber(Math.min(fileContent.totalPages, currentPageNumber + 1))}
+                                    disabled={currentPageNumber >= fileContent.totalPages}
+                                    title="Next Page"
+                                    className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                                  >
+                                    <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  </Button>
+                                </>
+                              )}
+
+                              {fileContent.type === 'pdf' && fileContent.totalPages && (
+                                <Badge variant="outline">{fileContent.totalPages} page{fileContent.totalPages > 1 ? 's' : ''}</Badge>
+                              )}
+                            </div>
+
+                            {/* File Content Rendering with Overflow Protection - Wrapped with signature overlay container */}
+                            <div className="space-y-4 pb-4 w-full relative" style={{
+                              transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
+                              transformOrigin: 'top center',
+                              transition: 'transform 0.3s ease',
+                            }}>
+                              {fileContent.type === 'pdf' && fileContent.pageCanvases?.map((pageDataUrl: string, index: number) => (
+                                <div key={index} className="relative mb-6 overflow-hidden" id={`pdf-page-${index}`}>
+                                  <img
+                                    src={pageDataUrl}
+                                    alt={`Page ${index + 1}`}
+                                    style={{
+                                      maxWidth: '100%',
+                                      height: 'auto',
+                                    }}
+                                    className="border shadow-lg rounded mx-auto block"
+                                  />
+                                  <Badge variant="secondary" className="absolute top-2 right-2 bg-background/95 backdrop-blur z-20">
+                                    Page {index + 1} of {fileContent.totalPages}
+                                  </Badge>
+
+                                  {/* Render signatures ONLY for this specific PDF page */}
+                                  {placedSignatures
+                                    .filter(sig => sig.pageNumber === index + 1 && (sig.fileIndex === undefined || sig.fileIndex === currentFileIndex))
+                                    .map((signature) => {
+                                      // ✅ Convert NORMALIZED coordinates (0-1) to pixel coordinates for display
+                                      // Multiply by document dimensions, then apply zoom
+                                      const zoomFactor = fileZoom / 100;
+                                      const displayX = signature.xPercent * signature.docWidth * zoomFactor;
+                                      const displayY = signature.yPercent * signature.docHeight * zoomFactor;
+                                      const displayWidth = signature.widthPercent * signature.docWidth * zoomFactor;
+                                      const displayHeight = signature.heightPercent * signature.docHeight * zoomFactor;
+
+                                      return <div
+                                        key={`${signature.id}-page-${index}`}
+                                        className={`absolute cursor-pointer select-none transition-all duration-200 ${selectedSignatureId === signature.id ? 'ring-2 ring-blue-400/60 shadow-lg border-2 border-blue-500' : 'hover:shadow-sm border border-transparent'}`}
+                                        style={{
+                                          left: `${displayX}px`,
+                                          top: `${displayY}px`,
+                                          width: `${displayWidth}px`,
+                                          height: `${displayHeight}px`,
+                                          transform: `rotate(${signature.rotation}deg)`,
+                                          transformOrigin: 'center',
+                                          zIndex: selectedSignatureId === signature.id ? 100 : 50,
+                                          pointerEvents: 'auto',
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedSignatureId(signature.id);
+                                          console.log('📝 PDF Signature clicked on page', index + 1, ':', signature.id);
+                                        }}
+                                        onMouseDown={(e) => handleSignatureMouseDown(e, signature.id)}
+                                      >
+                                        <img
+                                          src={signature.data}
+                                          alt="Signature"
+                                          className="w-full h-full object-contain pointer-events-none"
+                                          style={{
+                                            background: 'transparent',
+                                            mixBlendMode: 'multiply',
+                                            opacity: 1
                                           }}
-                                          className="h-7 px-2"
-                                          title="Rotate 90°"
-                                        >
-                                          <RotateCcw className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteSignature(signature.id);
+                                          draggable={false}
+                                        />
+
+                                        {/* Signature Attribution Badge - Shows who signed */}
+                                        {signature.signedBy && (
+                                          <div className="absolute -bottom-6 left-0 right-0 flex justify-center pointer-events-none">
+                                            <Badge
+                                              variant={signature.signedBy === user.name ? "default" : "secondary"}
+                                              className="text-xs px-2 py-0.5 bg-white/95 backdrop-blur-sm border shadow-sm"
+                                            >
+                                              {signature.signedBy === user.name ? '✓ You' : signature.signedBy}
+                                            </Badge>
+                                          </div>
+                                        )}
+
+                                        {/* Control Buttons (when selected) - Only for current user's signatures */}
+                                        {selectedSignatureId === signature.id && signature.signedBy === user.name && (
+                                          <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white/95 backdrop-blur-sm rounded-t-lg border border-b-0 border-blue-500 p-1">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                rotateSignature(signature.id);
+                                              }}
+                                              className="h-7 px-2"
+                                              title="Rotate 90°"
+                                            >
+                                              <RotateCcw className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteSignature(signature.id);
+                                              }}
+                                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              title="Delete"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                            <div className="flex items-center px-2 text-xs text-gray-600">
+                                              <Move className="w-3 h-3 mr-1" />
+                                              Drag
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Resize Corners (when selected) - Only for current user's signatures */}
+                                        {selectedSignatureId === signature.id && signature.signedBy === user.name && (
+                                          <>
+                                            <div
+                                              className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tl')}
+                                            />
+                                            <div
+                                              className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tr')}
+                                            />
+                                            <div
+                                              className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'bl')}
+                                            />
+                                            <div
+                                              className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'br')}
+                                            />
+                                          </>
+                                        )}
+                                      </div>;
+                                    })}
+                                </div>
+                              ))}
+
+                              {fileContent.type === 'word' && (
+                                <div className="w-full overflow-hidden relative">
+                                  <div
+                                    className="prose prose-sm max-w-none p-6 bg-white rounded shadow-sm min-h-[300px] break-words"
+                                    style={{
+                                      wordWrap: 'break-word',
+                                      overflowWrap: 'break-word',
+                                      maxWidth: '100%',
+                                    }}
+                                    dangerouslySetInnerHTML={{ __html: fileContent.html }}
+                                  />
+                                </div>
+                              )}
+
+                              {fileContent.type === 'excel' && (
+                                <div className="w-full overflow-hidden relative">
+                                  <div
+                                    className="overflow-auto bg-white rounded shadow-sm p-4 min-h-[300px] max-h-[600px]"
+                                    style={{
+                                      maxWidth: '100%',
+                                    }}
+                                    dangerouslySetInnerHTML={{ __html: fileContent.html }}
+                                  />
+                                </div>
+                              )}
+
+                              {fileContent.type === 'image' && (
+                                <div className="flex justify-center">
+                                  <img
+                                    src={fileContent.url}
+                                    alt={currentFile.name}
+                                    style={{
+                                      maxWidth: '100%',
+                                      height: 'auto',
+                                    }}
+                                    className="border shadow-lg rounded"
+                                  />
+                                </div>
+                              )}
+
+                              {fileContent.type === 'unsupported' && (
+                                <div className="flex items-center justify-center h-full p-8">
+                                  <div className="text-center">
+                                    <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                                    <p className="text-sm text-gray-600">Unsupported file type</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Placed Signatures Overlay - For non-PDF files (Word, Excel, Images) */}
+                              {/* PDFs render signatures per-page inside each page div above */}
+                              {fileContent?.type !== 'pdf' && (
+                                <>
+                                  {console.log('🔍 Rendering signatures for non-PDF:', placedSignatures.length, 'signatures')}
+                                  {placedSignatures
+                                    .filter(sig => sig.fileIndex === undefined || sig.fileIndex === currentFileIndex)
+                                    .map((signature, index) => {
+                                      // ✅ Convert NORMALIZED coordinates (0-1) to pixel coordinates for display
+                                      const zoomFactor = fileZoom / 100;
+                                      const displayX = signature.xPercent * signature.docWidth * zoomFactor;
+                                      const displayY = signature.yPercent * signature.docHeight * zoomFactor;
+                                      const displayWidth = signature.widthPercent * signature.docWidth * zoomFactor;
+                                      const displayHeight = signature.heightPercent * signature.docHeight * zoomFactor;
+
+                                      console.log(`Rendering signature ${index + 1}:`, {
+                                        normalized: { xPercent: signature.xPercent, yPercent: signature.yPercent },
+                                        display: { x: displayX, y: displayY, width: displayWidth, height: displayHeight },
+                                        zoom: fileZoom
+                                      });
+
+                                      return <div
+                                        key={signature.id}
+                                        className={`absolute cursor-pointer select-none transition-all duration-200 ${selectedSignatureId === signature.id ? 'ring-2 ring-blue-400/60 shadow-lg border-2 border-blue-500' : 'hover:shadow-sm border border-transparent'}`}
+                                        style={{
+                                          left: `${displayX}px`,
+                                          top: `${displayY}px`,
+                                          width: `${displayWidth}px`,
+                                          height: `${displayHeight}px`,
+                                          transform: `rotate(${signature.rotation}deg)`,
+                                          transformOrigin: 'center',
+                                          zIndex: selectedSignatureId === signature.id ? 100 : 50,
+                                          pointerEvents: 'auto',
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedSignatureId(signature.id);
+                                          console.log('Signature clicked:', signature.id);
+                                        }}
+                                        onMouseDown={(e) => handleSignatureMouseDown(e, signature.id)}
+                                      >
+                                        {/* Signature Image - Authentic ink absorption */}
+                                        <img
+                                          src={signature.data}
+                                          alt="Signature"
+                                          className="w-full h-full object-contain pointer-events-none"
+                                          style={{
+                                            background: 'transparent',
+                                            mixBlendMode: 'multiply',
+                                            opacity: 1
                                           }}
-                                          className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                          title="Delete"
-                                        >
-                                          <X className="w-4 h-4" />
-                                        </Button>
-                                        <div className="flex items-center px-2 text-xs text-gray-600">
-                                          <Move className="w-3 h-3 mr-1" />
-                                          Drag
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Resize Corners (when selected) - Only for current user's signatures */}
-                                    {selectedSignatureId === signature.id && signature.signedBy === user.name && (
-                                      <>
-                                        <div
-                                          className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                          onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tl')}
+                                          draggable={false}
                                         />
-                                        <div
-                                          className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                          onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tr')}
-                                        />
-                                        <div
-                                          className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                          onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'bl')}
-                                        />
-                                        <div
-                                          className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                          onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'br')}
-                                        />
-                                      </>
-                                    )}
-                                  </div>;
-                                })}
-                              </div>
-                            ))}
 
-                            {fileContent.type === 'word' && (
-                              <div className="w-full overflow-hidden relative">
-                                <div
-                                  className="prose prose-sm max-w-none p-6 bg-white rounded shadow-sm min-h-[300px] break-words"
-                                  style={{
-                                    wordWrap: 'break-word',
-                                    overflowWrap: 'break-word',
-                                    maxWidth: '100%',
-                                  }}
-                                  dangerouslySetInnerHTML={{ __html: fileContent.html }}
-                                />
-                              </div>
-                            )}
+                                        {/* Signature Attribution Badge - Shows who signed */}
+                                        {signature.signedBy && (
+                                          <div className="absolute -bottom-6 left-0 right-0 flex justify-center pointer-events-none">
+                                            <Badge
+                                              variant={signature.signedBy === user.name ? "default" : "secondary"}
+                                              className="text-xs px-2 py-0.5 bg-white/95 backdrop-blur-sm border shadow-sm"
+                                            >
+                                              {signature.signedBy === user.name ? '✓ You' : signature.signedBy}
+                                            </Badge>
+                                          </div>
+                                        )}
 
-                            {fileContent.type === 'excel' && (
-                              <div className="w-full overflow-hidden relative">
-                                <div
-                                  className="overflow-auto bg-white rounded shadow-sm p-4 min-h-[300px] max-h-[600px]"
-                                  style={{
-                                    maxWidth: '100%',
-                                  }}
-                                  dangerouslySetInnerHTML={{ __html: fileContent.html }}
-                                />
-                              </div>
-                            )}
+                                        {/* Control Buttons (when selected) - Only for current user's signatures */}
+                                        {selectedSignatureId === signature.id && signature.signedBy === user.name && (
+                                          <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white/95 backdrop-blur-sm rounded-t-lg border border-b-0 border-blue-500 p-1">
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                rotateSignature(signature.id);
+                                              }}
+                                              className="h-7 px-2"
+                                              title="Rotate 90°"
+                                            >
+                                              <RotateCcw className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteSignature(signature.id);
+                                              }}
+                                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                              title="Delete"
+                                            >
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                            <div className="flex items-center px-2 text-xs text-gray-600">
+                                              <Move className="w-3 h-3 mr-1" />
+                                              Drag
+                                            </div>
+                                          </div>
+                                        )}
 
-                            {fileContent.type === 'image' && (
-                              <div className="flex justify-center">
-                                <img
-                                  src={fileContent.url}
-                                  alt={currentFile.name}
-                                  style={{
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                  }}
-                                  className="border shadow-lg rounded"
-                                />
-                              </div>
-                            )}
+                                        {/* Resize Corners (when selected) - Only for current user's signatures */}
+                                        {selectedSignatureId === signature.id && signature.signedBy === user.name && (
+                                          <>
+                                            {/* Top Left */}
+                                            <div
+                                              className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tl')}
+                                            />
+                                            {/* Top Right */}
+                                            <div
+                                              className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tr')}
+                                            />
+                                            {/* Bottom Left */}
+                                            <div
+                                              className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'bl')}
+                                            />
+                                            {/* Bottom Right */}
+                                            <div
+                                              className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
+                                              onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'br')}
+                                            />
+                                          </>
+                                        )}
+                                      </div>;
+                                    })}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full p-8">
+                            <div className="text-center">
+                              <Eye className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                              <p className="text-sm text-gray-600">Loading preview...</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
+                      <div className="text-center p-6">
+                        <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                        <p className="text-sm text-gray-600 mb-2">No document available</p>
+                        <p className="text-xs text-gray-500">
+                          Please provide a document file to preview
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-                            {fileContent.type === 'unsupported' && (
-                              <div className="flex items-center justify-center h-full p-8">
-                                <div className="text-center">
-                                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                                  <p className="text-sm text-gray-600">Unsupported file type</p>
+            {/* Right Column - Signature Interaction & CTA (Slide-in mobile sidebar) */}
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+              <div
+                className="absolute inset-0 bg-black/50 z-[40] lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
+
+            <div className={`
+              absolute inset-y-0 left-0 z-[50] flex
+              transform transition-transform duration-300 ease-in-out
+              lg:relative lg:inset-auto lg:z-auto lg:transform-none lg:transition-none lg:w-auto
+              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+              w-full h-full sm:w-[450px] lg:w-auto
+              rounded-none border-0 m-0 overflow-visible
+            `}>
+              {/* Mobile Sidebar Toggle Tab */}
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-black text-white shadow-lg flex items-center justify-center z-[60] border border-black hover:bg-gray-800 transition-all pointer-events-auto ${isSidebarOpen
+                    ? 'right-0 rounded-l-xl border-r-0'
+                    : '-right-10 rounded-r-xl border-l-0'
+                  }`}
+                title="Toggle Signature Tools"
+              >
+                {isSidebarOpen ? <ChevronLeft className="w-5 h-5 text-white" /> : <ChevronRight className="w-5 h-5 text-white" />}
+              </button>
+
+              <div className="w-full h-full bg-background overflow-y-auto overflow-x-hidden p-2 sm:p-4 lg:p-0 lg:pl-6 border-r lg:border-r-0 shadow-2xl lg:shadow-none m-0 rounded-none w-full max-w-full relative">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col m-0 p-0 border-none w-full max-w-full">
+                  <TabsList className="grid w-full grid-cols-4 mb-2 sm:mb-4 h-auto p-1 bg-muted/50 rounded-lg gap-1">
+                    <TabsTrigger value="signature" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Sign</TabsTrigger>
+                    <TabsTrigger value="library" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Library</TabsTrigger>
+                    <TabsTrigger value="face-auth" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Face Auth</TabsTrigger>
+                    <TabsTrigger value="verification" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Verify</TabsTrigger>
+                  </TabsList>
+
+
+
+                  <TabsContent value="signature" className="flex-1 overflow-y-auto">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Signature className="w-5 h-5" />
+                          Digital Signature Methods
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 w-full max-w-full overflow-hidden">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+                          <Button
+                            variant="outline"
+                            onClick={() => setSignatureMethod('draw')}
+                            className={`h-16 sm:h-20 flex-col p-2 sm:p-4 transition-all border-2 ${signatureMethod === 'draw' ? 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100' : 'hover:border-blue-500 hover:bg-blue-50/50'}`}
+                          >
+                            <PenTool className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${signatureMethod === 'draw' ? 'text-blue-700' : ''}`} />
+                            <span className="text-xs sm:text-sm font-medium">Draw Signature</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setSignatureMethod('camera')}
+                            className={`h-16 sm:h-20 flex-col p-2 sm:p-4 transition-all border-2 ${signatureMethod === 'camera' ? 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100' : 'hover:border-blue-500 hover:bg-blue-50/50'}`}
+                          >
+                            <Camera className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${signatureMethod === 'camera' ? 'text-blue-700' : ''}`} />
+                            <span className="text-xs sm:text-sm font-medium">Phone Camera</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setSignatureMethod('upload')}
+                            className={`h-16 sm:h-20 flex-col p-2 sm:p-4 transition-all border-2 ${signatureMethod === 'upload' ? 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100' : 'hover:border-blue-500 hover:bg-blue-50/50'}`}
+                          >
+                            <Upload className={`w-5 h-5 sm:w-6 sm:h-6 mb-1 sm:mb-2 ${signatureMethod === 'upload' ? 'text-blue-700' : ''}`} />
+                            <span className="text-xs sm:text-sm font-medium">Upload Image</span>
+                          </Button>
+                        </div>
+
+
+
+                        {signatureMethod === 'draw' && (
+                          <div className="space-y-4">
+                            {/* Drawing Controls */}
+                            <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/30 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm">Size:</Label>
+                                <div className="flex gap-1">
+                                  {[1, 2, 4, 6].map(size => (
+                                    <Button
+                                      key={size}
+                                      variant={brushSize === size ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => setBrushSize(size)}
+                                      className="text-xs px-2 py-1 h-7"
+                                    >
+                                      {size}px
+                                    </Button>
+                                  ))}
                                 </div>
                               </div>
-                            )}
 
-                            {/* Placed Signatures Overlay - For non-PDF files (Word, Excel, Images) */}
-                            {/* PDFs render signatures per-page inside each page div above */}
-                            {fileContent?.type !== 'pdf' && (
-                              <>
-                                {console.log('🔍 Rendering signatures for non-PDF:', placedSignatures.length, 'signatures')}
-                                {placedSignatures
-                                  .filter(sig => sig.fileIndex === undefined || sig.fileIndex === currentFileIndex)
-                                  .map((signature, index) => {
-                                    // ✅ Convert NORMALIZED coordinates (0-1) to pixel coordinates for display
-                                    const zoomFactor = fileZoom / 100;
-                                    const displayX = signature.xPercent * signature.docWidth * zoomFactor;
-                                    const displayY = signature.yPercent * signature.docHeight * zoomFactor;
-                                    const displayWidth = signature.widthPercent * signature.docWidth * zoomFactor;
-                                    const displayHeight = signature.heightPercent * signature.docHeight * zoomFactor;
-                                    
-                                    console.log(`Rendering signature ${index + 1}:`, { 
-                                      normalized: { xPercent: signature.xPercent, yPercent: signature.yPercent }, 
-                                      display: { x: displayX, y: displayY, width: displayWidth, height: displayHeight },
-                                      zoom: fileZoom
-                                    });
-                                    
-                                    return <div
-                                      key={signature.id}
-                                      className={`absolute cursor-pointer select-none transition-all duration-200 ${selectedSignatureId === signature.id ? 'ring-2 ring-blue-400/60 shadow-lg border-2 border-blue-500' : 'hover:shadow-sm border border-transparent'}`}
-                                      style={{
-                                        left: `${displayX}px`,
-                                        top: `${displayY}px`,
-                                        width: `${displayWidth}px`,
-                                        height: `${displayHeight}px`,
-                                        transform: `rotate(${signature.rotation}deg)`,
-                                        transformOrigin: 'center',
-                                        zIndex: selectedSignatureId === signature.id ? 100 : 50,
-                                        pointerEvents: 'auto',
+                              <div className="flex items-center gap-2">
+                                <Label className="text-sm">Color:</Label>
+                                <input
+                                  type="color"
+                                  value={brushColor}
+                                  onChange={(e) => setBrushColor(e.target.value)}
+                                  className="w-8 h-8 rounded border cursor-pointer"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="border rounded-lg p-4">
+                              <Label className="mb-2 block">Touch and Hold to Sign</Label>
+                              <p className="text-xs text-muted-foreground mb-3">
+                                Press and hold while drawing your signature smoothly
+                              </p>
+                              <div className="w-full overflow-hidden border border-dashed border-gray-300 rounded touch-none relative" style={{ height: '150px' }}>
+                                <canvas
+                                  ref={canvasRef}
+                                  width={400}
+                                  height={150}
+                                  style={{ width: '100%', height: '100%', touchAction: 'none' }}
+                                  className="cursor-crosshair w-full h-full"
+                                  onMouseDown={handleMouseDown}
+                                  onMouseMove={handleMouseMove}
+                                  onMouseUp={handleMouseUp}
+                                  onMouseLeave={handleMouseUp}
+                                  onTouchStart={handleTouchStart}
+                                  onTouchMove={handleTouchMove}
+                                  onTouchEnd={handleTouchEnd}
+                                />
+                              </div>
+                              <div className="flex gap-2 mt-2">
+                                <Button size="sm" variant="outline" onClick={clearSignature}>
+                                  Clear
+                                </Button>
+                                <Button size="sm" onClick={saveDrawnSignature}>
+                                  Save to Library
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {signatureMethod === 'camera' && (
+                          <div className="space-y-4">
+                            <div className="border rounded-lg p-4">
+                              <Label className="mb-2 block">Capture Signature with Phone Camera</Label>
+
+                              {!cameraActive && !capturedSignature && (
+                                <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                                  <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                                  <p className="text-sm text-gray-600 mb-4">
+                                    Use your phone camera to capture your handwritten signature
+                                  </p>
+                                  <Button onClick={startCamera} className="mb-2">
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Start Camera
+                                  </Button>
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    <p>• Write your signature on white paper</p>
+                                    <p>• Ensure good lighting</p>
+                                    <p>• Hold camera steady</p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {cameraActive && (
+                                <div className="space-y-4">
+                                  <div className="relative">
+                                    <video
+                                      ref={videoRef}
+                                      autoPlay
+                                      playsInline
+                                      muted
+                                      className="w-full max-w-md mx-auto border rounded-lg"
+                                    />
+                                    <div className="absolute inset-0 border-2 border-dashed border-blue-500 rounded-lg pointer-events-none" />
+                                  </div>
+                                  <div className="flex gap-2 justify-center">
+                                    <Button onClick={captureSignature} className="bg-blue-600 hover:bg-blue-700">
+                                      <Scan className="w-4 h-4 mr-2" />
+                                      Capture Signature
+                                    </Button>
+                                    <Button variant="outline" onClick={stopCamera}>
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {capturedSignature && (
+                                <div className="space-y-4">
+                                  <div className="text-center">
+                                    <Label className="block mb-2">Captured Signature</Label>
+                                    <img
+                                      src={capturedSignature}
+                                      alt="Captured signature"
+                                      className="max-w-full h-32 mx-auto border rounded-lg object-contain bg-white"
+                                    />
+                                  </div>
+                                  <div className="flex gap-2 justify-center">
+                                    <Button variant="outline" onClick={retakeSignature}>
+                                      <Camera className="w-4 h-4 mr-2" />
+                                      Retake
+                                    </Button>
+                                    <Button
+                                      onClick={() => {
+                                        if (capturedSignature) {
+                                          placeSignatureOnDocument(capturedSignature);
+                                          toast({ title: "Signature Placed", description: "Signature has been placed on the document. You can now move, resize, or rotate it." });
+                                        }
                                       }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedSignatureId(signature.id);
-                                        console.log('Signature clicked:', signature.id);
-                                      }}
-                                      onMouseDown={(e) => handleSignatureMouseDown(e, signature.id)}
                                     >
-                                      {/* Signature Image - Authentic ink absorption */}
-                                      <img
-                                        src={signature.data}
-                                        alt="Signature"
-                                        className="w-full h-full object-contain pointer-events-none"
-                                        style={{ 
-                                          background: 'transparent',
-                                          mixBlendMode: 'multiply',
-                                          opacity: 1
-                                        }}
-                                        draggable={false}
-                                      />
-
-                                      {/* Signature Attribution Badge - Shows who signed */}
-                                      {signature.signedBy && (
-                                        <div className="absolute -bottom-6 left-0 right-0 flex justify-center pointer-events-none">
-                                          <Badge 
-                                            variant={signature.signedBy === user.name ? "default" : "secondary"}
-                                            className="text-xs px-2 py-0.5 bg-white/95 backdrop-blur-sm border shadow-sm"
-                                          >
-                                            {signature.signedBy === user.name ? '✓ You' : signature.signedBy}
-                                          </Badge>
-                                        </div>
-                                      )}
-
-                                      {/* Control Buttons (when selected) - Only for current user's signatures */}
-                                      {selectedSignatureId === signature.id && signature.signedBy === user.name && (
-                                        <div className="absolute -top-10 left-0 right-0 flex justify-center gap-1 bg-white/95 backdrop-blur-sm rounded-t-lg border border-b-0 border-blue-500 p-1">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              rotateSignature(signature.id);
-                                            }}
-                                            className="h-7 px-2"
-                                            title="Rotate 90°"
-                                          >
-                                            <RotateCcw className="w-4 h-4" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              deleteSignature(signature.id);
-                                            }}
-                                            className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                            title="Delete"
-                                          >
-                                            <X className="w-4 h-4" />
-                                          </Button>
-                                          <div className="flex items-center px-2 text-xs text-gray-600">
-                                            <Move className="w-3 h-3 mr-1" />
-                                            Drag
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Resize Corners (when selected) - Only for current user's signatures */}
-                                      {selectedSignatureId === signature.id && signature.signedBy === user.name && (
-                                        <>
-                                          {/* Top Left */}
-                                          <div
-                                            className="absolute -top-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                            onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tl')}
-                                          />
-                                          {/* Top Right */}
-                                          <div
-                                            className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                            onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'tr')}
-                                          />
-                                          {/* Bottom Left */}
-                                          <div
-                                            className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full cursor-nesw-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                            onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'bl')}
-                                          />
-                                          {/* Bottom Right */}
-                                          <div
-                                            className="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-nwse-resize hover:bg-blue-600 border-2 border-white shadow-md"
-                                            onMouseDown={(e) => handleResizeMouseDown(e, signature.id, 'br')}
-                                          />
-                                        </>
-                                      )}
-                                    </div>;
-                                })}
-                              </>
-                            )}
+                                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                                      Place on Document
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full p-8">
-                          <div className="text-center">
-                            <Eye className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                            <p className="text-sm text-gray-600">Loading preview...</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
-                    <div className="text-center p-6">
-                      <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p className="text-sm text-gray-600 mb-2">No document available</p>
-                      <p className="text-xs text-gray-500">
-                        Please provide a document file to preview
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Right Column - Signature Interaction & CTA */}
-          <div className="pl-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mb-4">
-                <TabsTrigger value="signature">Sign</TabsTrigger>
-                <TabsTrigger value="library">Library</TabsTrigger>
-                <TabsTrigger value="face-auth">Face Auth</TabsTrigger>
-                <TabsTrigger value="verification">Verify</TabsTrigger>
-              </TabsList>
+                        )}
 
-
-
-              <TabsContent value="signature" className="flex-1 overflow-y-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Signature className="w-5 h-5" />
-                  Digital Signature Methods
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <Button
-                    variant={signatureMethod === 'draw' ? 'default' : 'outline'}
-                    onClick={() => setSignatureMethod('draw')}
-                    className="h-20 flex-col"
-                  >
-                    <PenTool className="w-6 h-6 mb-2" />
-                    Draw Signature
-                  </Button>
-                  <Button
-                    variant={signatureMethod === 'camera' ? 'default' : 'outline'}
-                    onClick={() => setSignatureMethod('camera')}
-                    className="h-20 flex-col"
-                  >
-                    <Camera className="w-6 h-6 mb-2" />
-                    Phone Camera
-                  </Button>
-                  <Button
-                    variant={signatureMethod === 'upload' ? 'default' : 'outline'}
-                    onClick={() => setSignatureMethod('upload')}
-                    className="h-20 flex-col"
-                  >
-                    <Upload className="w-6 h-6 mb-2" />
-                    Upload Image
-                  </Button>
-                </div>
-
-
-
-                {signatureMethod === 'draw' && (
-                  <div className="space-y-4">
-                    {/* Drawing Controls */}
-                    <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm">Size:</Label>
-                        <div className="flex gap-1">
-                          {[1, 2, 4, 6].map(size => (
-                            <Button
-                              key={size}
-                              variant={brushSize === size ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setBrushSize(size)}
-                              className="text-xs px-2 py-1 h-7"
-                            >
-                              {size}px
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm">Color:</Label>
-                        <input
-                          type="color"
-                          value={brushColor}
-                          onChange={(e) => setBrushColor(e.target.value)}
-                          className="w-8 h-8 rounded border cursor-pointer"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <Label className="mb-2 block">Touch and Hold to Sign</Label>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Press and hold while drawing your signature smoothly
-                      </p>
-                      <canvas
-                        ref={canvasRef}
-                        width={400}
-                        height={150}
-                        className="border border-dashed border-gray-300 rounded cursor-crosshair touch-none"
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <Button size="sm" variant="outline" onClick={clearSignature}>
-                          Clear
-                        </Button>
-                        <Button size="sm" onClick={saveDrawnSignature}>
-                          Save to Library
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {signatureMethod === 'camera' && (
-                  <div className="space-y-4">
-                    <div className="border rounded-lg p-4">
-                      <Label className="mb-2 block">Capture Signature with Phone Camera</Label>
-                      
-                      {!cameraActive && !capturedSignature && (
-                        <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
-                          <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                          <p className="text-sm text-gray-600 mb-4">
-                            Use your phone camera to capture your handwritten signature
-                          </p>
-                          <Button onClick={startCamera} className="mb-2">
-                            <Camera className="w-4 h-4 mr-2" />
-                            Start Camera
-                          </Button>
-                          <div className="text-xs text-muted-foreground mt-2">
-                            <p>• Write your signature on white paper</p>
-                            <p>• Ensure good lighting</p>
-                            <p>• Hold camera steady</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {cameraActive && (
-                        <div className="space-y-4">
-                          <div className="relative">
-                            <video
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              className="w-full max-w-md mx-auto border rounded-lg"
-                            />
-                            <div className="absolute inset-0 border-2 border-dashed border-blue-500 rounded-lg pointer-events-none" />
-                          </div>
-                          <div className="flex gap-2 justify-center">
-                            <Button onClick={captureSignature} className="bg-blue-600 hover:bg-blue-700">
-                              <Scan className="w-4 h-4 mr-2" />
-                              Capture Signature
-                            </Button>
-                            <Button variant="outline" onClick={stopCamera}>
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {capturedSignature && (
-                        <div className="space-y-4">
-                          <div className="text-center">
-                            <Label className="block mb-2">Captured Signature</Label>
-                            <img
-                              src={capturedSignature}
-                              alt="Captured signature"
-                              className="max-w-full h-32 mx-auto border rounded-lg object-contain bg-white"
-                            />
-                          </div>
-                          <div className="flex gap-2 justify-center">
-                            <Button variant="outline" onClick={retakeSignature}>
-                              <Camera className="w-4 h-4 mr-2" />
-                              Retake
-                            </Button>
-                            <Button 
-                              onClick={() => {
-                                if (capturedSignature) {
-                                  placeSignatureOnDocument(capturedSignature);
-                                  toast({ title: "Signature Placed", description: "Signature has been placed on the document. You can now move, resize, or rotate it." });
-                                }
-                              }}
-                            >
-                              <CheckCircle2 className="w-4 h-4 mr-2" />
-                              Place on Document
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {signatureMethod === 'upload' && (
-                  <div className="space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p className="text-sm text-gray-600">Upload your signature image</p>
-                      <Input 
-                        type="file" 
-                        accept="image/*" 
-                        className="mt-2" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            saveUploadedSignature(file);
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-                
-
-                
-
-                
-                <div className="flex justify-end mt-4">
-                  <Button onClick={() => setActiveTab('verification')}>Continue</Button>
-                </div>
-              </CardContent>
-            </Card>
-              </TabsContent>
-
-              <TabsContent value="face-auth" className="flex-1 overflow-y-auto">
-                <FaceAuthentication
-                  userId={user.email}
-                  onVerified={(success) => {
-                    setFaceVerified(success);
-                    if (success) {
-                      toast({
-                        title: "Face Verified",
-                        description: "You can now proceed to verification",
-                      });
-                      setActiveTab('verification');
-                    }
-                  }}
-                />
-              </TabsContent>
-
-              <TabsContent value="library" className="flex-1 overflow-y-auto">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      Signature Library
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {savedSignatures.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Signature className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                        <p className="text-sm text-muted-foreground mb-2">
-                          No saved signatures yet
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Create signatures in the Sign tab to save them here
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-4">
-                        {savedSignatures.map((sig) => (
-                          <div key={sig.id} className="border rounded-lg p-4">
-                            <div className="aspect-[2/1] bg-gray-50 rounded mb-3 overflow-hidden">
-                              <img
-                                src={sig.data}
-                                alt={sig.name}
-                                className="w-full h-full object-contain"
+                        {signatureMethod === 'upload' && (
+                          <div className="space-y-4">
+                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                              <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                              <p className="text-sm text-gray-600">Upload your signature image</p>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="mt-2"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    saveUploadedSignature(file);
+                                  }
+                                }}
                               />
                             </div>
-                            <p className="text-sm font-medium truncate mb-3">{sig.name}</p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                className="flex-1"
-                                onClick={() => {
-                                  loadSavedSignature(sig);
-                                  setActiveTab('signature');
-                                }}
-                              >
-                                Use This
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSavedSignatures(prev => prev.filter(s => s.id !== sig.id));
-                                  toast({
-                                    title: "Signature Deleted",
-                                    description: `${sig.name} has been removed`
-                                  });
-                                }}
-                              >
-                                Delete
+                          </div>
+                        )}
+
+
+
+
+
+                        <div className="flex justify-end mt-4">
+                          <Button onClick={() => setActiveTab('verification')}>Continue</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="face-auth" className="flex-1 overflow-y-auto">
+                    <FaceAuthentication
+                      userId={user.email}
+                      onVerified={(success) => {
+                        setFaceVerified(success);
+                        if (success) {
+                          toast({
+                            title: "Face Verified",
+                            description: "You can now proceed to verification",
+                          });
+                          setActiveTab('verification');
+                        }
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="library" className="flex-1 overflow-y-auto">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Settings className="w-5 h-5" />
+                          Signature Library
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {savedSignatures.length === 0 ? (
+                          <div className="text-center py-8">
+                            <Signature className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                            <p className="text-sm text-muted-foreground mb-2">
+                              No saved signatures yet
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Create signatures in the Sign tab to save them here
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-4">
+                            {savedSignatures.map((sig) => (
+                              <div key={sig.id} className="border rounded-lg p-4">
+                                <div className="aspect-[2/1] bg-gray-50 rounded mb-3 overflow-hidden">
+                                  <img
+                                    src={sig.data}
+                                    alt={sig.name}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <p className="text-sm font-medium truncate mb-3">{sig.name}</p>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => {
+                                      loadSavedSignature(sig);
+                                      setActiveTab('signature');
+                                    }}
+                                  >
+                                    Use This
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSavedSignatures(prev => prev.filter(s => s.id !== sig.id));
+                                      toast({
+                                        title: "Signature Deleted",
+                                        description: `${sig.name} has been removed`
+                                      });
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="verification" className="flex-1 overflow-y-auto space-y-6">
+                    {/* Signer Information Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <User className="w-5 h-5" />
+                          Signer Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">{user.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">{user.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{user.role}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-4">
+                            <Camera className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">Face Auth: {faceVerified ? <Badge className="bg-green-500">✓ Verified</Badge> : <Badge variant="outline">Not Verified</Badge>}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+
+
+                    {/* Processing/Completed States */}
+                    {isProcessing ? (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="space-y-4 text-center">
+                            <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+                              <PenTool className="w-8 h-8 text-blue-600 animate-pulse" />
+                            </div>
+                            <h3 className="text-lg font-semibold">Processing Signature...</h3>
+                            <Progress value={signingProgress} className="w-full max-w-md mx-auto" />
+                            <p className="text-sm text-muted-foreground">{signingProgress}% Complete</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : isCompleted ? (
+                      <Card>
+                        <CardContent className="p-6">
+                          <div className="space-y-4 text-center">
+                            <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                              <CheckCircle2 className="w-8 h-8 text-green-600" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-green-800">Document Signed Successfully!</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Your signature has been applied and the document has been forwarded to the next recipient.
+                            </p>
+                            <div className="flex gap-2 justify-center">
+                              <Button variant="outline" size="sm">
+                                <Download className="w-4 h-4 mr-2" />
+                                Download
                               </Button>
                             </div>
                           </div>
-                        ))}
+                        </CardContent>
+                      </Card>
+                    ) : null}
+
+                    {/* Action Buttons */}
+                    {!isProcessing && !isCompleted && (
+                      <div className="flex justify-between pt-4">
+                        <Button variant="outline" onClick={() => setActiveTab('signature')}>
+                          Back
+                        </Button>
+                        <Button
+                          onClick={handleSign}
+                          disabled={!faceVerified}
+                          className={faceVerified ? 'bg-green-600 hover:bg-green-700' : ''}
+                        >
+                          {faceVerified ? '✓ Complete Signing' : 'Verify'}
+                        </Button>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="verification" className="flex-1 overflow-y-auto space-y-6">
-            {/* Signer Information Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Signer Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{user.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{user.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{user.role}</Badge>
-                  </div>
-                  <div className="flex items-center gap-2 mt-4">
-                    <Camera className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">Face Auth: {faceVerified ? <Badge className="bg-green-500">✓ Verified</Badge> : <Badge variant="outline">Not Verified</Badge>}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </TabsContent>
 
 
-
-            {/* Processing/Completed States */}
-            {isProcessing ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="space-y-4 text-center">
-                    <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-                      <PenTool className="w-8 h-8 text-blue-600 animate-pulse" />
-                    </div>
-                    <h3 className="text-lg font-semibold">Processing Signature...</h3>
-                    <Progress value={signingProgress} className="w-full max-w-md mx-auto" />
-                    <p className="text-sm text-muted-foreground">{signingProgress}% Complete</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : isCompleted ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="space-y-4 text-center">
-                    <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-8 h-8 text-green-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-green-800">Document Signed Successfully!</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your signature has been applied and the document has been forwarded to the next recipient.
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      <Button variant="outline" size="sm">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-
-            {/* Action Buttons */}
-            {!isProcessing && !isCompleted && (
-              <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setActiveTab('signature')}>
-                  Back
-                </Button>
-                <Button 
-                  onClick={handleSign} 
-                  disabled={!faceVerified}
-                  className={faceVerified ? 'bg-green-600 hover:bg-green-700' : ''}
-                >
-                  {faceVerified ? '✓ Complete Signing' : 'Verify'}
-                </Button>
+                </Tabs>
               </div>
-            )}
-          </TabsContent>
 
-
-            </Tabs>
+              {/* Sidebar Toggle Tab */}
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="lg:hidden absolute top-1/2 -right-10 -translate-y-1/2 flex items-center justify-center bg-black text-white w-10 h-16 rounded-r-2xl shadow-xl border border-black border-l-0"
+                style={{ paddingLeft: '2px' }}
+              >
+                {isSidebarOpen ? <ChevronLeft className="w-5 h-5 text-white" /> : <ChevronRight className="w-5 h-5 text-white" />}
+              </button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
 
-    {/* FileViewer Modal */}
-    {(file || (files && files.length > 0)) && (
-      <FileViewer
-        file={file || undefined}
-        files={files && files.length > 0 ? files : undefined}
-        open={showFileViewer}
-        onOpenChange={setShowFileViewer}
-      />
-    )}
-  </>
+      {/* FileViewer Modal */}
+      {(file || (files && files.length > 0)) && (
+        <FileViewer
+          file={file || undefined}
+          files={files && files.length > 0 ? files : undefined}
+          open={showFileViewer}
+          onOpenChange={setShowFileViewer}
+        />
+      )}
+    </>
   );
 };

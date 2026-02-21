@@ -81,12 +81,14 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
       request.urgency === 'urgent' ? 'border-orange-200 bg-orange-50/50' :
         'border-gray-200'
       }`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {getStatusIcon()}
-              {request.documentTitle}
+      <CardHeader className="pb-3 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div className="space-y-1 w-full sm:w-auto">
+            <CardTitle className="text-lg flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2">
+                {getStatusIcon()}
+                {request.documentTitle}
+              </div>
               <Badge variant="outline" className="text-xs">
                 {request.documentType.toUpperCase()}
               </Badge>
@@ -97,7 +99,7 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start w-full sm:w-auto gap-2">
             <Badge variant="default" className="bg-orange-100 text-orange-800">
               ⚡Urgent
             </Badge>
@@ -109,19 +111,19 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
         {/* Meeting Details */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <Settings className="h-4 w-4 text-gray-500" />
-              <span className="font-medium">Purpose:</span>
+              <span className="font-medium min-w-[120px] sm:min-w-[60px]">Purpose:</span>
               <span>❓Need Clarification</span>
             </div>
 
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span className="font-medium">Format:</span>
+              <span className="font-medium min-w-[120px] sm:min-w-[60px]">Format:</span>
               <span>
                 {request.meetingFormat === 'online' ? '💻 Online' :
                   request.meetingFormat === 'in_person' ? '🏢 In-Person' :
@@ -159,18 +161,18 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
         <Separator />
 
         {/* Action Buttons */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="text-xs text-gray-500">
             Request ID: {request.id.slice(-8)}
           </div>
 
           {request.status === 'pending' && !isExpired && (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => onDecline(request.id)}
-                className="text-red-600 hover:bg-red-50"
+                className="text-red-600 hover:bg-red-50 w-full sm:w-auto order-2 sm:order-1"
               >
                 <XCircle className="h-4 w-4 mr-1" />
                 Decline
@@ -178,13 +180,14 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
               <Button
                 size="sm"
                 onClick={() => onAccept(request.id)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto order-1 sm:order-2"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
                 Accept
               </Button>
             </div>
           )}
+
 
           {request.status === 'accepted' && (
             <div className="flex items-center gap-2">

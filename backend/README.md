@@ -1,15 +1,15 @@
 # Backend API
 
-A Node.js/Express.js backend with TypeScript, Supabase, and Socket.IO integration.
+A Node.js/Express.js backend with TypeScript and Socket.IO integration.
 
 ## Technology Stack
 
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (JWT + OAuth2)
-- **Real-time**: Socket.IO + Supabase Realtime
+- **Database**: localStorage / in-memory storage
+- **Authentication**: JWT + Google OAuth2
+- **Real-time**: Socket.IO
 - **File Storage**: Google Drive API
 - **Email**: Resend API
 - **Testing**: Jest + Supertest

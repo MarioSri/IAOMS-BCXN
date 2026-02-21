@@ -1,71 +1,57 @@
 # ✅ Real Recipients Integration
 
-## 🎯 What Changed
+## What Changed
 
 **Before**: Mock recipients generated in code
-**After**: Real recipients loaded from Supabase database
+**After**: Real recipients loaded from local storage
 
 ---
 
-## 🚀 Setup (1 minute)
+## Setup
 
-### Step 1: Run Recipients Schema
-```sql
--- In Supabase SQL Editor
--- Copy from: backend/supabase-recipients-schema.sql
--- Paste and Run
-```
+### Step 1: Initialize Recipients Data
+Recipients are pre-populated in the application's local data store. The application loads sample recipients automatically on first run.
 
 ### Step 2: Verify
-```sql
-SELECT COUNT(*) FROM recipients;
--- Should return: 11 (sample recipients inserted)
-```
+Open the browser console and check that recipients are loaded successfully.
 
 ### Step 3: Done!
-Recipients now load from database automatically.
+Recipients now load from local storage automatically.
 
 ---
 
-## 📊 Database Structure
+## Data Structure
 
-```sql
-recipients
-├── user_id (unique) - "principal-dr-robert"
-├── name - "Dr. Robert Principal"
-├── email - "principal@hitam.org"
-├── role - "Principal"
-├── department - "Administration"
-├── branch - "CSE" (optional)
-└── year - "1st" (optional)
+```typescript
+interface Recipient {
+  user_id: string;     // "principal-dr-robert"
+  name: string;        // "Dr. Robert Principal"
+  email: string;       // "principal@hitam.org"
+  role: string;        // "Principal"
+  department: string;  // "Administration"
+  branch?: string;     // "CSE" (optional)
+  year?: string;       // "1st" (optional)
+}
 ```
 
 ---
 
-## ➕ Add New Recipients
+## Add New Recipients
 
-### Via SQL:
-```sql
-INSERT INTO recipients (user_id, name, email, role, department, branch) 
-VALUES ('new-user-id', 'Dr. New User', 'new@hitam.org', 'HOD', 'CSE Department', 'CSE');
-```
-
-### Via Supabase Dashboard:
-1. Go to Table Editor
-2. Select `recipients` table
-3. Click "Insert row"
-4. Fill in details
-5. Save
+### Via the Application:
+1. Navigate to the admin/settings area
+2. Add a new recipient with the required fields
+3. Save
 
 ---
 
-## 🔄 How It Works
+## How It Works
 
 ### RecipientSelector Component:
 ```typescript
 // Loads recipients on mount
 useEffect(() => {
-  const data = await supabaseWorkflowService.getRecipients();
+  const data = await workflowService.getRecipients();
   setAllRecipients(data);
 }, []);
 
@@ -82,7 +68,7 @@ const recipientGroups = useMemo(() => groupRecipients(allRecipients), [allRecipi
 
 ---
 
-## 📝 Sample Recipients Included
+## Sample Recipients Included
 
 1. Dr. Robert Principal (Principal)
 2. Prof. Sarah Registrar (Registrar)
@@ -98,23 +84,22 @@ const recipientGroups = useMemo(() => groupRecipients(allRecipients), [allRecipi
 
 ---
 
-## ✅ Benefits
+## Benefits
 
-- ✅ No hardcoded data
-- ✅ Easy to add/remove recipients
-- ✅ Centralized management
-- ✅ Real-time updates
-- ✅ Scalable to thousands of users
+- No hardcoded data
+- Easy to add/remove recipients
+- Centralized management
+- Persistent local storage
+- Scalable to many users
 
 ---
 
-## 🔧 Files Modified
+## Files Modified
 
-1. `backend/supabase-recipients-schema.sql` - Database schema
-2. `src/services/SupabaseWorkflowService.ts` - Added getRecipients()
-3. `src/components/RecipientSelector.tsx` - Load from database
+1. `src/services/WorkflowService.ts` - Added getRecipients()
+2. `src/components/RecipientSelector.tsx` - Load from local data store
 
 ---
 
 **Status**: ✅ COMPLETE
-**Next**: Run schema, recipients load automatically
+**Next**: Recipients load automatically from local storage

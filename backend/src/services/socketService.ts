@@ -7,9 +7,21 @@ export class SocketService {
   private connectedUsers: Map<string, SocketUser> = new Map();
 
   constructor(server: HttpServer) {
+    const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+      .split(',')
+      .map(o => o.trim());
+
     this.io = new Server(server, {
       cors: {
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true);
+          // In development, allow any localhost origin
+          if (process.env.NODE_ENV !== 'production' && /^https?:\/\/localhost(:\d+)?$/.test(origin)) {
+            return callback(null, true);
+          }
+          if (allowedOrigins.includes(origin)) return callback(null, true);
+          callback(new Error(`CORS not allowed for origin: ${origin}`));
+        },
         methods: ["GET", "POST"]
       }
     });

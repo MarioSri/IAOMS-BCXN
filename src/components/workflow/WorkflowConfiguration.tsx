@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useResponsive } from '@/hooks/useResponsive';
 import { RecipientSelector } from '@/components/approval/RecipientSelector';
 import { LoadingState } from '@/components/ui/loading-states';
 import { BiDirectionalWorkflowEngine } from '@/services/BiDirectionalWorkflowEngine';
@@ -59,6 +60,7 @@ interface WorkflowConfigurationProps {
 export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ className, hideWorkflowsTab = false }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isMobile } = useResponsive();
   const [workflowEngine] = useState(() => new BiDirectionalWorkflowEngine());
   const [workflows, setWorkflows] = useState<WorkflowRoute[]>([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowRoute | null>(null);
@@ -100,7 +102,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
   const [viewingFile, setViewingFile] = useState<File | null>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
 
-  const availableRoles = ['principal', 'registrar', 'program-head', 'hod', 'employee'];
+  const availableRoles = ['principal', 'demo-work', 'registrar', 'program-head', 'hod', 'employee'];
 
   // Document management constants
   const documentTypeOptions = [
@@ -116,6 +118,10 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
     } else {
       setDocumentTypes(documentTypes.filter(id => id !== typeId));
     }
+  };
+
+  const handleDocumentTypeRadio = (typeId: string) => {
+    setDocumentTypes([typeId]);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1113,13 +1119,13 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Upload className="w-5 h-5 text-primary" />
-                  <label className="text-base font-medium">Submit Document</label>
+                  <label className="text-lg sm:text-base font-bold">Submit Document</label>
                 </div>
 
                 {/* Document Title and Routing Type side by side */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium">Document Title</label>
+                    <label className="text-base sm:text-sm font-medium">Document Title</label>
                     <Input
                       value={documentTitle}
                       onChange={(e) => setDocumentTitle(e.target.value)}
@@ -1128,7 +1134,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Routing Type</label>
+                    <label className="text-base sm:text-sm font-medium">Routing Type</label>
                     <Select value={workflowType} onValueChange={(value: 'sequential' | 'parallel' | 'reverse' | 'bidirectional') => setWorkflowType(value as any)}>
                       <SelectTrigger className="mt-1 text-base sm:text-sm">
                         <SelectValue />
@@ -1145,8 +1151,29 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
                 {/* Document Type Selection */}
                 <div>
-                  <label className="text-sm font-medium">Document Type</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+                  <label className="text-base sm:text-sm font-medium">Document Type</label>
+                  {/* Mobile: Radio circles */}
+                  <div className="grid grid-cols-1 gap-3 mt-1 sm:hidden">
+                    {documentTypeOptions.map((option) => (
+                      <div
+                        key={option.id}
+                        className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                        onClick={() => handleDocumentTypeRadio(option.id)}
+                      >
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary">
+                          {documentTypes.includes(option.id) && (
+                            <div className="w-3 h-3 rounded-full bg-primary" />
+                          )}
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer text-base font-medium">
+                          <option.icon className="w-4 h-4" />
+                          {option.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop: Checkboxes */}
+                  <div className="hidden sm:grid sm:grid-cols-3 gap-3 mt-1">
                     {documentTypeOptions.map((option) => (
                       <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent transition-colors">
                         <Checkbox
@@ -1154,7 +1181,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                           checked={documentTypes.includes(option.id)}
                           onCheckedChange={(checked) => handleDocumentTypeChange(option.id, !!checked)}
                         />
-                        <label htmlFor={`doc-${option.id}`} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <label htmlFor={`doc-${option.id}`} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                           <option.icon className="w-4 h-4" />
                           {option.label}
                         </label>
@@ -1165,7 +1192,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
                 {/* File Upload */}
                 <div>
-                  <label className="text-sm font-medium">Upload Documents</label>
+                  <label className="text-base sm:text-sm font-medium">Upload Documents</label>
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors mt-1">
                     <input
                       type="file"
@@ -1179,7 +1206,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                     <label htmlFor="workflow-file-upload" className="cursor-pointer">
                       <div className="space-y-2">
                         <Upload className="w-8 h-8 mx-auto text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-base sm:text-sm text-muted-foreground font-medium">
                           Drag and drop files here, or click to browse
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -1192,37 +1219,41 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                   {/* Uploaded Files */}
                   {uploadedFiles.length > 0 && (
                     <div className="space-y-2 mt-3">
-                      <label className="text-sm font-medium">Uploaded Files</label>
+                      <label className="text-base sm:text-sm font-medium">Uploaded Files</label>
                       {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-accent rounded-md">
-                          <div className="flex items-center gap-2">
-                            <File className="w-4 h-4 text-primary" />
-                            <span className="text-sm">{file.name}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {(file.size / 1024 / 1024).toFixed(1)} MB
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="text-xs cursor-pointer hover:bg-primary/10"
-                              onClick={() => handleViewFile(file)}
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="text-xs cursor-pointer hover:bg-primary/10"
-                              onClick={() => setShowWatermarkModal(true)}
-                            >
-                              <Settings className="w-3 h-3 mr-1" />
-                              Watermark
-                            </Badge>
+                        <div key={index} className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-2 bg-accent rounded-md gap-2 sm:gap-0">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full pr-8 sm:pr-0">
+                            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+                              <File className="w-4 h-4 text-primary shrink-0" />
+                              <span className="text-sm truncate max-w-[150px] sm:max-w-xs">{file.name}</span>
+                              <Badge variant="secondary" className="text-xs shrink-0">
+                                {(file.size / 1024 / 1024).toFixed(1)} MB
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="text-xs cursor-pointer hover:bg-primary/10"
+                                onClick={() => handleViewFile(file)}
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-xs cursor-pointer hover:bg-primary/10"
+                                onClick={() => setShowWatermarkModal(true)}
+                              >
+                                <Settings className="w-3 h-3 mr-1" />
+                                Watermark
+                              </Badge>
+                            </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => removeFile(index)}
-                            className="h-6 w-6 p-0"
+                            className="absolute top-2 right-2 sm:static h-6 w-6 p-0 shrink-0"
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -1235,12 +1266,13 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                 {/* Assignment Preview */}
                 {uploadedFiles.length > 1 && selectedRecipients.length > 1 && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Document Assignment</label>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+                      <label className="text-base sm:text-sm font-medium">Document Assignment</label>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => setShowAssignmentModal(true)}
+                        className="w-full sm:w-auto"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Customize Assignment
@@ -1256,7 +1288,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
                 {/* Recipients */}
                 <div>
-                  <label className="text-sm font-medium">Approval Chain with Bypass Recipients</label>
+                  <label className="text-base sm:text-sm font-medium">Approval Chain with Bypass Recipients</label>
                   <div className="mt-1">
                     <RecipientSelector
                       userRole={user?.role || 'employee'}
@@ -1268,7 +1300,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
                 {/* Priority */}
                 <div>
-                  <label className="text-sm font-medium">Priority Level</label>
+                  <label className="text-base sm:text-sm font-medium">Priority Level</label>
                   <Select value={documentPriority} onValueChange={setDocumentPriority}>
                     <SelectTrigger className="mt-1 text-base sm:text-sm">
                       <SelectValue />
@@ -1304,7 +1336,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
                 {/* Document Description */}
                 <div>
-                  <label className="text-sm font-medium">Document Description / Comments</label>
+                  <label className="text-base sm:text-sm font-medium">Document Description / Comments</label>
                   <Textarea
                     value={documentDescription}
                     onChange={(e) => setDocumentDescription(e.target.value)}
@@ -1559,7 +1591,7 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
 
       {/* Document Assignment Modal */}
       <Dialog open={showAssignmentModal} onOpenChange={setShowAssignmentModal}>
-        <DialogContent className="max-w-4xl w-[95vw] sm:w-[90vw] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Assign Documents to Recipients</DialogTitle>
             <DialogDescription>
@@ -1579,22 +1611,63 @@ export const WorkflowConfiguration: React.FC<WorkflowConfigurationProps> = ({ cl
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {selectedRecipients.map((recipientId) => (
-                      <div key={recipientId} className="flex items-center space-x-2 p-2 border rounded">
-                        <Checkbox
-                          id={`workflow-${file.name}-${recipientId}`}
-                          checked={documentAssignments[file.name]?.includes(recipientId) ?? true}
-                          onCheckedChange={(checked) => {
+                      <div
+                        key={recipientId}
+                        className={cn(
+                          "flex items-center space-x-2 p-2 border rounded cursor-pointer",
+                          isMobile ? "py-3 bg-muted/20" : "hover:bg-muted/50"
+                        )}
+                        onClick={() => {
+                          if (isMobile) {
+                            const isChecked = documentAssignments[file.name]?.includes(recipientId) ?? true;
                             setDocumentAssignments(prev => {
                               const current = prev[file.name] || [];
-                              if (checked) {
+                              if (!isChecked) {
                                 return { ...prev, [file.name]: [...current, recipientId] };
                               } else {
                                 return { ...prev, [file.name]: current.filter(id => id !== recipientId) };
                               }
                             });
-                          }}
-                        />
-                        <label htmlFor={`workflow-${file.name}-${recipientId}`} className="text-sm cursor-pointer">
+                          }
+                        }}
+                      >
+                        {!isMobile && (
+                          <Checkbox
+                            id={`workflow-${file.name}-${recipientId}`}
+                            checked={documentAssignments[file.name]?.includes(recipientId) ?? true}
+                            onCheckedChange={(checked) => {
+                              setDocumentAssignments(prev => {
+                                const current = prev[file.name] || [];
+                                if (checked) {
+                                  return { ...prev, [file.name]: [...current, recipientId] };
+                                } else {
+                                  return { ...prev, [file.name]: current.filter(id => id !== recipientId) };
+                                }
+                              });
+                            }}
+                          />
+                        )}
+
+                        {isMobile && (
+                          <div className={cn(
+                            "flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-all",
+                            (documentAssignments[file.name]?.includes(recipientId) ?? true)
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground"
+                          )}>
+                            {(documentAssignments[file.name]?.includes(recipientId) ?? true) && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                        )}
+
+                        <label
+                          htmlFor={!isMobile ? `workflow-${file.name}-${recipientId}` : undefined}
+                          className={cn(
+                            "text-sm cursor-pointer flex-1",
+                            isMobile && "ml-2"
+                          )}
+                        >
                           {recipientId.replace('-', ' ').toUpperCase()}
                         </label>
                       </div>

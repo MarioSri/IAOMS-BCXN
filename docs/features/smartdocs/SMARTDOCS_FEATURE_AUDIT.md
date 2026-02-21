@@ -229,7 +229,7 @@
    - Status: **NOT STARTED**
 
 2. **Document Storage & Persistence**
-   - Connect to Supabase for document storage
+   - Connect to a persistent storage backend for document storage
    - Implement save/load operations
    - Add document metadata storage
    - Status: **NOT STARTED**
@@ -356,7 +356,7 @@
 The **SmartDocs Editor** has been **excellently implemented** from a frontend perspective with **84% overall completion**. The UI/UX is polished, the AI integration architecture is solid, and the Google Docs-like experience is well-replicated.
 
 **Next Steps for Full Production:**
-1. Set up Supabase tables for document storage
+1. Set up database tables for document storage
 2. Implement WebSocket server for real-time collaboration
 3. Integrate real AI APIs (OpenAI/Gemini)
 4. Add version control database schema

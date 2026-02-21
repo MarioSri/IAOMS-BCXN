@@ -258,7 +258,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
           return doc;
         }
 
-        // Otherwise normalize from either DocumentData (local) or Document (Supabase)
+        // Otherwise normalize from DocumentData
         return {
           id: doc.id,
           title: doc.title || 'Untitled Document',

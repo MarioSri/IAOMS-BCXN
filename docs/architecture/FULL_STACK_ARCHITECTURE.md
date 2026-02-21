@@ -23,7 +23,7 @@
                             ↕
 ┌─────────────────────────────────────────────────────────────┐
 │                    EXTERNAL SERVICES                         │
-│  ├── Supabase (Database + Auth + Realtime)                  │
+│  ├── localStorage (Client-side data persistence)            │
 │  ├── Google Drive API (File storage)                        │
 │  ├── Resend API (Email notifications)                       │
 │  └── Socket.IO (Real-time communication)                    │
@@ -69,7 +69,7 @@ Name-/
    ↓
 2. POST /api/documents (Backend)
    ↓
-3. Store in Supabase database
+3. Store in localStorage / backend API
    ↓
 4. Upload files to Google Drive
    ↓
@@ -93,7 +93,7 @@ Name-/
    ↓
 3. Backend receives message
    ↓
-4. Store in Supabase
+4. Store in localStorage
    ↓
 5. Broadcast to channel members
    ↓
@@ -111,7 +111,7 @@ Name-/
    ↓
 2. POST /api/auth/login (Backend)
    ↓
-3. Validate credentials (Supabase Auth)
+3. Validate credentials against mock user data
    ↓
 4. Generate JWT token
    ↓
@@ -142,15 +142,13 @@ const response = await fetch('http://localhost:3001/api/documents', {
 });
 ```
 
-### Backend → Supabase
+### Backend → Data Store
 
 ```typescript
-// Backend database query
-const { data, error } = await supabase
-  .from('documents')
-  .insert(documentData)
-  .select()
-  .single();
+// Backend data storage
+const documents = JSON.parse(localStorage.getItem('documents') || '[]');
+documents.push(documentData);
+localStorage.setItem('documents', JSON.stringify(documents));
 ```
 
 ---
@@ -162,8 +160,8 @@ const { data, error } = await supabase
 ```
 Frontend:  http://localhost:5173
 Backend:   http://localhost:3001
-Database:  Supabase Cloud
-Storage:   Google Drive
+Storage:   localStorage (browser-native)
+Files:     Google Drive
 Email:     Resend API
 ```
 
@@ -172,8 +170,8 @@ Email:     Resend API
 ```
 Frontend:  https://your-domain.com
 Backend:   https://api.your-domain.com
-Database:  Supabase Cloud (Production)
-Storage:   Google Drive (Production folder)
+Storage:   Backend API with database
+Files:     Google Drive (Production folder)
 Email:     Resend API (Production key)
 ```
 
@@ -195,15 +193,15 @@ Email:     Resend API (Production key)
 - **Runtime**: Node.js 18+
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: JWT + Supabase Auth
+- **Data Storage**: localStorage / in-memory mock data
+- **Authentication**: JWT
 - **Real-time**: Socket.IO
 - **File Storage**: Google Drive API
 - **Email**: Resend API
 - **API Docs**: Swagger UI
 - **Testing**: Jest + Supertest
 
-### Database Schema
+### Data Schema
 - `documents` - Document metadata
 - `approval_cards` - Approval workflow
 - `recipients` - User directory
@@ -243,7 +241,7 @@ Email:     Resend API (Production key)
 ### Backend
 - Response compression (gzip)
 - Rate limiting (100 req/15min)
-- Caching with Supabase Edge Functions
+- In-memory caching
 - Connection pooling
 
 ---
@@ -260,7 +258,7 @@ Email:     Resend API (Production key)
 - Helmet.js security headers
 - CORS configuration
 - JWT token validation
-- SQL injection prevention (Supabase)
+- Input sanitization
 - Rate limiting
 - Request size limits
 

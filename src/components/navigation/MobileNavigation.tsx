@@ -63,6 +63,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ userRole }) 
 
     const roleSpecificItems = {
       principal: adminRoleItems,
+      "demo-work": adminRoleItems,
       registrar: adminRoleItems,
       "program-head": adminRoleItems,
       hod: adminRoleItems,
@@ -101,7 +102,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ userRole }) 
 
       {/* Mobile Navigation Menu */}
       <div className={cn(
-        "md:hidden fixed top-0 left-0 h-full w-80 bg-background border-r shadow-xl z-50 transform transition-transform duration-300",
+        "md:hidden fixed top-0 left-0 h-full w-80 bg-background border-r shadow-xl z-50 transform transition-transform duration-300 overflow-hidden",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-6 pt-20">
@@ -109,7 +110,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ userRole }) 
             <h2 className="text-xl font-bold">IAOMS</h2>
             <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
           </div>
-          
+
           <nav className="space-y-2">
             {menuItems.map((item) => (
               <Button

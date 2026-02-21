@@ -76,14 +76,14 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
     // Simulate API call to fetch analytics data
     const fetchAnalytics = async () => {
       setLoading(true);
-      
+
       const mockAnalytics: AnalyticsData = {
         documentStats: {
-          total: userRole === 'principal' ? 247 : userRole === 'registrar' ? 189 : userRole === 'hod' ? 67 : 23,
-          approved: userRole === 'principal' ? 198 : userRole === 'registrar' ? 156 : userRole === 'hod' ? 52 : 18,
-          rejected: userRole === 'principal' ? 31 : userRole === 'registrar' ? 21 : userRole === 'hod' ? 7 : 2,
-          pending: userRole === 'principal' ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 8 : 3,
-          avgProcessingTime: userRole === 'principal' ? 2.3 : userRole === 'registrar' ? 1.8 : userRole === 'hod' ? 1.5 : 0.8
+          total: (userRole === 'principal' || userRole === 'demo-work') ? 247 : userRole === 'registrar' ? 189 : userRole === 'hod' ? 67 : 23,
+          approved: (userRole === 'principal' || userRole === 'demo-work') ? 198 : userRole === 'registrar' ? 156 : userRole === 'hod' ? 52 : 18,
+          rejected: (userRole === 'principal' || userRole === 'demo-work') ? 31 : userRole === 'registrar' ? 21 : userRole === 'hod' ? 7 : 2,
+          pending: (userRole === 'principal' || userRole === 'demo-work') ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 8 : 3,
+          avgProcessingTime: (userRole === 'principal' || userRole === 'demo-work') ? 2.3 : userRole === 'registrar' ? 1.8 : userRole === 'hod' ? 1.5 : 0.8
         },
         departmentStats: [
           { name: 'CSE', documents: 45, approvalRate: 89, avgTime: 2.1 },
@@ -100,9 +100,9 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
           { period: 'Week 4', documents: 56, approvals: 49, rejections: 7 }
         ],
         userActivity: {
-          activeUsers: userRole === 'principal' ? 156 : userRole === 'registrar' ? 89 : userRole === 'hod' ? 23 : 12,
-          documentsToday: userRole === 'principal' ? 23 : userRole === 'registrar' ? 15 : userRole === 'hod' ? 8 : 3,
-          approvalsToday: userRole === 'principal' ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 6 : 0,
+          activeUsers: (userRole === 'principal' || userRole === 'demo-work') ? 156 : userRole === 'registrar' ? 89 : userRole === 'hod' ? 23 : 12,
+          documentsToday: (userRole === 'principal' || userRole === 'demo-work') ? 23 : userRole === 'registrar' ? 15 : userRole === 'hod' ? 8 : 3,
+          approvalsToday: (userRole === 'principal' || userRole === 'demo-work') ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 6 : 0,
           peakHours: '10:00 AM - 12:00 PM'
         }
       };
@@ -163,7 +163,10 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
       isCustomizing && "cursor-pointer"
     )} onClick={onSelect}>
       <CardHeader className={cn(isMobile && "pb-3")}>
-        <div className="flex items-center justify-between">
+        <div className={cn(
+          "flex justify-between",
+          isMobile ? "flex-col gap-3" : "items-center"
+        )}>
           <CardTitle className={cn(
             "flex items-center gap-2",
             isMobile ? "text-lg" : "text-xl"
@@ -171,8 +174,11 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
             <BarChart3 className="w-5 h-5 text-primary" />
             Analytics
           </CardTitle>
-          
-          <div className="flex items-center gap-2">
+
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile && "w-full justify-between"
+          )}>
             <select
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value as any)}
@@ -182,9 +188,9 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
               <option value="month">This Month</option>
               <option value="quarter">This Quarter</option>
             </select>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate("/analytics")}
               className={cn(isMobile && "text-xs")}
@@ -195,7 +201,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3">
@@ -220,7 +226,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
               <span className="text-xs text-success">+2.3% vs last {timeframe}</span>
             </div>
           </div>
-          
+
           <div className="p-3 bg-warning/10 rounded-lg border border-warning/20">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-4 h-4 text-warning" />
@@ -245,7 +251,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
         </div>
 
         {/* Department Performance (for Principal/Registrar) */}
-        {(userRole === 'principal' || userRole === 'registrar') && (
+        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
           <div>
             <h4 className={cn(
               "font-semibold mb-2",
@@ -319,7 +325,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
                     )}>
                       {trend.documents} docs
                     </span>
-                    <Badge 
+                    <Badge
                       variant={approvalRate >= 90 ? "success" : approvalRate >= 80 ? "default" : "warning"}
                       className="text-xs"
                     >
@@ -333,7 +339,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
         </div>
 
         {/* User Activity (for Principal/Registrar) */}
-        {(userRole === 'principal' || userRole === 'registrar') && (
+        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
           <div className="pt-2 border-t">
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="p-2 bg-primary/10 rounded">
@@ -365,7 +371,7 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
                 </p>
               </div>
             </div>
-            
+
             <div className="mt-2 p-2 bg-muted/30 rounded text-center">
               <p className="text-xs text-muted-foreground">
                 Peak Activity: {analytics.userActivity.peakHours}
@@ -380,9 +386,9 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
             <Activity className="w-4 h-4" />
             <span>Live data</span>
           </div>
-          
-          <Button 
-            variant="ghost" 
+
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => navigate("/analytics")}
           >

@@ -17,8 +17,8 @@ Successfully implemented **Pinata IPFS blockchain storage** for face recognition
 4. **`deepface_server_ipfs.py`** - DeepFace server with IPFS
 5. **`register_user_ipfs.py`** - Face registration with IPFS
 
-### Database Migration
-6. **`supabase/migrations/20240116_face_database_ipfs.sql`** - IPFS hash storage table
+### Database Schema
+6. **Database schema** - IPFS hash storage structure
 
 ### Configuration
 7. **`package.json`** - Updated with IPFS scripts
@@ -41,8 +41,8 @@ Pinata IPFS Cloud
   QmYyY...def → user2@email.com.jpg  
   QmZzZ...ghi → principal@edu.jpg
 
-Supabase Database
-  face_database table:
+Local Database
+  face_database structure:
     user_id | ipfs_hash | created_at
 ```
 
@@ -167,11 +167,8 @@ pip install -r requirements.txt
 npm install
 ```
 
-### 3. Run Database Migration
-```sql
--- Execute in Supabase SQL Editor
--- File: supabase/migrations/20240116_face_database_ipfs.sql
-```
+### 3. Initialize Database Schema
+The face database schema is initialized automatically through the application's local data store.
 
 ### 4. Start IPFS DeepFace Server
 ```bash
@@ -306,7 +303,7 @@ migrate_local_to_ipfs()
 ### Common Issues
 1. **IPFS Upload Failed**: Check API keys, network connection
 2. **Download Failed**: Verify IPFS hash, gateway availability
-3. **Database Error**: Check Supabase connection, table exists
+3. **Database Error**: Check local storage connection, data structure exists
 4. **DeepFace Error**: Ensure Python server running, dependencies installed
 
 ### Debugging
@@ -369,7 +366,7 @@ curl -H "Authorization: Bearer YOUR_JWT" \
 
 ✅ **Decentralized Storage**: Face images stored on IPFS blockchain  
 ✅ **API Integration**: Pinata API with provided credentials  
-✅ **Database Mapping**: Supabase stores user → IPFS hash mappings  
+✅ **Database Mapping**: Local storage maps user → IPFS hash mappings  
 ✅ **DeepFace Compatible**: Works with existing face recognition  
 ✅ **Secure & Scalable**: Blockchain-backed, globally accessible  
 ✅ **Cost Effective**: Free tier supports thousands of users  

@@ -1,32 +1,27 @@
-# Sigstore Rekor + Supabase Audit Implementation
+# Sigstore Rekor + Local Audit Implementation
 
 ## Overview
-This system records every Approve & Sign and Reject action to Sigstore Rekor (free blockchain transparency log) and stores the verified record in Supabase for admin monitoring.
+This system records every Approve & Sign and Reject action to Sigstore Rekor (free blockchain transparency log) and stores the verified record locally for admin monitoring.
 
 ## Components Created
 
-### 1. Database Migration
-**File**: `supabase/migrations/20240116_document_action_logs.sql`
-- Creates `document_action_logs` table
-- Stores: document_id, recipient_id, recipient_name, recipient_role, action_type, timestamp, rekor_uuid, rekor_log_index, signature_data, verification_url
-
-### 2. Rekor Integration Service
+### 1. Rekor Integration Service
 **File**: `src/lib/rekor.ts`
 - `submitToRekor(data)` - Submits action to Sigstore Rekor
 - Returns UUID and log index for verification
 
-### 3. Audit Logger Service
+### 2. Audit Logger Service
 **File**: `src/lib/auditLogger.ts`
-- `recordAction(actionData)` - Records to both Rekor and Supabase
+- `recordAction(actionData)` - Records to both Rekor and local storage
 - Called automatically on approve/reject actions
 
-### 4. Hook for Easy Integration
+### 3. Hook for Easy Integration
 **File**: `src/hooks/useAuditLog.ts`
 - `logAction()` - Simple hook to log actions from components
 
-### 5. Backend API Endpoint
+### 4. Backend API Endpoint
 **File**: `backend/src/routes/auditLog.ts`
-- POST `/api/audit/record-action` - Records action to Rekor + Supabase
+- POST `/api/audit/record-action` - Records action to Rekor + local storage
 
 ## Integration Points
 
@@ -49,25 +44,25 @@ await recordAction({
 
 ## Admin Monitoring
 
-### Via Supabase Dashboard
-1. Login to https://supabase.com/dashboard
-2. Navigate to Table Editor
-3. Select `document_action_logs` table
+### Via Browser Developer Tools
+1. Open browser developer tools (F12)
+2. Navigate to Application > Local Storage
+3. View `document_action_logs` entries
 4. View all actions with Rekor verification URLs
 
 ### Query Examples
-```sql
--- View all actions
-SELECT * FROM document_action_logs ORDER BY timestamp DESC;
+Audit logs are stored locally and can be retrieved programmatically:
+```typescript
+// View all actions
+const logs = JSON.parse(localStorage.getItem('document_action_logs') || '[]');
 
--- View actions for specific document
-SELECT * FROM document_action_logs WHERE document_id = 'doc-123';
+// Filter actions for specific document
+const docLogs = logs.filter(log => log.document_id === 'doc-123');
 
--- View actions by user
-SELECT * FROM document_action_logs WHERE recipient_name = 'Dr. Robert';
+// Filter actions by user
+const userLogs = logs.filter(log => log.recipient_name === 'Dr. Robert');
 
--- Verify on Rekor
--- Copy verification_url and open in browser
+// Verify on Rekor - open verification_url in browser
 ```
 
 ## Data Recorded
@@ -87,13 +82,13 @@ For each action:
 
 ## Verification
 Every action can be verified on Sigstore:
-1. Get `verification_url` from Supabase
+1. Get `verification_url` from local audit logs
 2. Open URL in browser
 3. See immutable proof on https://search.sigstore.dev
 
 ## Next Steps
-1. Run Supabase migration: `supabase db push`
+1. Initialize local audit log storage
 2. Add `recordAction()` calls to approve/reject handlers
 3. Test with sample approval
-4. Verify record in Supabase dashboard
+4. Verify record in local storage
 5. Verify on Sigstore using verification URL

@@ -409,8 +409,8 @@ export default function Documents() {
     <ResponsiveLayout>
       <div className="container mx-auto p-4 sm:p-6 space-y-6 animate-fade-in">
         <div className="flex flex-col gap-2 mb-2 sm:mb-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Document Management</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Submit Your Permission Reports, Letters, and Circulars</p>
+          <h1 className="text-3xl font-bold text-foreground">Document Management</h1>
+          <p className="text-base text-muted-foreground">Submit Your Permission Reports, Letters, and Circulars</p>
         </div>
 
         <div className="space-y-6">

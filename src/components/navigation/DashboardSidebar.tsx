@@ -59,44 +59,51 @@ export function DashboardSidebar({ userRole }: DashboardSidebarProps) {
   const getRoleInfo = () => {
     switch (userRole) {
       case "principal":
-        return { 
-          icon: Crown, 
-          title: "Principal", 
+        return {
+          icon: Crown,
+          title: "Principal",
           color: "bg-purple-100 text-purple-700 border-purple-200",
           description: "Institution Principal"
         };
+      case "demo-work":
+        return {
+          icon: Crown,
+          title: "Demo Work Role",
+          color: "bg-purple-100 text-purple-700 border-purple-200",
+          description: "Demo Work Role"
+        };
       case "registrar":
-        return { 
-          icon: Shield, 
-          title: "Registrar", 
+        return {
+          icon: Shield,
+          title: "Registrar",
           color: "bg-blue-100 text-blue-700 border-blue-200",
           description: "Academic Registrar"
         };
       case "program-head":
-        return { 
-          icon: Users, 
-          title: "Program Head", 
+        return {
+          icon: Users,
+          title: "Program Head",
           color: "bg-green-100 text-green-700 border-green-200",
           description: "Program Department Head"
         };
       case "hod":
-        return { 
-          icon: Users, 
-          title: "HOD", 
+        return {
+          icon: Users,
+          title: "HOD",
           color: "bg-orange-100 text-orange-700 border-orange-200",
           description: "Head of Department"
         };
       case "employee":
-        return { 
-          icon: Briefcase, 
-          title: "Employee", 
+        return {
+          icon: Briefcase,
+          title: "Employee",
           color: "bg-gray-100 text-gray-700 border-gray-200",
           description: "Staff Member"
         };
       default:
-        return { 
-          icon: Briefcase, 
-          title: "Employee", 
+        return {
+          icon: Briefcase,
+          title: "Employee",
           color: "bg-gray-100 text-gray-700 border-gray-200",
           description: "Staff Member"
         };
@@ -136,6 +143,7 @@ export function DashboardSidebar({ userRole }: DashboardSidebarProps) {
 
     const roleSpecificItems = {
       principal: adminRoleItems,
+      "demo-work": adminRoleItems,
       registrar: adminRoleItems,
       "program-head": adminRoleItems,
       hod: adminRoleItems,

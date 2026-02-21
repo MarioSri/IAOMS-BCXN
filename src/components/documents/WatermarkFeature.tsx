@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Droplets, Shuffle, Lock, Eye, Save, ZoomIn, ZoomOut, RotateCw, ChevronLeft, ChevronRight, Download, Loader2, AlertCircle, X, Type, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -80,6 +81,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileZoom, setFileZoom] = useState(100);
   const [fileRotation, setFileRotation] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // NEW STATES FOR REPEATING PATTERN
   const [repeatMode, setRepeatMode] = useState<'none' | 'diagonal' | 'grid'>('none');
@@ -911,691 +913,762 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
     { id: 'generate' as TabType, label: 'Generate Unique' }
   ];
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'basic':
-        return (
-          <div className="space-y-4">
-            {/* Watermark Type Selection */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Watermark Type</Label>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={watermarkType === 'text' ? 'default' : 'outline'}
-                  onClick={() => setWatermarkType('text')}
-                  className="flex-1"
-                >
-                  <Type className="w-4 h-4 mr-2" />
-                  Text
-                </Button>
-                <Button
-                  type="button"
-                  variant={watermarkType === 'image' ? 'default' : 'outline'}
-                  onClick={() => setWatermarkType('image')}
-                  className="flex-1"
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  Image
-                </Button>
-              </div>
-            </div>
-
-            {/* Text Watermark Input */}
-            {watermarkType === 'text' && (
-              <div>
-                <Label className="text-sm font-medium">Watermark Text</Label>
-                <Textarea
-                  id="watermarkText"
-                  value={watermarkText}
-                  onChange={(e) => setWatermarkText(e.target.value)}
-                  placeholder="Click to edit watermark text..."
-                  className="mt-1 min-h-[80px] text-base sm:text-sm"
-                />
-              </div>
-            )}
-
-            {/* Image Upload */}
-            {watermarkType === 'image' && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Upload Watermark Image</Label>
-                <Input
-                  type="file"
-                  accept="image/png,image/jpg,image/jpeg"
-                  onChange={handleImageUpload}
-                  className="cursor-pointer"
-                />
-                {watermarkImage && (
-                  <div className="relative w-full h-24 border rounded-lg overflow-hidden bg-gray-50">
-                    <img
-                      src={watermarkImage}
-                      alt="Preview"
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-1 right-1"
-                      onClick={() => {
-                        setWatermarkImage(null);
-                        toast({
-                          title: 'Image removed',
-                          description: 'Watermark image has been removed',
-                        });
-                      }}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Image Scale Control */}
-            {watermarkType === 'image' && watermarkImage && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Image Scale: {imageScale}%
-                </Label>
-                <Slider
-                  value={[imageScale]}
-                  onValueChange={(value) => setImageScale(value[0])}
-                  min={10}
-                  max={200}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-            )}
-            <div>
-              <Label className="text-sm font-medium">Location on Page</Label>
-              <Select value={location} onValueChange={setLocation}>
-                <SelectTrigger className="mt-1 text-base sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Centered">Centered</SelectItem>
-                  <SelectItem value="Custom Left">Custom Left</SelectItem>
-                  <SelectItem value="Custom Right">Custom Right</SelectItem>
-                  <SelectItem value="Top">Top</SelectItem>
-                  <SelectItem value="Bottom">Bottom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Opacity: {Math.round(opacity[0] * 100)}%</Label>
-              <Slider
-                value={opacity}
-                onValueChange={setOpacity}
-                max={1}
-                min={0.1}
-                step={0.05}
-                className="mt-2"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Rotation Angle</Label>
-              <Input
-                type="number"
-                value={rotation}
-                onChange={(e) => setRotation(Number(e.target.value))}
-                className="mt-1 text-base sm:text-sm"
-              />
-            </div>
+  const renderBasicContent = () => {
+    return (
+      <div className="space-y-4">
+        {/* Watermark Type Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Watermark Type</Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={watermarkType === 'text' ? 'default' : 'outline'}
+              onClick={() => setWatermarkType('text')}
+              className="flex-1"
+            >
+              <Type className="w-4 h-4 mr-2" />
+              Text
+            </Button>
+            <Button
+              type="button"
+              variant={watermarkType === 'image' ? 'default' : 'outline'}
+              onClick={() => setWatermarkType('image')}
+              className="flex-1"
+            >
+              <ImageIcon className="w-4 h-4 mr-2" />
+              Image
+            </Button>
           </div>
-        );
+        </div>
 
-      case 'style':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium">Font</Label>
-              <Select value={font} onValueChange={setFont}>
-                <SelectTrigger className="mt-1 text-base sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Helvetica">Helvetica</SelectItem>
-                  <SelectItem value="Arial">Arial</SelectItem>
-                  <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                  <SelectItem value="Georgia">Georgia</SelectItem>
-                  <SelectItem value="Verdana">Verdana</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Font Size</Label>
-              <Input
-                type="number"
-                value={fontSize}
-                onChange={(e) => setFontSize(Number(e.target.value))}
-                className="mt-1 text-base sm:text-sm"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Color</Label>
-              <div className="flex gap-2 mt-1">
-                <Input
-                  type="color"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="w-16 h-10 p-1 border rounded-md shrink-0"
-                />
-                <Input
-                  type="text"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="flex-1 text-base sm:text-sm"
-                />
-              </div>
-            </div>
-
-            {/* Repeat Mode Selection */}
-            <div className="space-y-2 pt-4 border-t">
-              <Label className="text-sm font-medium">Repeat Pattern</Label>
-              <Select
-                value={repeatMode}
-                onValueChange={(value: any) => {
-                  setRepeatMode(value);
-                  // Set good defaults when switching modes
-                  if (value === 'diagonal') {
-                    setSpacingX(250);
-                    setSpacingY(250);
-                    setDiagonalAngle(-45);
-                    setOpacity([0.15]); // Lower opacity for repeating patterns
-                  } else if (value === 'grid') {
-                    setSpacingX(300);
-                    setSpacingY(300);
-                    setOpacity([0.15]); // Lower opacity for repeating patterns
-                  } else {
-                    setOpacity([0.3]); // Higher opacity for single watermark
-                  }
-                }}
-              >
-                <SelectTrigger className="text-base sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Single (No Repeat)</SelectItem>
-                  <SelectItem value="diagonal">Diagonal Repeat</SelectItem>
-                  <SelectItem value="grid">Grid Repeat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Spacing Controls */}
-            {repeatMode !== 'none' && (
-              <>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Horizontal Spacing: {spacingX}px
-                  </Label>
-                  <Slider
-                    value={[spacingX]}
-                    onValueChange={(value) => setSpacingX(value[0])}
-                    min={100}
-                    max={500}
-                    step={10}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">
-                    Vertical Spacing: {spacingY}px
-                  </Label>
-                  <Slider
-                    value={[spacingY]}
-                    onValueChange={(value) => setSpacingY(value[0])}
-                    min={100}
-                    max={500}
-                    step={10}
-                    className="w-full"
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Diagonal Angle Control */}
-            {repeatMode === 'diagonal' && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Diagonal Angle: {diagonalAngle}°
-                </Label>
-                <Slider
-                  value={[diagonalAngle]}
-                  onValueChange={(value) => setDiagonalAngle(value[0])}
-                  min={-90}
-                  max={90}
-                  step={5}
-                  className="w-full"
-                />
-              </div>
-            )}
+        {/* Text Watermark Input */}
+        {watermarkType === 'text' && (
+          <div>
+            <Label className="text-sm font-medium">Watermark Text</Label>
+            <Textarea
+              id="watermarkText"
+              value={watermarkText}
+              onChange={(e) => setWatermarkText(e.target.value)}
+              placeholder="Click to edit watermark text..."
+              className="mt-1 min-h-[80px] text-base sm:text-sm"
+            />
           </div>
-        );
+        )}
 
-      case 'preview':
-        return (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Preview Page</Label>
+        {/* Image Upload */}
+        {watermarkType === 'image' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Upload Watermark Image</Label>
+            <Input
+              type="file"
+              accept="image/png,image/jpg,image/jpeg"
+              onChange={handleImageUpload}
+              className="cursor-pointer"
+            />
+            {watermarkImage && (
+              <div className="relative w-full h-24 border rounded-lg overflow-hidden bg-gray-50">
+                <img
+                  src={watermarkImage}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                />
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="destructive"
                   size="sm"
-                  onClick={() => setPreviewPage(0)}
-                  className="h-7 text-xs"
-                >
-                  View All Pages
-                </Button>
-              </div>
-              <Input
-                type="number"
-                value={previewPage === 0 ? '' : previewPage}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setPreviewPage(val === '' ? 0 : Number(val));
-                }}
-                className="mt-1 text-base sm:text-sm"
-                min={0}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Apply to Pages</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                  className="absolute top-1 right-1"
                   onClick={() => {
-                    if (fileContent?.type === 'pdf' && fileContent.totalPages) {
-                      setPageRange(`1-${fileContent.totalPages}`);
-                    } else {
-                      setPageRange('1-');
-                    }
+                    setWatermarkImage(null);
+                    toast({
+                      title: 'Image removed',
+                      description: 'Watermark image has been removed',
+                    });
                   }}
-                  className="h-7 text-xs"
                 >
-                  All Pages
+                  <X className="w-3 h-3" />
                 </Button>
-              </div>
-              <Input
-                value={pageRange}
-                onChange={(e) => setPageRange(e.target.value)}
-                placeholder="e.g., 1-10, 13, 14, 100-"
-                className="mt-1 text-base sm:text-sm"
-              />
-            </div>
-            <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px] relative overflow-hidden">
-              <div className="text-xs text-gray-500 mb-2">
-                Preview {previewPage === 0 ? '(All Pages)' : `(Page ${previewPage})`}
-              </div>
-              <div className="relative w-full h-48 bg-white border rounded shadow-sm">
-                <div
-                  className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-                  style={{
-                    transform: `rotate(${rotation}deg)`,
-                    opacity: opacity[0],
-                    color: color,
-                    fontSize: `${fontSize * 0.3}px`,
-                    fontFamily: font
-                  }}
-                >
-                  {watermarkText}
-                </div>
-                <div className="p-4 text-xs text-gray-600">
-                  Sample document content appears here...
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'generate':
-        return (
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600 mb-4">
-              Generate a unique watermark style based on your text and chosen location. The style is reproducible and adjustable.
-            </div>
-            <div className="space-y-3">
-              <Button
-                onClick={generateUniqueWatermark}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                <Droplets className="w-4 h-4 mr-2" />
-                Generate Unique Watermark
-              </Button>
-              <Button
-                onClick={regenerateVariant}
-                variant="outline"
-                className="w-full"
-              >
-                <Shuffle className="w-4 h-4 mr-2" />
-                Regenerate Variant
-              </Button>
-              <Button
-                onClick={lockWatermark}
-                variant={isLocked ? "destructive" : "secondary"}
-                className="w-full"
-              >
-                <Lock className="w-4 h-4 mr-2" />
-                {isLocked ? 'Unlock' : 'Lock'} Watermark
-              </Button>
-            </div>
-            {generatedStyle && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
-                <div className="text-sm font-medium text-blue-800 mb-2">Generated Style:</div>
-                <div className="text-xs text-blue-600 space-y-1">
-                  <div>Font: {generatedStyle.font}</div>
-                  <div>Size: {generatedStyle.size}px</div>
-                  <div>Color: {generatedStyle.color}</div>
-                  <div>Opacity: {Math.round(generatedStyle.opacity * 100)}%</div>
-                  <div>Rotation: {generatedStyle.rotation}°</div>
-                </div>
               </div>
             )}
           </div>
-        );
+        )}
 
-      default:
-        return null;
-    }
+        {/* Image Scale Control */}
+        {watermarkType === 'image' && watermarkImage && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Image Scale: {imageScale}%
+            </Label>
+            <Slider
+              value={[imageScale]}
+              onValueChange={(value) => setImageScale(value[0])}
+              min={10}
+              max={200}
+              step={5}
+              className="w-full"
+            />
+          </div>
+        )}
+        <div>
+          <Label className="text-sm font-medium">Location on Page</Label>
+          <Select value={location} onValueChange={setLocation}>
+            <SelectTrigger className="mt-1 text-base sm:text-sm h-12 md:h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Centered">Centered</SelectItem>
+              <SelectItem value="Custom Left">Custom Left</SelectItem>
+              <SelectItem value="Custom Right">Custom Right</SelectItem>
+              <SelectItem value="Top">Top</SelectItem>
+              <SelectItem value="Bottom">Bottom</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Opacity: {Math.round(opacity[0] * 100)}%</Label>
+          <Slider
+            value={opacity}
+            onValueChange={setOpacity}
+            max={1}
+            min={0.1}
+            step={0.05}
+            className="mt-2 py-4 md:py-2"
+          />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Rotation Angle</Label>
+          <Input
+            type="number"
+            value={rotation}
+            onChange={(e) => setRotation(Number(e.target.value))}
+            className="mt-1 text-base sm:text-sm h-12 md:h-10"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStyleContent = () => {
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label className="text-sm font-medium">Font</Label>
+          <Select value={font} onValueChange={setFont}>
+            <SelectTrigger className="mt-1 text-base sm:text-sm h-12 md:h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Helvetica">Helvetica</SelectItem>
+              <SelectItem value="Arial">Arial</SelectItem>
+              <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+              <SelectItem value="Georgia">Georgia</SelectItem>
+              <SelectItem value="Verdana">Verdana</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Font Size</Label>
+          <Input
+            type="number"
+            value={fontSize}
+            onChange={(e) => setFontSize(Number(e.target.value))}
+            className="mt-1 text-base sm:text-sm h-12 md:h-10"
+          />
+        </div>
+        <div>
+          <Label className="text-sm font-medium">Color</Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-16 h-12 md:h-10 p-1 border rounded-md shrink-0"
+            />
+            <Input
+              type="text"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="flex-1 text-base sm:text-sm h-12 md:h-10"
+            />
+          </div>
+        </div>
+
+        {/* Repeat Mode Selection */}
+        <div className="space-y-2 pt-4 border-t">
+          <Label className="text-sm font-medium">Repeat Pattern</Label>
+          <Select
+            value={repeatMode}
+            onValueChange={(value: any) => {
+              setRepeatMode(value);
+              // Set good defaults when switching modes
+              if (value === 'diagonal') {
+                setSpacingX(250);
+                setSpacingY(250);
+                setDiagonalAngle(-45);
+                setOpacity([0.15]); // Lower opacity for repeating patterns
+              } else if (value === 'grid') {
+                setSpacingX(300);
+                setSpacingY(300);
+                setOpacity([0.15]); // Lower opacity for repeating patterns
+              } else {
+                setOpacity([0.3]); // Higher opacity for single watermark
+              }
+            }}
+          >
+            <SelectTrigger className="text-base sm:text-sm h-12 md:h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Single (No Repeat)</SelectItem>
+              <SelectItem value="diagonal">Diagonal Repeat</SelectItem>
+              <SelectItem value="grid">Grid Repeat</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Spacing Controls */}
+        {repeatMode !== 'none' && (
+          <>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Horizontal Spacing: {spacingX}px
+              </Label>
+              <Slider
+                value={[spacingX]}
+                onValueChange={(value) => setSpacingX(value[0])}
+                min={100}
+                max={500}
+                step={10}
+                className="w-full py-4 md:py-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Vertical Spacing: {spacingY}px
+              </Label>
+              <Slider
+                value={[spacingY]}
+                onValueChange={(value) => setSpacingY(value[0])}
+                min={100}
+                max={500}
+                step={10}
+                className="w-full py-4 md:py-2"
+              />
+            </div>
+          </>
+        )}
+
+        {/* Diagonal Angle Control */}
+        {repeatMode === 'diagonal' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Diagonal Angle: {diagonalAngle}°
+            </Label>
+            <Slider
+              value={[diagonalAngle]}
+              onValueChange={(value) => setDiagonalAngle(value[0])}
+              min={-90}
+              max={90}
+              step={5}
+              className="w-full py-4 md:py-2"
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPreviewContent = () => {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Preview Page</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setPreviewPage(0)}
+              className="h-7 text-xs"
+            >
+              View All Pages
+            </Button>
+          </div>
+          <Input
+            type="number"
+            value={previewPage === 0 ? '' : previewPage}
+            onChange={(e) => {
+              const val = e.target.value;
+              setPreviewPage(val === '' ? 0 : Number(val));
+            }}
+            className="mt-1 text-base sm:text-sm h-12 md:h-10"
+            min={0}
+          />
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">Apply to Pages</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (fileContent?.type === 'pdf' && fileContent.totalPages) {
+                  setPageRange(`1-${fileContent.totalPages}`);
+                } else {
+                  setPageRange('1-');
+                }
+              }}
+              className="h-7 text-xs"
+            >
+              All Pages
+            </Button>
+          </div>
+          <Input
+            value={pageRange}
+            onChange={(e) => setPageRange(e.target.value)}
+            placeholder="e.g., 1-10, 13, 14, 100-"
+            className="mt-1 text-base sm:text-sm h-12 md:h-10"
+          />
+        </div>
+        <div className="border rounded-lg p-4 bg-gray-50 min-h-[200px] relative overflow-hidden">
+          <div className="text-xs text-gray-500 mb-2">
+            Preview {previewPage === 0 ? '(All Pages)' : `(Page ${previewPage})`}
+          </div>
+          <div className="relative w-full h-48 bg-white border rounded shadow-sm">
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+              style={{
+                transform: `rotate(${rotation}deg)`,
+                opacity: opacity[0],
+                color: color,
+                fontSize: `${fontSize * 0.3}px`,
+                fontFamily: font
+              }}
+            >
+              {watermarkText}
+            </div>
+            <div className="p-4 text-xs text-gray-600">
+              Sample document content appears here...
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGenerateContent = () => {
+    return (
+      <div className="space-y-4">
+        <div className="text-sm text-gray-600 mb-4">
+          Generate a unique watermark style based on your text and chosen location. The style is reproducible and adjustable.
+        </div>
+        <div className="space-y-3">
+          <Button
+            onClick={generateUniqueWatermark}
+            className="w-full bg-blue-600 hover:bg-blue-700 h-10"
+          >
+            <Droplets className="w-4 h-4 mr-2" />
+            Generate Unique Watermark
+          </Button>
+          <Button
+            onClick={regenerateVariant}
+            variant="outline"
+            className="w-full h-10"
+          >
+            <Shuffle className="w-4 h-4 mr-2" />
+            Regenerate Variant
+          </Button>
+          <Button
+            onClick={lockWatermark}
+            variant={isLocked ? "destructive" : "secondary"}
+            className="w-full h-10"
+          >
+            <Lock className="w-4 h-4 mr-2" />
+            {isLocked ? 'Unlock' : 'Lock'} Watermark
+          </Button>
+        </div>
+        {generatedStyle && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg border">
+            <div className="text-sm font-medium text-blue-800 mb-2">Generated Style:</div>
+            <div className="text-xs text-blue-600 space-y-1">
+              <div>Font: {generatedStyle.font}</div>
+              <div>Size: {generatedStyle.size}px</div>
+              <div>Color: {generatedStyle.color}</div>
+              <div>Opacity: {Math.round(generatedStyle.opacity * 100)}%</div>
+              <div>Rotation: {generatedStyle.rotation}°</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl w-[95vw] md:w-full max-h-[95vh] md:max-h-[90vh] p-0 bg-gradient-to-br from-green-50 to-blue-50 overflow-hidden">
-        <div className="h-full overflow-hidden flex flex-col">
-          {/* Two-Column Layout with Overflow Protection */}
-          <div className="flex flex-col md:grid md:grid-cols-2 gap-4 p-4 md:p-6 flex-1 overflow-y-auto md:overflow-hidden min-h-0">
-            {/* LEFT COLUMN - Document Viewer */}
-            <div className="flex flex-col h-[500px] md:h-full min-w-0 order-2 md:order-1 flex-shrink-0 md:flex-shrink">
-              <Card className="flex-1 shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden flex flex-col min-h-0">
-                <CardContent className="p-4 md:p-6 flex-1 flex flex-col overflow-hidden min-h-0">
-                  <div className="mb-4 flex items-center justify-between flex-shrink-0">
-                    <h3 className="text-base md:text-lg font-semibold flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                      Document Preview
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {files && files.length > 0 ? (
-                        <Badge variant="secondary" className="text-[10px] md:text-xs">
-                          {currentFileIndex + 1} / {files.length}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-red-500 text-[10px] md:text-xs">
-                          No files
-                        </Badge>
-                      )}
-                    </div>
+      <DialogContent className="w-screen h-screen sm:w-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] p-0 sm:p-6 gap-0 sm:gap-4 border-0 sm:border rounded-none sm:rounded-lg overflow-hidden flex flex-col [&>button:last-child]:top-2 [&>button:last-child]:right-2 [&>button:last-child]:bg-gray-100 [&>button:last-child]:opacity-100 sm:[&>button:last-child]:top-6 sm:[&>button:last-child]:right-4 sm:[&>button:last-child]:bg-white sm:[&>button:last-child]:opacity-90">
+        <DialogHeader className="p-4 sm:p-0 border-b sm:border-b-0 m-0">
+          <DialogTitle className="flex items-center gap-2">
+            <Droplets className="w-5 h-5 text-blue-600" />
+            Watermark Management
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 flex flex-col lg:grid lg:grid-cols-2 gap-0 lg:gap-6 lg:h-[80vh] w-full overflow-hidden relative bg-background border-none min-h-0">
+          {/* LEFT COLUMN - Document Viewer */}
+          <div className="flex-1 lg:h-full lg:border-r lg:pr-6 border-b lg:border-b-0 flex flex-col w-full relative z-0 min-h-0">
+            <Card className="flex-1 lg:h-full flex flex-col border-0 sm:border shadow-none sm:shadow-sm rounded-none sm:rounded-xl m-0 bg-transparent min-h-0">
+              <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm sm:text-lg">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    Document Preview
                   </div>
-
-                  {/* Embedded Document Preview - Enhanced Scrolling with Increased Height */}
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden border rounded-lg bg-gray-50 scroll-smooth" style={{ maxHeight: 'calc(88vh - 240px)', minHeight: '300px' }}>
-                    {fileLoading ? (
-                      <div className="flex items-center justify-center h-full p-8 min-h-[400px]">
-                        <div className="text-center">
-                          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-500" />
-                          <p className="text-sm text-gray-600">Loading document...</p>
-                        </div>
-                      </div>
-                    ) : fileError ? (
-                      <div className="flex items-center justify-center h-full p-8 min-h-[400px]">
-                        <div className="text-center">
-                          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-                          <p className="text-sm font-medium text-red-600 mb-2">Error Loading File</p>
-                          <p className="text-xs text-gray-500 break-words">{fileError}</p>
-                        </div>
-                      </div>
-                    ) : viewingFile && fileContent ? (
-                      <div className="p-4 pb-8 w-full">
-                        {/* Zoom and Rotation Controls */}
-                        <div className="flex items-center justify-center gap-2 mb-4 sticky top-0 bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-sm z-10">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setFileZoom(Math.max(50, fileZoom - 10))}
-                            disabled={fileZoom <= 50}
-                            title="Zoom Out"
-                          >
-                            <ZoomOut className="h-4 w-4" />
-                          </Button>
-                          <Badge variant="secondary" className="px-3 font-mono">
-                            {fileZoom}%
-                          </Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setFileZoom(Math.min(200, fileZoom + 10))}
-                            disabled={fileZoom >= 200}
-                            title="Zoom In"
-                          >
-                            <ZoomIn className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setFileRotation((fileRotation + 90) % 360)}
-                            title="Rotate 90°"
-                          >
-                            <RotateCw className="h-4 w-4" />
-                          </Button>
-                          {fileContent.type === 'pdf' && fileContent.totalPages && (
-                            <Badge variant="outline" className="ml-2">
-                              {fileContent.totalPages} {fileContent.totalPages === 1 ? 'page' : 'pages'}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* File Content Rendering with Overflow Protection */}
-                        <div className="space-y-4 pb-4 w-full">
-                          {fileContent.type === 'pdf' && fileContent.pageCanvases?.map((pageDataUrl: string, index: number) => {
-                            const pageNumber = index + 1;
-                            // Filter by preview page if set
-                            if (previewPage && previewPage > 0 && pageNumber !== previewPage) {
-                              return null; // Skip pages that don't match preview page
-                            }
-                            return (
-                              <div key={index} className="relative mb-6 overflow-hidden">
-                                {/* Live Watermark Preview Overlay */}
-                                <WatermarkOverlay pageNumber={pageNumber} />
-                                <img
-                                  src={pageDataUrl}
-                                  alt={`Page ${pageNumber}`}
-                                  style={{
-                                    transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
-                                    transformOrigin: 'center',
-                                    transition: 'transform 0.3s ease',
-                                    maxWidth: '100%',
-                                    height: 'auto',
-                                  }}
-                                  className="border shadow-lg rounded mx-auto block"
-                                />
-                                <Badge variant="secondary" className="absolute top-2 right-2 bg-background/95 backdrop-blur z-20">
-                                  Page {pageNumber} of {fileContent.totalPages}
-                                </Badge>
-                              </div>
-                            );
-                          })}
-
-                          {fileContent.type === 'word' && (
-                            <div className="w-full overflow-hidden relative">
-                              {/* Live Watermark Preview Overlay */}
-                              <WatermarkOverlay />
-                              <div
-                                className="prose prose-sm max-w-none p-6 bg-white rounded shadow-sm min-h-[300px] break-words"
-                                style={{
-                                  transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
-                                  transformOrigin: 'top center',
-                                  transition: 'transform 0.3s ease',
-                                  wordWrap: 'break-word',
-                                  overflowWrap: 'break-word',
-                                  maxWidth: '100%',
-                                }}
-                                dangerouslySetInnerHTML={{ __html: fileContent.html }}
-                              />
-                            </div>
-                          )}
-
-                          {fileContent.type === 'excel' && (
-                            <div className="w-full overflow-hidden relative">
-                              {/* Live Watermark Preview Overlay */}
-                              <WatermarkOverlay />
-                              <div
-                                className="overflow-auto bg-white rounded shadow-sm p-4 min-h-[300px] max-h-[600px]"
-                                style={{
-                                  transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
-                                  transformOrigin: 'top left',
-                                  transition: 'transform 0.3s ease',
-                                  maxWidth: '100%',
-                                }}
-                                dangerouslySetInnerHTML={{ __html: fileContent.html }}
-                              />
-                            </div>
-                          )}
-
-                          {fileContent.type === 'image' && (
-                            <div className="flex justify-center relative">
-                              {/* Live Watermark Preview Overlay */}
-                              <WatermarkOverlay />
-                              <img
-                                src={fileContent.url}
-                                alt={viewingFile.name}
-                                style={{
-                                  maxWidth: '100%',
-                                  height: 'auto',
-                                  transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
-                                  transition: 'transform 0.3s ease',
-                                  transformOrigin: 'center',
-                                }}
-                                className="rounded shadow-lg"
-                              />
-                            </div>
-                          )}
-
-                          {fileContent.type === 'unsupported' && (
-                            <div className="text-center py-12">
-                              <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                              <p className="text-sm font-medium text-gray-600 mb-2">{viewingFile.name}</p>
-                              <p className="text-xs text-gray-500">
-                                {(viewingFile.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                              <Badge variant="secondary" className="mt-2">
-                                ✓ File ready for watermarking
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    {files && files.length > 0 ? (
+                      <Badge variant="secondary" className="text-xs">
+                        {currentFileIndex + 1} of {files.length}
+                      </Badge>
                     ) : (
-                      <div className="flex items-center justify-center h-full p-8">
-                        <div className="text-center text-gray-400">
-                          <FileText className="h-16 w-16 mx-auto mb-3 opacity-50" />
-                          <p className="text-sm font-medium mb-1">No documents uploaded</p>
-                          <p className="text-xs">Upload files to apply watermark</p>
-                        </div>
-                      </div>
+                      <Badge variant="outline" className="text-red-500 text-xs">
+                        No files
+                      </Badge>
                     )}
                   </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 flex flex-col overflow-hidden p-0">
 
-                  {/* File Navigation - Fixed Footer */}
-                  {files && files.length > 1 && (
-                    <div className="mt-4 pt-3 border-t flex items-center justify-between gap-2 flex-shrink-0 bg-white/50 backdrop-blur-sm rounded-lg p-3">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSelectFile(currentFileIndex - 1)}
-                        disabled={currentFileIndex === 0}
-                        className="shadow-sm"
-                        title="Previous File"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      <div className="flex-1 text-center">
-                        <p className="text-sm text-gray-600 font-medium truncate">
-                          {viewingFile?.name}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {currentFileIndex + 1} of {files.length}
-                        </p>
+                {/* Embedded Document Preview */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden border-t sm:border-t bg-gray-50 scroll-smooth relative flex flex-col">
+                  {fileLoading ? (
+                    <div className="flex items-center justify-center h-full p-8 min-h-[200px]">
+                      <div className="text-center">
+                        <Loader2 className="h-8 w-8 md:h-12 md:w-12 animate-spin mx-auto mb-4 text-blue-500" />
+                        <p className="text-xs md:text-sm text-gray-600">Loading document...</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleSelectFile(currentFileIndex + 1)}
-                        disabled={currentFileIndex === files.length - 1}
-                        className="shadow-sm"
-                        title="Next File"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
+                    </div>
+                  ) : fileError ? (
+                    <div className="flex items-center justify-center h-full p-8 min-h-[200px]">
+                      <div className="text-center">
+                        <AlertCircle className="h-8 w-8 md:h-12 md:w-12 mx-auto mb-4 text-red-500" />
+                        <p className="text-xs md:text-sm font-medium text-red-600 mb-2">Error Loading File</p>
+                        <p className="text-[10px] md:text-xs text-gray-500 break-words">{fileError}</p>
+                      </div>
+                    </div>
+                  ) : viewingFile && fileContent ? (
+                    <div className="p-0 sm:p-4 pb-4 sm:pb-8 w-full flex-1 flex flex-col">
+                      {/* Zoom and Rotation Controls */}
+                      <div className="flex items-center justify-center gap-1 sm:gap-2 mb-0 sm:mb-4 sticky top-0 bg-white/95 backdrop-blur-sm p-1.5 sm:p-2 rounded-none sm:rounded-lg shadow-sm z-10 scale-100 origin-top shrink-0 border-b sm:border-b-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFileZoom(Math.max(50, fileZoom - 10))}
+                          disabled={fileZoom <= 50}
+                          title="Zoom Out"
+                          className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                        >
+                          <ZoomOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        <Badge variant="secondary" className="px-1.5 sm:px-3 font-mono text-xs">
+                          {fileZoom}%
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFileZoom(Math.min(200, fileZoom + 10))}
+                          disabled={fileZoom >= 200}
+                          title="Zoom In"
+                          className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                        >
+                          <ZoomIn className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setFileRotation((fileRotation + 90) % 360)}
+                          title="Rotate 90°"
+                          className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                        >
+                          <RotateCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                        {fileContent.type === 'pdf' && fileContent.totalPages && (
+                          <Badge variant="outline" className="text-xs">
+                            {fileContent.totalPages} page{fileContent.totalPages > 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* File Content Rendering with Overflow Protection */}
+                      <div className="pb-4 w-full flex-1 flex flex-col items-center pt-2 sm:pt-0">
+                        {fileContent.type === 'pdf' && fileContent.pageCanvases?.map((pageDataUrl: string, index: number) => {
+                          const pageNumber = index + 1;
+                          // Filter by preview page if set
+                          if (previewPage && previewPage > 0 && pageNumber !== previewPage) {
+                            return null; // Skip pages that don't match preview page
+                          }
+                          return (
+                            <div key={index} className="relative mb-6 overflow-hidden w-full flex items-center justify-center flex-1">
+                              {/* Live Watermark Preview Overlay */}
+                              <WatermarkOverlay pageNumber={pageNumber} />
+                              <img
+                                src={pageDataUrl}
+                                alt={`Page ${pageNumber}`}
+                                style={{
+                                  transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
+                                  transformOrigin: 'center',
+                                  transition: 'transform 0.3s ease',
+                                  width: '100%',
+                                  height: '100%',
+                                  maxHeight: '70vh',
+                                  objectFit: 'contain'
+                                }}
+                                className="sm:border sm:shadow-lg rounded-none sm:rounded block"
+                              />
+                              <Badge variant="secondary" className="absolute top-2 right-2 bg-background/95 backdrop-blur z-20 text-xs">
+                                Page {pageNumber} of {fileContent.totalPages}
+                              </Badge>
+                            </div>
+                          );
+                        })}
+
+                        {fileContent.type === 'word' && (
+                          <div className="w-full overflow-hidden relative">
+                            {/* Live Watermark Preview Overlay */}
+                            <WatermarkOverlay />
+                            <div
+                              className="prose prose-sm max-w-none p-4 md:p-6 bg-white rounded shadow-sm min-h-[300px] break-words"
+                              style={{
+                                transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
+                                transformOrigin: 'top center',
+                                transition: 'transform 0.3s ease',
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                maxWidth: '100%',
+                              }}
+                              dangerouslySetInnerHTML={{ __html: fileContent.html }}
+                            />
+                          </div>
+                        )}
+
+                        {fileContent.type === 'excel' && (
+                          <div className="w-full overflow-hidden relative">
+                            {/* Live Watermark Preview Overlay */}
+                            <WatermarkOverlay />
+                            <div
+                              className="overflow-auto bg-white rounded shadow-sm p-4 min-h-[300px] max-h-[600px]"
+                              style={{
+                                transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
+                                transformOrigin: 'top left',
+                                transition: 'transform 0.3s ease',
+                                maxWidth: '100%',
+                              }}
+                              dangerouslySetInnerHTML={{ __html: fileContent.html }}
+                            />
+                          </div>
+                        )}
+
+                        {fileContent.type === 'image' && (
+                          <div className="flex justify-center relative w-full flex-1 min-h-[50vh] sm:min-h-0">
+                            {/* Live Watermark Preview Overlay */}
+                            <WatermarkOverlay />
+                            <img
+                              src={fileContent.url}
+                              alt={viewingFile.name}
+                              style={{
+                                transform: `scale(${fileZoom / 100}) rotate(${fileRotation}deg)`,
+                                transformOrigin: 'center',
+                                transition: 'transform 0.3s ease',
+                                width: '100%',
+                                height: '100%',
+                                maxHeight: '70vh',
+                                objectFit: 'contain'
+                              }}
+                              className="sm:border sm:shadow-lg rounded-none sm:rounded block"
+                            />
+                          </div>
+                        )}
+
+                        {fileContent.type === 'unsupported' && (
+                          <div className="text-center py-12">
+                            <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                            <p className="text-sm font-medium text-gray-600 mb-2">{viewingFile.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {(viewingFile.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                            <Badge variant="secondary" className="mt-2">
+                              ✓ File ready for watermarking
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full p-8">
+                      <div className="text-center text-gray-400">
+                        <FileText className="h-12 w-12 md:h-16 md:w-16 mx-auto mb-3 opacity-50" />
+                        <p className="text-sm font-medium mb-1">No documents uploaded</p>
+                        <p className="text-xs">Upload files to apply watermark</p>
+                      </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+                </div>
 
-            {/* RIGHT COLUMN - Watermark Settings */}
-            <div className="flex flex-col h-full min-w-0">
-              <Card className="flex-1 shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden flex flex-col">
-                <CardContent className="p-6 flex-1 flex flex-col">
-                  <DialogHeader className="mb-4 flex-shrink-0">
-                    <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
-                      <Droplets className="h-5 w-5 md:h-6 md:w-6 text-blue-600 shrink-0" />
-                      <span className="truncate">Watermark Settings</span>
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  {/* Tab Navigation */}
-                  <div className="mb-6 flex-shrink-0">
-                    <div className="bg-gray-100 rounded-full p-1 flex overflow-x-auto no-scrollbar">
-                      {tabs.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`px-1 xs:px-3 py-2 rounded-full text-[10px] xs:text-sm font-medium transition-all flex-1 text-center whitespace-nowrap ${activeTab === tab.id
-                            ? 'bg-black text-white'
-                            : 'text-gray-600 hover:text-gray-800'
-                            }`}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tab Content - Scrollable Area */}
-                  <div className="flex-1 overflow-y-auto pr-2 mb-4">
-                    {renderTabContent()}
-                  </div>
-
-                  {/* Action Buttons - Fixed Footer */}
-                  <div className="flex gap-3 pt-4 border-t flex-shrink-0 bg-white/50 backdrop-blur-sm rounded-lg p-3">
-                    <Button
-                      onClick={handleSubmit}
-                      className="flex-1 bg-green-600 hover:bg-green-700 shadow-md whitespace-nowrap"
-                      disabled={isLocked && !generatedStyle}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Apply Watermark
-                    </Button>
+                {/* File Navigation */}
+                {files && files.length > 1 && (
+                  <div className="mt-2 sm:mt-4 pt-2 sm:pt-3 border-t flex items-center justify-between gap-2 flex-shrink-0 p-2 sm:p-3">
                     <Button
                       variant="outline"
-                      onClick={handleUndo}
-                      className="shadow-sm flex-shrink-0"
-                      title="Undo - Revert to original file"
-                      disabled={!hasAppliedWatermark}
+                      size="sm"
+                      onClick={() => handleSelectFile(currentFileIndex - 1)}
+                      disabled={currentFileIndex === 0}
+                      className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                      title="Previous File"
                     >
-                      <RotateCw className="h-5 w-5" />
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="flex-1 text-center">
+                      <p className="text-xs sm:text-sm text-gray-600 font-medium truncate">
+                        {viewingFile?.name}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {currentFileIndex + 1} of {files.length}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSelectFile(currentFileIndex + 1)}
+                      disabled={currentFileIndex === files.length - 1}
+                      className="h-7 w-7 sm:h-9 sm:w-9 p-0"
+                      title="Next File"
+                    >
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RIGHT COLUMN - Watermark Settings (Slide-in mobile sidebar) */}
+          {/* Mobile Overlay */}
+          {isSidebarOpen && (
+            <div
+              className="absolute inset-0 bg-black/50 z-[40] lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+
+          <div className={`
+            absolute inset-y-0 left-0 z-[50] flex
+            transform transition-transform duration-300 ease-in-out
+            lg:relative lg:inset-auto lg:z-auto lg:transform-none lg:transition-none lg:w-auto
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            w-full h-full sm:w-[450px] lg:w-auto
+            rounded-none border-0 m-0 overflow-visible
+          `}>
+            {/* Mobile Sidebar Toggle Tab */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-black text-white shadow-lg flex items-center justify-center z-[60] border border-black hover:bg-gray-800 transition-all pointer-events-auto ${isSidebarOpen
+                ? 'right-0 rounded-l-xl border-r-0'
+                : '-right-10 rounded-r-xl border-l-0'
+                }`}
+              title="Toggle Watermark Settings"
+            >
+              {isSidebarOpen ? <ChevronLeft className="w-5 h-5 text-white" /> : <ChevronRight className="w-5 h-5 text-white" />}
+            </button>
+
+            <div className="w-full h-full bg-background overflow-y-auto overflow-x-hidden p-2 sm:p-4 lg:p-0 lg:pl-6 border-r lg:border-r-0 shadow-2xl lg:shadow-none m-0 rounded-none w-full max-w-full relative">
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)} className="h-full flex flex-col m-0 p-0 border-none w-full max-w-full">
+                <TabsList className="grid w-full grid-cols-4 mb-2 sm:mb-4 h-auto p-1 bg-muted/50 rounded-lg gap-1">
+                  <TabsTrigger value="basic" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Basic</TabsTrigger>
+                  <TabsTrigger value="style" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Style</TabsTrigger>
+                  <TabsTrigger value="preview" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Preview</TabsTrigger>
+                  <TabsTrigger value="generate" className="text-[10px] sm:text-sm py-1.5 sm:py-1.5 px-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">Generate</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="basic" className="flex-1 overflow-y-auto">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Droplets className="w-5 h-5" />
+                        Basic Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 w-full max-w-full overflow-hidden">
+                      {renderBasicContent()}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="style" className="flex-1 overflow-y-auto">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Type className="w-5 h-5" />
+                        Style Options
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 w-full max-w-full overflow-hidden">
+                      {renderStyleContent()}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="preview" className="flex-1 overflow-y-auto">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Eye className="w-5 h-5" />
+                        Preview & Apply
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 w-full max-w-full overflow-hidden">
+                      {renderPreviewContent()}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="generate" className="flex-1 overflow-y-auto">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shuffle className="w-5 h-5" />
+                        Generate Unique
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6 w-full max-w-full overflow-hidden">
+                      {renderGenerateContent()}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <div className="flex flex-col sm:flex-row justify-between pt-4 border-t mt-4 gap-2 pb-4 sm:pb-0">
+                  <Button
+                    variant="outline"
+                    onClick={handleUndo}
+                    disabled={!hasAppliedWatermark}
+                    title="Undo - Revert to original file"
+                    className="w-full sm:w-auto"
+                  >
+                    <RotateCw className="w-4 h-4 mr-2" />
+                    Undo
+                  </Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isLocked && !generatedStyle}
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Apply Watermark
+                  </Button>
+                </div>
+              </Tabs>
             </div>
           </div>
         </div>
+
       </DialogContent>
     </Dialog>
   );

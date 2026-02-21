@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+
 import {
   Upload,
   FileText,
@@ -78,6 +79,10 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
     }
   };
 
+  const handleDocumentTypeRadio = (typeId: string) => {
+    setDocumentTypes([typeId]);
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setUploadedFiles([...uploadedFiles, ...files]);
@@ -116,7 +121,7 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
   const submitDocuments = () => {
     const data = {
       title: documentTitle,
-      documentTypes,
+      documentType: documentTypes, // Use array directly
       files: uploadedFiles,
       recipients: selectedRecipients,
       description,
@@ -224,18 +229,39 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
           {/* Document Type Selection */}
           <div className="space-y-3">
             <Label className="text-base font-medium">Document Type</Label>
-            <div className="grid grid-cols-2 xs:grid-cols-2 md:grid-cols-3 gap-3">
+            {/* Mobile: Radio circles */}
+            <div className="grid grid-cols-1 gap-3 sm:hidden">
+              {documentTypeOptions.map((option) => (
+                <div
+                  key={option.id}
+                  className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                  onClick={() => handleDocumentTypeRadio(option.id)}
+                >
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary">
+                    {documentTypes.includes(option.id) && (
+                      <div className="w-3 h-3 rounded-full bg-primary" />
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer text-base font-medium">
+                    <option.icon className="w-4 h-4" />
+                    {option.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: Checkboxes */}
+            <div className="hidden sm:grid sm:grid-cols-3 gap-3">
               {documentTypeOptions.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent transition-colors">
                   <Checkbox
-                    id={option.id}
+                    id={`doc-upload-${option.id}`}
                     checked={documentTypes.includes(option.id)}
                     onCheckedChange={(checked) => handleDocumentTypeChange(option.id, !!checked)}
                   />
-                  <Label htmlFor={option.id} className="flex items-center gap-2 cursor-pointer text-sm sm:text-base">
-                    <option.icon className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{option.label}</span>
-                  </Label>
+                  <label htmlFor={`doc-upload-${option.id}`} className="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                    <option.icon className="w-4 h-4" />
+                    {option.label}
+                  </label>
                 </div>
               ))}
             </div>
@@ -279,12 +305,12 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
                         <span className="text-sm truncate font-medium">{file.name}</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                        <Badge variant="secondary" className="text-xs">
                           {(file.size / 1024 / 1024).toFixed(1)} MB
                         </Badge>
                         <Badge
                           variant="outline"
-                          className="text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10 flex items-center gap-1 active:scale-95 transition-transform"
+                          className="text-xs cursor-pointer hover:bg-primary/10 flex items-center gap-1 active:scale-95 transition-transform"
                           onClick={() => handleViewFile(file)}
                         >
                           <Eye className="w-3 h-3" />
@@ -292,7 +318,7 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
                         </Badge>
                         <Badge
                           variant="outline"
-                          className="text-[10px] sm:text-xs cursor-pointer hover:bg-primary/10 flex items-center gap-1 active:scale-95 transition-transform"
+                          className="text-xs cursor-pointer hover:bg-primary/10 flex items-center gap-1 active:scale-95 transition-transform"
                           onClick={() => setShowWatermarkModal(true)}
                         >
                           <Settings className="w-3 h-3" />
@@ -453,7 +479,7 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
 
       {/* Document Assignment Modal */}
       <Dialog open={showAssignmentModal} onOpenChange={setShowAssignmentModal}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Assign Documents to Recipients</DialogTitle>
             <DialogDescription>
@@ -471,7 +497,30 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
+                  {/* Mobile: Radio circles */}
+                  <div className="grid grid-cols-1 gap-3 sm:hidden">
+                    {selectedRecipients.map((recipientId) => (
+                      <div
+                        key={recipientId}
+                        className="flex items-center space-x-3 p-3 border rounded hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          const isChecked = documentAssignments[file.name]?.includes(recipientId) ?? true;
+                          handleAssignmentChange(file.name, recipientId, !isChecked);
+                        }}
+                      >
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary shrink-0">
+                          {(documentAssignments[file.name]?.includes(recipientId) ?? true) && (
+                            <div className="w-3 h-3 rounded-full bg-primary" />
+                          )}
+                        </div>
+                        <Label className="text-sm cursor-pointer truncate">
+                          {recipientId.replace('-', ' ').toUpperCase()}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Desktop: Checkboxes */}
+                  <div className="hidden sm:grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {selectedRecipients.map((recipientId) => (
                       <div key={recipientId} className="flex items-center space-x-2 p-2 border rounded hover:bg-accent/50 transition-colors">
                         <Checkbox

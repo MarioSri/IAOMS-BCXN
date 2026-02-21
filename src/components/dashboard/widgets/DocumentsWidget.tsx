@@ -89,8 +89,8 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
     ];
 
     // Add specific role mappings
-    if (currentUserRole.toLowerCase() === 'principal') {
-      roleVariations.push('Dr. Principal', 'Principal', 'Dr. Robert Principal');
+    if (currentUserRole.toLowerCase() === 'principal' || currentUserRole.toLowerCase() === 'demo-work') {
+      roleVariations.push('Dr. Principal', 'Principal', 'Dr. Robert Principal', 'Demo Work Role');
     } else if (currentUserRole.toLowerCase() === 'registrar') {
       roleVariations.push('Prof. Registrar', 'Registrar', 'Prof. Sarah Registrar');
     } else if (currentUserRole.toLowerCase() === 'hod') {
@@ -172,7 +172,7 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
         }));
 
         // Only show static mock data for Principal role
-        const staticPendingDocs = userRole === 'principal' ? [
+        const staticPendingDocs = (userRole === 'principal' || userRole === 'demo-work') ? [
           {
             id: 'faculty-meeting',
             title: 'Faculty Meeting Minutes – Q4 2024',
@@ -402,7 +402,10 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
       isCustomizing && "cursor-pointer"
     )} onClick={onSelect}>
       <CardHeader className={cn(isMobile && "pb-3")}>
-        <div className="flex items-center justify-between">
+        <div className={cn(
+          "flex justify-between",
+          isMobile ? "flex-col gap-3" : "items-center"
+        )}>
           <CardTitle className={cn(
             "flex items-center gap-2",
             isMobile ? "text-lg" : "text-xl"
@@ -416,15 +419,18 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
             )}
           </CardTitle>
 
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile && "w-full justify-between"
+          )}>
+            <div className={cn("flex gap-1", isMobile && "flex-1")}>
               {(['all', 'pending', 'emergency'] as const).map(filterType => (
                 <Button
                   key={filterType}
                   variant={filter === filterType ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setFilter(filterType)}
-                  className={cn(isMobile && "text-xs px-2")}
+                  className={cn(isMobile ? "text-xs px-3 h-8 flex-1" : "px-3")}
                 >
                   {filterType === 'all' ? 'All' :
                     filterType === 'pending' ? 'Pending' : 'Emergency'}

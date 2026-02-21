@@ -38,6 +38,7 @@ export function AuthenticationCard({ onLogin }: AuthenticationCardProps) {
 
   const roles = [
     { value: "principal", label: "Principal", icon: Building2 },
+    { value: "demo-work", label: "Demo Work Role", icon: Building2 },
     { value: "registrar", label: "Registrar", icon: Shield },
     { value: "hod", label: "HOD", icon: Users },
     { value: "program-head", label: "Program Department Head", icon: Users },
@@ -147,8 +148,8 @@ export function AuthenticationCard({ onLogin }: AuthenticationCardProps) {
                   key={index}
                   onClick={() => setCurrentSlide(index)}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentSlide
-                      ? 'bg-white scale-110'
-                      : 'bg-white/50 hover:bg-white/75'
+                    ? 'bg-white scale-110'
+                    : 'bg-white/50 hover:bg-white/75'
                     }`}
                 />
               ))}

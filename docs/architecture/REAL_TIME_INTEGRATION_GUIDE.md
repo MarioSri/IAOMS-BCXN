@@ -26,7 +26,7 @@ UnifiedDocumentSystem.tsx      # System integration wrapper
 ```
 Track Documents ←→ Real-time Service ←→ Approval Center
        ↕                    ↕                    ↕
-Document Management ←→ Socket.IO + Supabase ←→ Emergency Management
+Document Management ←→ Socket.IO + localStorage ←→ Emergency Management
        ↕                    ↕                    ↕
 Approval Chain ←→ Real-time Events ←→ Recipient Management
 ```
@@ -138,7 +138,6 @@ await updateRecipients(documentId,
 
 ### **Multi-Channel Notifications**
 - ✅ Socket.IO for real-time updates
-- ✅ Supabase Realtime for database changes
 - ✅ LocalStorage events for cross-tab sync
 - ✅ Custom events for component communication
 
@@ -224,8 +223,6 @@ user.department === 'CSE' → 'hod-dr.-cse-hod'
 ```env
 VITE_API_URL=http://localhost:3001/api
 VITE_WS_URL=http://localhost:3001
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_key
 ```
 
 ### **Backend Integration**
@@ -235,14 +232,6 @@ socket.emit('document-created', documentData);
 socket.emit('document-approved', { documentId, approvedBy });
 socket.emit('document-rejected', { documentId, rejectedBy });
 socket.emit('recipients-updated', { documentId, recipients });
-
-// Supabase Realtime
-supabase
-  .channel('documents')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, 
-    (payload) => handleChange(payload)
-  )
-  .subscribe();
 ```
 
 ---
@@ -286,7 +275,6 @@ window.realTimeDocumentService.updateRecipients(
 
 ### **Scalability**
 - ✅ Socket.IO room-based updates
-- ✅ Supabase row-level security
 - ✅ Pagination for large document lists
 - ✅ Connection pooling and retry logic
 

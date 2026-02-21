@@ -160,7 +160,6 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Supabase Realtime removed (localStorage only)
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [allMeetings, setAllMeetings] = useState<Meeting[]>([]); // Store all meetings before filtering
@@ -444,7 +443,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
   const [availableAttendees, setAvailableAttendees] = useState<any[]>([]);
 
-  // Load real recipients from Supabase
+  // Load available attendees from recipients list
   useEffect(() => {
     const loadAttendees = async () => {
       try {
@@ -857,13 +856,13 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
         {/* View Mode Tabs */}
         <Tabs value={viewMode} onValueChange={(value: any) => setViewMode(value)} className="w-full">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <TabsList className="grid w-full sm:w-fit grid-cols-2">
-              <TabsTrigger value="calendar" className="gap-2">
-                <CalendarIcon className="w-4 h-4" />
+            <TabsList className="grid w-full h-auto sm:h-10 sm:w-fit grid-cols-2">
+              <TabsTrigger value="calendar" className="gap-1.5 sm:gap-2 text-xs sm:text-sm py-2 sm:py-1.5">
+                <CalendarIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 Calendar
               </TabsTrigger>
-              <TabsTrigger value="list" className="gap-2">
-                <Users className="w-4 h-4" />
+              <TabsTrigger value="list" className="gap-1.5 sm:gap-2 text-xs sm:text-sm py-2 sm:py-1.5">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 List View
               </TabsTrigger>
             </TabsList>
@@ -1029,51 +1028,51 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                 <CardDescription>Overview of your scheduled meetings</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Total Meetings</p>
-                          <p className="text-2xl font-bold">2</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">Total Meetings</p>
+                          <p className="text-lg sm:text-2xl font-bold">2</p>
                         </div>
-                        <CalendarIcon className="w-8 h-8 text-muted-foreground" />
+                        <CalendarIcon className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">This Week</p>
-                          <p className="text-2xl font-bold">0</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">This Week</p>
+                          <p className="text-lg sm:text-2xl font-bold">0</p>
                         </div>
-                        <TrendingUp className="w-8 h-8 text-muted-foreground" />
+                        <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Online Meetings</p>
-                          <p className="text-2xl font-bold">2</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">Online Meetings</p>
+                          <p className="text-lg sm:text-2xl font-bold">2</p>
                         </div>
-                        <Video className="w-8 h-8 text-muted-foreground" />
+                        <Video className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3 sm:p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-muted-foreground">Avg Duration</p>
-                          <p className="text-2xl font-bold">105m</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">Avg Duration</p>
+                          <p className="text-lg sm:text-2xl font-bold">105m</p>
                         </div>
-                        <Timer className="w-8 h-8 text-muted-foreground" />
+                        <Timer className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
@@ -1279,7 +1278,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
         {/* New Meeting Dialog */}
         <Dialog open={showNewMeetingDialog} onOpenChange={setShowNewMeetingDialog}>
-          <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5" />
@@ -1675,7 +1674,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
         {/* Conflict Resolution Dialog */}
         <Dialog open={showConflictDialog} onOpenChange={setShowConflictDialog}>
-          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -1744,7 +1743,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
         {/* AI Suggestions Dialog */}
         <Dialog open={showAISuggestionsDialog} onOpenChange={setShowAISuggestionsDialog}>
-          <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Brain className="w-5 h-5 text-blue-500" />
@@ -1802,7 +1801,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
         {/* Meeting Details Dialog */}
         <Dialog open={showMeetingDetails} onOpenChange={setShowMeetingDetails}>
-          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg">
             <DialogHeader>
               <DialogTitle>Meeting Details</DialogTitle>
             </DialogHeader>
@@ -1861,7 +1860,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
 
         {/* Edit Meeting Dialog */}
         <Dialog open={showEditMeeting} onOpenChange={setShowEditMeeting}>
-          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg">
             <DialogHeader>
               <DialogTitle>Edit Meeting</DialogTitle>
             </DialogHeader>

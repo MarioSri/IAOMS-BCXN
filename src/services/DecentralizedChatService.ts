@@ -1,10 +1,10 @@
-import { 
-  ChatChannel, 
-  ChatUser, 
-  ChatMessage, 
-  ChatNotification, 
-  SignatureRequest, 
-  ChatPoll, 
+import {
+  ChatChannel,
+  ChatUser,
+  ChatMessage,
+  ChatNotification,
+  SignatureRequest,
+  ChatPoll,
   ChatThread,
   UserRole,
   Department,
@@ -49,15 +49,14 @@ class SimpleEventEmitter {
   }
 }
 
+import { io, Socket } from 'socket.io-client';
+
 export class DecentralizedChatService extends SimpleEventEmitter {
-  private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 1000;
+  private socket: Socket | null = null;
   private isConnected = false;
   private messageQueue: ChatMessage[] = [];
   private offlineMode = false;
-  
+
   // Local storage keys
   private static readonly STORAGE_KEYS = {
     CHANNELS: 'chat_channels',
@@ -78,51 +77,41 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   // Connection Management
   private initializeConnection(): void {
     try {
-      this.ws = new WebSocket(this.wsUrl);
-      
-      this.ws.onopen = () => {
-        console.log('Chat service connected');
+      this.socket = io(this.wsUrl, {
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        transports: ['websocket', 'polling']
+      });
+
+      this.socket.on('connect', () => {
+        console.log('Chat service connected (Socket.io)');
         this.isConnected = true;
-        this.reconnectAttempts = 0;
         this.emit('connected');
         this.syncOfflineData();
         this.processMessageQueue();
-      };
+      });
 
-      this.ws.onmessage = (event) => {
-        const chatEvent: ChatEvent = JSON.parse(event.data);
+      this.socket.on('chat:event', (chatEvent: ChatEvent) => {
         this.handleIncomingEvent(chatEvent);
-      };
+      });
 
-      this.ws.onclose = () => {
+      this.socket.on('disconnect', () => {
         console.log('Chat service disconnected');
         this.isConnected = false;
         this.emit('disconnected');
-        this.handleReconnection();
-      };
+      });
 
-      this.ws.onerror = (error) => {
-        console.error('Chat service error:', error);
+      this.socket.on('connect_error', (error) => {
+        console.error('Chat service connection error:', error);
         this.emit('error', error);
-      };
+        this.handleOfflineMode();
+      });
     } catch (error) {
       console.error('Failed to initialize chat connection:', error);
       this.handleOfflineMode();
     }
   }
 
-  private handleReconnection(): void {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      setTimeout(() => {
-        this.reconnectAttempts++;
-        console.log(`Reconnection attempt ${this.reconnectAttempts}`);
-        this.initializeConnection();
-      }, this.reconnectDelay * Math.pow(2, this.reconnectAttempts));
-    } else {
-      console.log('Max reconnection attempts reached, switching to offline mode');
-      this.handleOfflineMode();
-    }
-  }
 
   private handleOfflineMode(): void {
     this.offlineMode = true;
@@ -147,7 +136,7 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   // Auto-create role-based channels
   async initializeRoleBasedChannels(currentUser: ChatUser): Promise<void> {
     const channels = await this.generateRoleBasedChannels(currentUser);
-    
+
     for (const channel of channels) {
       await this.createChannel(channel);
     }
@@ -155,7 +144,7 @@ export class DecentralizedChatService extends SimpleEventEmitter {
 
   private async generateRoleBasedChannels(user: ChatUser): Promise<Partial<ChatChannel>[]> {
     const channels: Partial<ChatChannel>[] = [];
-    
+
     // HOD channels by department
     if (user.role === 'hod') {
       channels.push({
@@ -609,9 +598,9 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       publicKey: this.generateId(),
       privateKey: this.generateId()
     };
-    
+
     localStorage.setItem(
-      DecentralizedChatService.STORAGE_KEYS.ENCRYPTION_KEYS, 
+      DecentralizedChatService.STORAGE_KEYS.ENCRYPTION_KEYS,
       JSON.stringify(keyPair)
     );
   }
@@ -655,8 +644,8 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   }
 
   public sendWebSocketMessage(event: ChatEvent): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(event));
+    if (this.socket && this.isConnected) {
+      this.socket.emit('chat:event', event);
     }
   }
 
@@ -734,8 +723,8 @@ export class DecentralizedChatService extends SimpleEventEmitter {
 
   // Public API methods
   public disconnect(): void {
-    if (this.ws) {
-      this.ws.close();
+    if (this.socket) {
+      this.socket.disconnect();
     }
   }
 

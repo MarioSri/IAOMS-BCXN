@@ -159,8 +159,7 @@ module.exports = {
   "compression": "^1.7.4",
   "express-rate-limit": "^7.1.5",
   "swagger-jsdoc": "^6.2.8",
-  "swagger-ui-express": "^5.0.0",
-  "@supabase/supabase-js": "^2.39.0"
+  "swagger-ui-express": "^5.0.0"
 }
 ```
 
@@ -185,7 +184,6 @@ module.exports = {
 backend/
 ├── src/
 │   ├── config/
-│   │   ├── supabase.ts          ✅ EXISTS
 │   │   └── swagger.ts           ✅ EXISTS
 │   ├── controllers/
 │   │   ├── authController.ts    ✅ EXISTS
@@ -201,7 +199,6 @@ backend/
 │   │   ├── emailService.ts      ✅ EXISTS (Resend)
 │   │   ├── googleDriveService.ts ✅ EXISTS
 │   │   ├── socketService.ts     ✅ EXISTS
-│   │   ├── realtimeService.ts   ✅ EXISTS
 │   │   └── cacheService.ts      ✅ EXISTS
 │   ├── types/
 │   │   └── index.ts             ✅ EXISTS
@@ -277,7 +274,6 @@ type backend\tests\auth.test.ts
 | Node.js 18+ | ✅ | package.json engines | YES |
 | Express.js | ✅ | src/server.ts | YES |
 | TypeScript | ✅ | All .ts files | YES |
-| Supabase | ✅ | config/supabase.ts | YES |
 | Socket.IO | ✅ | services/socketService.ts | YES |
 | Google Drive | ✅ | services/googleDriveService.ts | YES |
 | Resend API | ✅ | services/emailService.ts | YES |

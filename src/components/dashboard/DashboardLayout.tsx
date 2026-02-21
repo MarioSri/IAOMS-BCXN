@@ -40,11 +40,12 @@ export function DashboardLayout({ children, userRole, onLogout }: DashboardLayou
   const getRoleInfo = () => {
     switch (userRole) {
       case "principal":
+      case "demo-work":
         return {
           icon: Crown,
-          title: "Principal",
+          title: userRole === "demo-work" ? "Demo Work Role" : "Principal",
           color: "bg-purple-100 text-purple-700 border-purple-200",
-          description: "Institution Principal"
+          description: userRole === "demo-work" ? "Demo Work Role" : "Institution Principal"
         };
       case "registrar":
         return {

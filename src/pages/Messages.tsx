@@ -16,13 +16,16 @@ import {
   Video
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useResponsive } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 
 export default function Messages() {
   const { user } = useAuth();
+  const { isMobile } = useResponsive();
 
   const [chatService] = useState(() => new DecentralizedChatService(
-    import.meta.env.VITE_WS_URL || 'ws://localhost:8080',
-    import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+    import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -185,47 +188,54 @@ export default function Messages() {
           <p className="text-sm sm:text-base text-muted-foreground">Messages, notes, and reminders for collaborative work</p>
         </div>
 
-        <Tabs defaultValue="notes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
-            <TabsTrigger value="notes" className="text-xs sm:text-sm py-2 sm:py-1.5 h-full whitespace-normal">
-              <span className="hidden sm:inline">Notes & Reminders</span>
-              <span className="sm:hidden">Notes</span>
-            </TabsTrigger>
+        <Tabs defaultValue={isMobile ? "chat" : "notes"} className="space-y-6">
+          <TabsList className={cn(
+            "grid w-full h-auto",
+            isMobile ? "grid-cols-2" : "grid-cols-3"
+          )}>
+            {!isMobile && (
+              <TabsTrigger value="notes" className="text-xs sm:text-sm py-2 sm:py-1.5 h-full whitespace-normal">
+                <span className="hidden sm:inline">Notes & Reminders</span>
+                <span className="sm:hidden">Notes</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="chat" className="relative text-xs sm:text-sm py-2 sm:py-1.5 h-full whitespace-normal">
               <span className="hidden sm:inline">Department Chat</span>
               <span className="sm:hidden">Chat</span>
               {stats.unreadMessages > 0 && (
-                <Badge variant="destructive" className="ml-1 sm:ml-2 px-1 py-0 text-[10px] sm:text-xs">
+                <Badge variant="destructive" className="ml-1 sm:ml-2 px-1 py-0 text-[10px] sm:text-xs self-center">
                   {stats.unreadMessages}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="live-requests" className="relative text-xs sm:text-sm py-2 sm:py-1.5 h-full whitespace-normal">
-              <div className="flex items-center space-x-1 sm:space-x-2">
-                <div className="relative w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0">
-                  <div className="absolute inset-0 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full"></div>
-                  <div className="absolute inset-0.5 sm:inset-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></div>
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <div className="relative w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-green-400 rounded-full"></div>
+                  <div className="relative w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full"></div>
                 </div>
                 <span>LiveMeet+</span>
               </div>
               {stats.liveMeetingRequests > 0 && (
-                <Badge variant="destructive" className="ml-1 sm:ml-2 px-1 py-0 text-[10px] sm:text-xs animate-pulse">
+                <Badge variant="destructive" className="ml-1 sm:ml-2 px-1 py-0 text-[10px] sm:text-xs animate-pulse self-center">
                   {stats.liveMeetingRequests}
                 </Badge>
               )}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="notes" className="space-y-6">
-            <NotesReminders userRole={user.role} isMessagesPage={true} />
-          </TabsContent>
+          {!isMobile && (
+            <TabsContent value="notes" className="space-y-6">
+              <NotesReminders userRole={user.role} isMessagesPage={true} />
+            </TabsContent>
+          )}
 
           <TabsContent value="live-requests" className="space-y-6">
             <LiveMeetingRequestManager />
           </TabsContent>
 
           <TabsContent value="chat" className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 sm:gap-4 mb-6">
+            <div className="hidden md:grid grid-cols-6 gap-3 sm:gap-4 mb-6">
               <Card>
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
@@ -302,13 +312,13 @@ export default function Messages() {
               </Card>
             </div>
 
-            <Card className="min-h-[calc(100vh-350px)] sm:min-h-[600px]">
-              <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Card className="min-h-[calc(100vh-350px)] sm:min-h-[600px] border-none sm:border">
+              <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-xl">
                   <Users className="h-4 w-4 sm:h-5 sm:w-5" />
                   Department Communication Hub
                 </CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
+                <CardDescription className="text-[10px] sm:text-sm hidden xs:block">
                   Real-time chat, document workflows, and collaboration tools
                 </CardDescription>
               </CardHeader>

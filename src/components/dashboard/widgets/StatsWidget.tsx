@@ -42,9 +42,9 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     // Simulate API call to fetch stats
     const fetchStats = async () => {
       setLoading(true);
-      
+
       // Only show mock data for Principal role
-      const mockStats: DocumentStats = userRole === 'principal' ? {
+      const mockStats: DocumentStats = (userRole === 'principal' || userRole === 'demo-work') ? {
         total: 247,
         pending: 18,
         approved: 198,
@@ -144,7 +144,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     ];
 
     // Add role-specific stats
-    if (userRole === 'principal') {
+    if (userRole === 'principal' || userRole === 'demo-work') {
       baseStats.push({
         title: "Emergency Docs",
         value: stats.emergency.toString(),
@@ -241,8 +241,8 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
                 </div>
                 <div className={cn(
                   "text-right",
-                  stat.trend === 'up' ? 'text-success' : 
-                  stat.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'
+                  stat.trend === 'up' ? 'text-success' :
+                    stat.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'
                 )}>
                   <span className={cn(
                     "font-medium",
@@ -252,7 +252,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
                   </span>
                 </div>
               </div>
-              
+
               <div>
                 <p className={cn(
                   "font-bold",
@@ -272,7 +272,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
         </div>
 
         {/* Additional Role-Specific Metrics */}
-        {stats && (userRole === 'principal' || userRole === 'registrar') && (
+        {stats && (userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
           <div className="mt-6 pt-4 border-t">
             <h4 className={cn(
               "font-semibold mb-3",

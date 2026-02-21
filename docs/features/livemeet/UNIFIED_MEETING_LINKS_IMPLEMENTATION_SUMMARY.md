@@ -281,7 +281,7 @@ Before deploying to production:
 3. **localStorage Only**
    - Meetings stored in browser only
    - Not synced across devices
-   - Consider migrating to Supabase database
+   - Consider migrating to a persistent database
 
 4. **No Calendar Sync**
    - Meetings created in external calendars won't appear in app
@@ -304,7 +304,7 @@ Before deploying to production:
 
 ### Future Enhancements
 1. Backend API service for secure credential management
-2. Database migration from localStorage to Supabase
+2. Database migration from localStorage to a persistent backend
 3. Email notifications with meeting links
 4. Calendar sync (two-way)
 5. Meeting recording capabilities

@@ -7,7 +7,7 @@ interface ActionData {
   recipientName: string;
   recipientRole: string;
   actionType: 'approve' | 'reject';
-  signatureData?: any;
+  signatureData?: unknown;
 }
 
 export async function recordAction(actionData: ActionData): Promise<{ success: boolean; rekorUUID: string }> {

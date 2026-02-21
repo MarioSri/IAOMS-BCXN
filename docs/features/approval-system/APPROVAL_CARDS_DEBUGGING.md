@@ -12,7 +12,7 @@ Recipient ID mismatch between:
 
 ### **Step 1: Document Submission**
 ```typescript
-// RecipientSelector loads from Supabase
+// RecipientSelector loads from local storage
 recipients = [
   { user_id: 'uuid-123', name: 'Dr. Smith', role: 'Principal' },
   { user_id: 'uuid-456', name: 'Mr. Doe', role: 'EMPLOYEE' }
@@ -37,8 +37,8 @@ localStorage.setItem('pending-approvals', JSON.stringify([approvalCard]))
 // User logs in as Principal
 login('principal')
 
-// AuthContext queries Supabase
-recipients = await supabaseWorkflowService.getRecipients()
+// AuthContext queries local storage
+recipients = await workflowService.getRecipients()
 
 // Finds matching recipient
 recipient = recipients.find(r => r.role === 'Principal')
@@ -148,13 +148,12 @@ user.id: 'uuid-123'  // UUID
 3. Logout → Login as Principal
 4. Both users should see card in Approval Center
 
-### **Test 3: Database Verification**
-```sql
--- Check recipients table
-SELECT user_id, name, role, role_type FROM recipients;
-
--- Verify UUIDs match what's in approval cards
--- Check localStorage: pending-approvals
+### **Test 3: Data Verification**
+```
+// Check recipients data in localStorage
+// Open browser dev tools > Application > Local Storage
+// Check for recipients data and verify UUIDs match approval cards
+// Check localStorage: pending-approvals
 ```
 
 ## Expected Console Output

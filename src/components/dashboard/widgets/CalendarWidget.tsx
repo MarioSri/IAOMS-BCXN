@@ -307,7 +307,10 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
       isCustomizing && "cursor-pointer"
     )} onClick={onSelect}>
       <CardHeader className={cn(isMobile && "pb-3")}>
-        <div className="flex items-center justify-between">
+        <div className={cn(
+          "flex justify-between",
+          isMobile ? "flex-col gap-3" : "items-center"
+        )}>
           <CardTitle className={cn(
             "flex items-center gap-2",
             isMobile ? "text-lg" : "text-xl"

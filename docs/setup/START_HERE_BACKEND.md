@@ -31,7 +31,7 @@ Your backend is **FULLY IMPLEMENTED**:
 
 - ✅ Express.js server configured
 - ✅ TypeScript setup complete
-- ✅ Supabase database connected
+- ✅ Local data storage configured
 - ✅ Authentication system ready
 - ✅ File upload/download working
 - ✅ Email service configured
@@ -116,10 +116,9 @@ netstat -ano | findstr :3001
 taskkill /PID <PID> /F
 ```
 
-### Can't connect to Supabase?
-- Check internet connection
-- Verify `.env` has correct `SUPABASE_URL`
-- Check Supabase dashboard status
+### Backend won't connect?
+- Verify the backend server is running
+- Check `.env` for correct configuration
 
 ---
 

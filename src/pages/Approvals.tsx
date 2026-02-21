@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useResponsive } from "@/hooks/useResponsive";
 import { ResponsiveLayout } from "@/components/layout/ResponsiveLayout";
 import { AdvancedDigitalSignature } from "@/components/signature/AdvancedDigitalSignature";
 import { LiveMeetingRequestModal } from "@/components/meetings/LiveMeetingRequestModal";
@@ -24,6 +25,7 @@ const Approvals = () => {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isMobile } = useResponsive();
 
   // Use localStorage-based system exclusively
   const {
@@ -1079,7 +1081,7 @@ const Approvals = () => {
         }
       }));
 
-      // Record action to Sigstore Rekor + Supabase
+      // Record action to Sigstore Rekor
       try {
         await recordAction({
           documentId: docId,
@@ -1482,7 +1484,7 @@ const Approvals = () => {
         }
       }));
 
-      // Record action to Sigstore Rekor + Supabase
+      // Record action to Sigstore Rekor
       try {
         await recordAction({
           documentId: docId,
@@ -1511,8 +1513,8 @@ const Approvals = () => {
     }
   };
 
-  // Show static mock cards for Principal and Employee roles
-  const staticPendingDocs = (user.role === 'principal' || user.role === 'employee') ? [
+  // Show static mock cards for Principal, Demo Work and Employee roles
+  const staticPendingDocs = (user.role === 'principal' || user.role === 'demo-work' || user.role === 'employee') ? [
     {
       id: 'faculty-meeting',
       title: 'Faculty Meeting Minutes – Q4 2024',
@@ -1639,7 +1641,7 @@ const Approvals = () => {
         const recipientLower = recipientId.toLowerCase();
         const userRoleLower = currentUserRole.toLowerCase();
 
-        // ✅ Check UUID match first (for Supabase recipients)
+        // Check UUID match first
         if (recipientId === currentUserId) {
           console.log(`  "${recipientId}" -> UUID MATCH`);
           return true;
@@ -1968,7 +1970,7 @@ const Approvals = () => {
   };
 
   // Show static approval history for Principal and Employee roles  
-  const recentApprovals = (user.role === 'principal' || user.role === 'employee') ? [
+  const recentApprovals = (user.role === 'principal' || user.role === 'demo-work' || user.role === 'employee') ? [
     {
       id: 10,
       title: "Academic Standards Review Report",
@@ -2183,295 +2185,300 @@ const Approvals = () => {
                     // For non-tracking cards or legacy cards, show if user is in recipients
                     console.log('  ✅ Non-workflow card, showing to recipient');
                     return true;
-                  }).map((doc) => (
-                    <Card key={doc.id} className={`hover:shadow-md transition-shadow ${doc.isEmergency ? 'border-destructive bg-red-50 animate-pulse' : ''}`}>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col lg:flex-row gap-6">
-                          <div className="flex-1 space-y-4">
-                            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                              <div className="w-full sm:w-auto">
-                                <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                  {doc.title}
-                                  {doc.isEmergency && (
-                                    <Badge variant="destructive" className="text-xs">
-                                      <AlertTriangle className="w-3 h-3 mr-1" />
-                                      EMERGENCY
-                                    </Badge>
-                                  )}
-                                  {(() => {
-                                    // Check if this document has escalation
-                                    const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-                                    const trackingCard = trackingCards.find((tc: any) =>
-                                      tc.id === doc.id || tc.id === doc.trackingCardId
-                                    );
-                                    const escalationLevel = trackingCard?.workflow?.escalationLevel || 0;
-
-                                    if (escalationLevel > 0) {
-                                      return (
-                                        <Badge variant="outline" className="text-xs bg-orange-50 border-orange-300 text-orange-700">
-                                          <Zap className="w-3 h-3 mr-1" />
-                                          Escalated {escalationLevel}x
-                                        </Badge>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
-                                </h3>
-                                <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <FileText className="h-4 w-4" />
-                                    {doc.type}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <User className="h-4 w-4" />
-                                    {doc.submitter}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-4 w-4" />
-                                    {doc.submittedDate}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                                <Clock className="h-4 w-4 text-yellow-600" />
-                                <Badge variant="warning">Pending</Badge>
-                                <Badge variant="outline" className={`${doc.priority === 'high' || doc.priority === 'critical' ? 'text-orange-600 font-semibold' :
-                                  doc.priority === 'medium' || doc.priority === 'urgent' ? 'text-yellow-600' :
-                                    'text-blue-600'
-                                  }`}>
-                                  {doc.priority === 'high' || doc.priority === 'critical' ? 'High Priority' :
-                                    doc.priority === 'medium' || doc.priority === 'urgent' ? 'Medium Priority' :
-                                      'Normal Priority'}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="text-sm font-medium">Description</span>
-                              </div>
-                              <div className="bg-muted p-3 rounded text-sm">
-                                <p>{doc.description}</p>
-                              </div>
-                            </div>
-
-                            {/* Action Required Indicator */}
-                            {(() => {
-                              const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-                              const trackingCard = trackingCards.find((tc: any) =>
-                                tc.id === doc.id || tc.id === doc.trackingCardId
-                              );
-                              const escalationLevel = trackingCard?.workflow?.escalationLevel || 0;
-
-                              if (doc.isEmergency || escalationLevel > 0) {
-                                return (
-                                  <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
-                                    <Zap className="w-4 h-4 text-warning" />
-                                    <span className="text-sm font-medium text-warning">
-                                      Action Required
-                                    </span>
-                                    {escalationLevel > 0 && (
-                                      <Badge variant="outline" className="text-xs bg-orange-100 border-orange-300 text-orange-700">
-                                        Escalated {escalationLevel}x
+                  })
+                    // 🆕 REMOVE DUPLICATE CARDS BY ID TO FIX REACT KEY WARNING
+                    .filter((doc, index, self) =>
+                      index === self.findIndex((d) => d.id === doc.id)
+                    )
+                    .map((doc) => (
+                      <Card key={doc.id} className={`hover:shadow-md transition-shadow ${doc.isEmergency ? 'border-destructive bg-red-50 animate-pulse' : ''}`}>
+                        <CardContent className="p-6">
+                          <div className="flex flex-col lg:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                    {doc.title}
+                                    {doc.isEmergency && (
+                                      <Badge variant="destructive" className="text-xs">
+                                        <AlertTriangle className="w-3 h-3 mr-1" />
+                                        EMERGENCY
                                       </Badge>
                                     )}
+                                    {(() => {
+                                      // Check if this document has escalation
+                                      const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
+                                      const trackingCard = trackingCards.find((tc: any) =>
+                                        tc.id === doc.id || tc.id === doc.trackingCardId
+                                      );
+                                      const escalationLevel = trackingCard?.workflow?.escalationLevel || 0;
+
+                                      if (escalationLevel > 0) {
+                                        return (
+                                          <Badge variant="outline" className="text-xs bg-orange-50 border-orange-300 text-orange-700">
+                                            <Zap className="w-3 h-3 mr-1" />
+                                            Escalated {escalationLevel}x
+                                          </Badge>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <FileText className="h-4 w-4" />
+                                      {doc.type}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-4 w-4" />
+                                      {doc.submitter}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      {doc.submittedDate}
+                                    </div>
                                   </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <Badge variant="warning">Pending</Badge>
+                                  <Badge variant="outline" className={`${doc.priority === 'high' || doc.priority === 'critical' ? 'text-orange-600 font-semibold' :
+                                    doc.priority === 'medium' || doc.priority === 'urgent' ? 'text-yellow-600' :
+                                      'text-blue-600'
+                                    }`}>
+                                    {doc.priority === 'high' || doc.priority === 'critical' ? 'High Priority' :
+                                      doc.priority === 'medium' || doc.priority === 'urgent' ? 'Medium Priority' :
+                                        'Normal Priority'}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Description</span>
+                                </div>
+                                <div className="bg-muted p-3 rounded text-sm">
+                                  <p>{doc.description}</p>
+                                </div>
+                              </div>
+
+                              {/* Action Required Indicator */}
+                              {(() => {
+                                const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
+                                const trackingCard = trackingCards.find((tc: any) =>
+                                  tc.id === doc.id || tc.id === doc.trackingCardId
                                 );
-                              }
-                              return null;
-                            })()}
+                                const escalationLevel = trackingCard?.workflow?.escalationLevel || 0;
 
-                            {/* Shared Comments from Previous Approvers */}
-                            {sharedComments[doc.id]?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <Share2 className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
-                                </div>
-                                <div className="space-y-2">
-                                  {sharedComments[doc.id].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
-                                    <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
-                                      <p className="text-blue-800">{shared.comment}</p>
-                                      <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
+                                if (doc.isEmergency || escalationLevel > 0) {
+                                  return (
+                                    <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
+                                      <Zap className="w-4 h-4 text-warning" />
+                                      <span className="text-sm font-medium text-warning">
+                                        Action Required
+                                      </span>
+                                      {escalationLevel > 0 && (
+                                        <Badge variant="outline" className="text-xs bg-orange-100 border-orange-300 text-orange-700">
+                                          Escalated {escalationLevel}x
+                                        </Badge>
+                                      )}
                                     </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                                  );
+                                }
+                                return null;
+                              })()}
 
-                            {/* Your Shared Comments (above input field) */}
-                            {sharedComments[doc.id]?.filter(s => s.sharedBy === user?.name).length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <Share2 className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
-                                </div>
+                              {/* Shared Comments from Previous Approvers */}
+                              {sharedComments[doc.id]?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                                 <div className="space-y-2">
-                                  {sharedComments[doc.id].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                    <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex justify-between items-start">
-                                      <div className="flex-1">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments[doc.id].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
+                                      <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
                                         <p className="text-blue-800">{shared.comment}</p>
+                                        <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
                                       </div>
-                                      <div className="flex gap-1 ml-2">
-                                        <button
-                                          className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                          onClick={() => {
-                                            const originalIndex = sharedComments[doc.id].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                            handleEditSharedComment(doc.id, originalIndex);
-                                          }}
-                                          title="Edit"
-                                        >
-                                          <SquarePen className="h-4 w-4 text-blue-700" />
-                                        </button>
-                                        <button
-                                          className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                          onClick={() => {
-                                            const originalIndex = sharedComments[doc.id].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                            handleUndoSharedComment(doc.id, originalIndex);
-                                          }}
-                                          title="Undo"
-                                        >
-                                          <Undo2 className="h-4 w-4 text-blue-700" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
-                            {comments[doc.id]?.filter(c => c.author === user?.name).length > 0 && (
-                              <div className="space-y-2">
+                              {/* Your Shared Comments (above input field) */}
+                              {sharedComments[doc.id]?.filter(s => s.sharedBy === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments[doc.id].filter(s => s.sharedBy === user?.name).map((shared, index) => (
+                                      <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p className="text-blue-800">{shared.comment}</p>
+                                        </div>
+                                        <div className="flex gap-1 ml-2">
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments[doc.id].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleEditSharedComment(doc.id, originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments[doc.id].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleUndoSharedComment(doc.id, originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {comments[doc.id]?.filter(c => c.author === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {comments[doc.id].filter(c => c.author === user?.name).map((commentObj, index) => (
+                                      <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p>{commentObj.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
+                                        </div>
+                                        <div className="flex gap-1 ml-2">
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments[doc.id].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleEditComment(doc.id, originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments[doc.id].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleUndoComment(doc.id, originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {!comments[doc.id]?.length && (
                                 <div className="flex items-center gap-1">
-                                  <MessageSquare className="h-4 w-4" />
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                   <span className="text-sm font-medium">Your Comments</span>
                                 </div>
-                                <div className="space-y-2">
-                                  {comments[doc.id].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                    <div key={index} className="bg-muted p-3 rounded-lg text-sm flex justify-between items-start">
-                                      <div className="flex-1">
-                                        <p>{commentObj.message}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
-                                      </div>
-                                      <div className="flex gap-1 ml-2">
-                                        <button
-                                          className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                          onClick={() => {
-                                            const originalIndex = comments[doc.id].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                            handleEditComment(doc.id, originalIndex);
-                                          }}
-                                          title="Edit"
-                                        >
-                                          <SquarePen className="h-4 w-4 text-gray-600" />
-                                        </button>
-                                        <button
-                                          className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                          onClick={() => {
-                                            const originalIndex = comments[doc.id].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                            handleUndoComment(doc.id, originalIndex);
-                                          }}
-                                          title="Undo"
-                                        >
-                                          <Undo2 className="h-4 w-4 text-gray-600" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              )}
 
-                            {!comments[doc.id]?.length && (
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="text-sm font-medium">Your Comments</span>
-                              </div>
-                            )}
-
-                            <div className="space-y-2">
-                              <div className="flex items-start border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white">
-                                <textarea
-                                  className="flex-1 min-h-[40px] p-3 border-0 rounded-l-lg resize-none text-base sm:text-sm focus:outline-none bg-white"
-                                  placeholder="Add your comment..."
-                                  rows={1}
-                                  style={{ resize: 'none' }}
-                                  value={commentInputs[doc.id] || ''}
-                                  onChange={(e) => {
-                                    const newInputs = { ...commentInputs, [doc.id]: e.target.value };
-                                    setCommentInputs(newInputs);
-                                    localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
-                                  }}
-                                  onInput={(e) => {
-                                    const target = e.target as HTMLTextAreaElement;
-                                    target.style.height = 'auto';
-                                    target.style.height = target.scrollHeight + 'px';
-                                  }}
-                                />
-                                <div className="flex gap-1 m-2">
-                                  <button
-                                    className="px-3 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                    title="Send comment"
-                                    onClick={() => handleAddComment(doc.id)}
-                                  >
-                                    <ChevronRight className="h-4 w-4 text-gray-600" />
-                                  </button>
-                                  {!isLastRecipient(doc) && (
+                              <div className="space-y-2">
+                                <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
+                                  <textarea
+                                    className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-base sm:text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
+                                    placeholder="Add your comment..."
+                                    rows={1}
+                                    style={{ resize: 'none' }}
+                                    value={commentInputs[doc.id] || ''}
+                                    onChange={(e) => {
+                                      const newInputs = { ...commentInputs, [doc.id]: e.target.value };
+                                      setCommentInputs(newInputs);
+                                      localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = target.scrollHeight + 'px';
+                                    }}
+                                  />
+                                  <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
                                     <button
-                                      className="px-3 py-2 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
-                                      title="Share comment with next recipient(s)"
-                                      onClick={() => handleShareComment(doc.id, doc)}
+                                      className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
+                                      title="Send comment"
+                                      onClick={() => handleAddComment(doc.id)}
                                     >
-                                      <Share2 className="h-4 w-4 text-blue-600" />
+                                      <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                     </button>
-                                  )}
+                                    {!isLastRecipient(doc) && (
+                                      <button
+                                        className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
+                                        title="Share comment with next recipient(s)"
+                                        onClick={() => handleShareComment(doc.id, doc)}
+                                      >
+                                        <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                            <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                              onClick={() => {
-                                setSelectedDocument({ id: doc.id, type: doc.type.toLowerCase(), title: doc.title });
-                                setShowLiveMeetingModal(true);
-                              }}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="relative w-4 h-4">
-                                  <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
-                                  <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onClick={() => {
+                                  setSelectedDocument({ id: doc.id, type: doc.type.toLowerCase(), title: doc.title });
+                                  setShowLiveMeetingModal(true);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
+                                    <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                  LiveMeet+
                                 </div>
-                                LiveMeet+
-                              </div>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleApproveSign(doc)}
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              Approve & Sign
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRejectDocument(doc.id)}
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
-                            </Button>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleApproveSign(doc)}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Approve & Sign
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectDocument(doc.id)}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))}
 
                   {/* Faculty Meeting Minutes Card */}
                   <Card className="hover:shadow-md transition-shadow">
@@ -2508,7 +2515,7 @@ const Approvals = () => {
                           {/* Description */}
                           <div className="space-y-2">
                             <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               <span className="text-sm font-medium">Description</span>
                             </div>
                             <div className="bg-muted p-3 rounded text-sm">
@@ -2520,7 +2527,7 @@ const Approvals = () => {
                           {sharedComments['faculty-meeting']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
+                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                                 <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
                               </div>
                               <div className="space-y-2">
@@ -2543,30 +2550,30 @@ const Approvals = () => {
                               </div>
                               <div className="space-y-2">
                                 {sharedComments['faculty-meeting'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p className="text-blue-800">{shared.comment}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleEditSharedComment('faculty-meeting', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-blue-700" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleUndoSharedComment('faculty-meeting', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-blue-700" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                     </div>
                                   </div>
@@ -2584,31 +2591,31 @@ const Approvals = () => {
                               </div>
                               <div className="space-y-2">
                                 {comments['faculty-meeting'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className="bg-muted p-3 rounded-lg text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p>{commentObj.message}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleEditComment('faculty-meeting', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-gray-600" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleUndoComment('faculty-meeting', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-gray-600" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                     </div>
                                   </div>
@@ -2627,9 +2634,9 @@ const Approvals = () => {
 
                           {/* Input Field */}
                           <div className="space-y-2">
-                            <div className="flex items-start border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white">
+                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                               <textarea
-                                className="flex-1 min-h-[40px] p-3 border-0 rounded-l-lg resize-none text-sm focus:outline-none bg-white"
+                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
                                 placeholder="Add your comment..."
                                 rows={1}
                                 style={{ resize: 'none' }}
@@ -2645,9 +2652,9 @@ const Approvals = () => {
                                   target.style.height = target.scrollHeight + 'px';
                                 }}
                               />
-                              <div className="flex gap-1 m-2">
+                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
                                 <button
-                                  className="px-3 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
                                   title="Send comment"
                                   onClick={() => handleAddComment('faculty-meeting')}
                                 >
@@ -2655,7 +2662,7 @@ const Approvals = () => {
                                 </button>
                                 {!isLastRecipient({ id: 'faculty-meeting', workflow: null, recipientIds: null }) && (
                                   <button
-                                    className="px-3 py-2 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
+                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
                                     title="Share comment with next recipient(s)"
                                     onClick={() => handleShareComment('faculty-meeting')}
                                   >
@@ -2762,7 +2769,7 @@ const Approvals = () => {
                           {/* Description */}
                           <div className="space-y-2">
                             <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               <span className="text-sm font-medium">Description</span>
                             </div>
                             <div className="bg-muted p-3 rounded text-sm">
@@ -2797,30 +2804,30 @@ const Approvals = () => {
                               </div>
                               <div className="space-y-2">
                                 {sharedComments['budget-request'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p className="text-blue-800">{shared.comment}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleEditSharedComment('budget-request', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-blue-700" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleUndoSharedComment('budget-request', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-blue-700" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                     </div>
                                   </div>
@@ -2838,31 +2845,31 @@ const Approvals = () => {
                               </div>
                               <div className="space-y-2">
                                 {comments['budget-request'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className="bg-muted p-3 rounded-lg text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p>{commentObj.message}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleEditComment('budget-request', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-gray-600" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleUndoComment('budget-request', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-gray-600" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                     </div>
                                   </div>
@@ -2881,9 +2888,9 @@ const Approvals = () => {
 
                           {/* Input Field */}
                           <div className="space-y-2">
-                            <div className="flex items-start border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white">
+                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                               <textarea
-                                className="flex-1 min-h-[40px] p-3 border-0 rounded-l-lg resize-none text-sm focus:outline-none bg-white"
+                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
                                 placeholder="Add your comment..."
                                 rows={1}
                                 style={{ resize: 'none' }}
@@ -2899,9 +2906,9 @@ const Approvals = () => {
                                   target.style.height = target.scrollHeight + 'px';
                                 }}
                               />
-                              <div className="flex gap-1 m-2">
+                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
                                 <button
-                                  className="px-3 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
                                   title="Send comment"
                                   onClick={() => handleAddComment('budget-request')}
                                 >
@@ -2909,7 +2916,7 @@ const Approvals = () => {
                                 </button>
                                 {!isLastRecipient({ id: 'budget-request', workflow: null, recipientIds: null }) && (
                                   <button
-                                    className="px-3 py-2 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
+                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
                                     title="Share comment with next recipient(s)"
                                     onClick={() => handleShareComment('budget-request')}
                                   >
@@ -3019,7 +3026,7 @@ const Approvals = () => {
 
                           <div className="space-y-2">
                             <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               <span className="text-sm font-medium">Description</span>
                             </div>
                             <div className="bg-muted p-3 rounded text-sm">
@@ -3046,12 +3053,12 @@ const Approvals = () => {
                               </div>
                               <div className="space-y-2">
                                 {comments['student-event'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className="bg-muted p-3 rounded-lg text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p>{commentObj.message}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
                                         className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
@@ -3086,9 +3093,9 @@ const Approvals = () => {
                             </div>
                           )}
 
-                          <div className="flex items-start border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white">
+                          <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                             <textarea
-                              className="flex-1 min-h-[40px] p-3 border-0 rounded-l-lg resize-none text-sm focus:outline-none bg-white"
+                              className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
                               placeholder="Add your comment..."
                               rows={1}
                               style={{ resize: 'none' }}
@@ -3104,20 +3111,20 @@ const Approvals = () => {
                                 target.style.height = target.scrollHeight + 'px';
                               }}
                             />
-                            <div className="flex gap-1 m-2">
+                            <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
                               <button
-                                className="px-3 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
                                 title="Send comment"
                                 onClick={() => handleAddComment('student-event')}
                               >
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                               </button>
                               <button
-                                className="px-3 py-2 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
+                                className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
                                 title="Share comment with next recipient(s)"
                                 onClick={() => handleShareComment('student-event')}
                               >
-                                <Share2 className="h-4 w-4 text-blue-600" />
+                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                               </button>
                             </div>
                           </div>
@@ -3217,7 +3224,7 @@ const Approvals = () => {
 
                           <div className="space-y-2">
                             <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               <span className="text-sm font-medium">Description</span>
                             </div>
                             <div className="bg-muted p-3 rounded text-sm">
@@ -3229,12 +3236,12 @@ const Approvals = () => {
                           {sharedComments['research-methodology']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
+                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                                 <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
                               </div>
                               <div className="space-y-2">
                                 {sharedComments['research-methodology'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
+                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <p className="text-blue-800">{shared.comment}</p>
                                     <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
                                   </div>
@@ -3247,7 +3254,7 @@ const Approvals = () => {
                           {sharedComments['research-methodology']?.filter(s => s.sharedBy === user?.name).length > 0 && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
+                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                                 <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
                               </div>
                               <div className="space-y-2">
@@ -3258,24 +3265,24 @@ const Approvals = () => {
                                     </div>
                                     <div className="flex gap-1 ml-2">
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleEditSharedComment('research-methodology', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-blue-700" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
                                           handleUndoSharedComment('research-methodology', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-blue-700" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
                                       </button>
                                     </div>
                                   </div>
@@ -3288,36 +3295,36 @@ const Approvals = () => {
                           {comments['research-methodology']?.filter(c => c.author === user?.name).length > 0 && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
+                                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 <span className="text-sm font-medium">Your Comments</span>
                               </div>
                               <div className="space-y-2">
                                 {comments['research-methodology'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className="bg-muted p-3 rounded-lg text-sm flex justify-between items-start">
+                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
                                     <div className="flex-1">
                                       <p>{commentObj.message}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
                                     </div>
-                                    <div className="flex gap-1 ml-2">
+                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleEditComment('research-methodology', originalIndex);
                                         }}
                                         title="Edit"
                                       >
-                                        <SquarePen className="h-4 w-4 text-gray-600" />
+                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                       <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                                         onClick={() => {
                                           const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
                                           handleUndoComment('research-methodology', originalIndex);
                                         }}
                                         title="Undo"
                                       >
-                                        <Undo2 className="h-4 w-4 text-gray-600" />
+                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                       </button>
                                     </div>
                                   </div>
@@ -3329,16 +3336,16 @@ const Approvals = () => {
                           {/* Your Comments Header - only when no comments exist */}
                           {!comments['research-methodology']?.length && (
                             <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
+                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               <span className="text-sm font-medium">Your Comments</span>
                             </div>
                           )}
 
                           {/* Input Field */}
                           <div className="space-y-2">
-                            <div className="flex items-start border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white">
+                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                               <textarea
-                                className="flex-1 min-h-[40px] p-3 border-0 rounded-l-lg resize-none text-sm focus:outline-none bg-white"
+                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
                                 placeholder="Add your comment..."
                                 rows={1}
                                 style={{ resize: 'none' }}
@@ -3354,21 +3361,21 @@ const Approvals = () => {
                                   target.style.height = target.scrollHeight + 'px';
                                 }}
                               />
-                              <div className="flex gap-1 m-2">
+                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
                                 <button
-                                  className="px-3 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
                                   title="Send comment"
                                   onClick={() => handleAddComment('research-methodology')}
                                 >
-                                  <ChevronRight className="h-4 w-4 text-gray-600" />
+                                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
                                 </button>
                                 {!isLastRecipient({ id: 'research-methodology', workflow: null, recipientIds: null }) && (
                                   <button
-                                    className="px-3 py-2 bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors"
+                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
                                     title="Share comment with next recipient(s)"
                                     onClick={() => handleShareComment('research-methodology')}
                                   >
-                                    <Share2 className="h-4 w-4 text-blue-600" />
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                                   </button>
                                 )}
                               </div>
@@ -3455,142 +3462,145 @@ const Approvals = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[...approvalHistory, ...recentApprovals].map((doc) => {
-                    // Check if this is an emergency card
-                    const isEmergency = doc.isEmergency || doc.priority === 'emergency' || doc.title === 'Course Curriculum Update';
+                  {[...approvalHistory, ...recentApprovals]
+                    .filter((doc, index, self) =>
+                      index === self.findIndex((d) => d.id === doc.id)
+                    ).map((doc) => {
+                      // Check if this is an emergency card
+                      const isEmergency = doc.isEmergency || doc.priority === 'emergency' || doc.title === 'Course Curriculum Update';
 
-                    return (
-                      <Card key={doc.id} className={`relative hover:shadow-md transition-shadow ${isEmergency ? 'border-destructive bg-red-50' : ''}`}>
-                        <CardContent className="p-6">
+                      return (
+                        <Card key={doc.id} className={`relative hover:shadow-md transition-shadow ${isEmergency ? 'border-destructive bg-red-50' : ''}`}>
+                          <CardContent className="p-6">
 
-                          <div className="flex flex-col lg:flex-row gap-6">
-                            <div className="flex-1 space-y-4">
-                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                                <div className="w-full sm:w-auto">
-                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                    {doc.title}
-                                    {isEmergency && (
-                                      <Badge variant="destructive" className="text-xs animate-pulse">
-                                        <AlertTriangle className="w-3 h-3 mr-1" />
-                                        EMERGENCY
-                                      </Badge>
-                                    )}
-                                  </h3>
-                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                    <div className="flex items-center gap-1">
-                                      <FileText className="h-4 w-4" />
-                                      {doc.type}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <User className="h-4 w-4" />
-                                      {doc.submitter}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-4 w-4" />
-                                      {doc.submittedDate}
+                            <div className="flex flex-col lg:flex-row gap-6">
+                              <div className="flex-1 space-y-4">
+                                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                  <div className="w-full sm:w-auto">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                      {doc.title}
+                                      {isEmergency && (
+                                        <Badge variant="destructive" className="text-xs animate-pulse">
+                                          <AlertTriangle className="w-3 h-3 mr-1" />
+                                          EMERGENCY
+                                        </Badge>
+                                      )}
+                                    </h3>
+                                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                      <div className="flex items-center gap-1">
+                                        <FileText className="h-4 w-4" />
+                                        {doc.type}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <User className="h-4 w-4" />
+                                        {doc.submitter}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="h-4 w-4" />
+                                        {doc.submittedDate}
+                                      </div>
                                     </div>
                                   </div>
+                                  <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                    {doc.status === "approved" ? (
+                                      <>
+                                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                        <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                        <Badge variant="destructive">Rejected</Badge>
+                                      </>
+                                    )}
+                                    <Badge variant="outline" className={
+                                      doc.priority === "high" ? "text-orange-600 font-semibold" :
+                                        doc.priority === "medium" ? "text-yellow-600" :
+                                          doc.title === 'Course Curriculum Update' ? "text-yellow-600" :
+                                            "text-blue-600"
+                                    }>
+                                      {doc.title === 'Course Curriculum Update' ? 'Medium Priority' :
+                                        doc.priority.charAt(0).toUpperCase() + doc.priority.slice(1) + ' Priority'}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                                  {doc.status === "approved" ? (
-                                    <>
-                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                      <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <XCircle className="h-4 w-4 text-red-600" />
-                                      <Badge variant="destructive">Rejected</Badge>
-                                    </>
-                                  )}
-                                  <Badge variant="outline" className={
-                                    doc.priority === "high" ? "text-orange-600 font-semibold" :
-                                      doc.priority === "medium" ? "text-yellow-600" :
-                                        doc.title === 'Course Curriculum Update' ? "text-yellow-600" :
-                                          "text-blue-600"
-                                  }>
-                                    {doc.title === 'Course Curriculum Update' ? 'Medium Priority' :
-                                      doc.priority.charAt(0).toUpperCase() + doc.priority.slice(1) + ' Priority'}
-                                  </Badge>
-                                </div>
-                              </div>
 
-                              {/* Description */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <MessageSquare className="h-4 w-4" />
-                                  <span className="text-sm font-medium">Description</span>
-                                </div>
-                                <div className="bg-muted p-3 rounded text-sm">
-                                  <p>{doc.description}</p>
-                                </div>
-                              </div>
-
-                              {/* Shared Comments from Previous Approvers - only for Research Grant Application */}
-                              {doc.title === 'Research Grant Application' && (
+                                {/* Description */}
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
-                                    <Share2 className="h-4 w-4 text-blue-600" />
-                                    <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <span className="text-sm font-medium">Description</span>
                                   </div>
-                                  <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
-                                    <p className="text-blue-800">Insufficient literature review and theoretical framework. References need to be updated to the latest 3 years.</p>
-                                    <p className="text-xs text-blue-600 mt-1">— Dr. Maria Garcia (HOD)</p>
+                                  <div className="bg-muted p-3 rounded text-sm">
+                                    <p>{doc.description}</p>
                                   </div>
                                 </div>
-                              )}
 
-                              {/* Your Comments */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <MessageSquare className="h-4 w-4" />
-                                  <span className="text-sm font-medium">Your Comments</span>
+                                {/* Shared Comments from Previous Approvers - only for Research Grant Application */}
+                                {doc.title === 'Research Grant Application' && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-1">
+                                      <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                      <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                    </div>
+                                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
+                                      <p className="text-blue-800">Insufficient literature review and theoretical framework. References need to be updated to the latest 3 years.</p>
+                                      <p className="text-xs text-blue-600 mt-1">— Dr. Maria Garcia (HOD)</p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Your Comments */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded text-sm">
+                                    <p>{doc.comment}</p>
+                                  </div>
                                 </div>
-                                <div className="bg-muted p-3 rounded text-sm">
-                                  <p>{doc.comment}</p>
+
+                                {/* Status Information */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Status Details</span>
+                                  </div>
+                                  <div className="bg-muted p-3 rounded text-sm">
+                                    {doc.status === "approved" ? (
+                                      <p>Approved by {doc.approvedBy} on {doc.approvedDate}</p>
+                                    ) : (
+                                      <p>Rejected by {doc.rejectedBy} on {doc.rejectedDate}</p>
+                                    )}
+                                  </div>
                                 </div>
+
+
                               </div>
+                              <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                                <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </Button>
+                                {doc.status === "approved" ? (
+                                  <Button variant="outline" size="sm" className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100">
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Approved
+                                  </Button>
+                                ) : (
+                                  <Button variant="outline" size="sm" className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100">
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    Rejected
+                                  </Button>
+                                )}
 
-                              {/* Status Information */}
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4" />
-                                  <span className="text-sm font-medium">Status Details</span>
-                                </div>
-                                <div className="bg-muted p-3 rounded text-sm">
-                                  {doc.status === "approved" ? (
-                                    <p>Approved by {doc.approvedBy} on {doc.approvedDate}</p>
-                                  ) : (
-                                    <p>Rejected by {doc.rejectedBy} on {doc.rejectedDate}</p>
-                                  )}
-                                </div>
                               </div>
-
-
                             </div>
-                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                              <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </Button>
-                              {doc.status === "approved" ? (
-                                <Button variant="outline" size="sm" className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100">
-                                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                                  Approved
-                                </Button>
-                              ) : (
-                                <Button variant="outline" size="sm" className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100">
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Rejected
-                                </Button>
-                              )}
-
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>

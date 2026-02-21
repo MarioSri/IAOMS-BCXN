@@ -18,7 +18,7 @@ Face Authentication has been integrated into the Documenso verification section 
 ### 3. Face Matching
 - ✅ Server-side face comparison using embeddings
 - ✅ Cosine similarity calculation (threshold: 0.6)
-- ✅ Secure embedding storage in Supabase
+- ✅ Secure embedding storage in local database
 
 ### 4. UI Integration
 - ✅ Seamlessly integrated into Documenso Verify tab
@@ -41,7 +41,7 @@ src/components/FaceAuthentication.tsx
 ```
 backend/src/routes/faceAuth.ts
 ├── POST /api/face-auth/verify
-│   ├── Fetch stored face embedding from Supabase
+│   ├── Fetch stored face embedding from local database
 │   ├── Generate embedding from captured image
 │   ├── Compare embeddings using cosine similarity
 │   └── Log verification attempt
@@ -103,19 +103,9 @@ wget https://github.com/nyoki-mtl/keras-facenet/releases/download/v0.1/facenet_k
 
 Place the model file in `backend/models/facenet.onnx`
 
-### 3. Configure Supabase
+### 3. Configure Database
 
-Run the migration:
-
-```bash
-cd backend
-npx supabase db push
-```
-
-Or manually execute:
-```bash
-psql -h <supabase-host> -U postgres -d postgres -f supabase/migrations/20240115_face_auth.sql
-```
+The face authentication data schema is initialized automatically through the application's local data store. The required data structures (`user_profiles` and `face_auth_logs`) are created on first use.
 
 ### 4. Environment Variables
 
@@ -125,10 +115,6 @@ Add to `.env`:
 # Face Recognition
 FACE_MODEL_PATH=./models/facenet.onnx
 FACE_SIMILARITY_THRESHOLD=0.6
-
-# Supabase
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
 ```
 
 ### 5. Register Backend Route
@@ -149,8 +135,8 @@ app.use('/api/face-auth', faceAuthRouter);
 const faceImage = await captureUserFace();
 const embedding = await generateEmbedding(faceImage);
 
-// Store encrypted embedding in Supabase
-await supabase.from('user_profiles').insert({
+// Store encrypted embedding in local database
+await userProfilesStore.insert({
   id: userId,
   email: userEmail,
   name: userName,
@@ -190,7 +176,7 @@ await supabase.from('user_profiles').insert({
 - IP address and user agent tracking
 
 ### 4. Row Level Security
-- Supabase RLS policies enforce user data isolation
+- Application-level access control policies enforce user data isolation
 - Users can only access their own profile and logs
 
 ## Model Integration Options
@@ -281,4 +267,3 @@ curl -X POST http://localhost:3000/api/face-auth/verify \
 - InsightFace: https://github.com/deepinsight/insightface
 - FaceNet: https://github.com/davidsandberg/facenet
 - ONNX Runtime: https://onnxruntime.ai/
-- Supabase Security: https://supabase.com/docs/guides/auth/row-level-security

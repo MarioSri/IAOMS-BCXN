@@ -4,7 +4,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'principal' | 'registrar' | 'hod' | 'program-head' | 'employee';
+  role: 'principal' | 'demo-work' | 'registrar' | 'hod' | 'program-head' | 'employee';
   department?: string;
   branch?: string;
   avatar?: string;
@@ -49,6 +49,13 @@ const ROLE_PERMISSIONS: Record<User['role'], RolePermissions> = {
     canViewAnalytics: true,
     canManageUsers: true,
   },
+  'demo-work': {
+    canApprove: true,
+    canViewAllDepartments: true,
+    canManageWorkflows: true,
+    canViewAnalytics: true,
+    canManageUsers: true,
+  },
   registrar: {
     canApprove: true,
     canViewAllDepartments: true,
@@ -83,9 +90,10 @@ function getUserPermissions(role: string): RolePermissions {
   return ROLE_PERMISSIONS[role as User['role']] ?? ROLE_PERMISSIONS.employee;
 }
 
-// Mock recipients data that was previously in Supabase
+// Mock recipients data
 export const MOCK_RECIPIENTS = [
   { user_id: 'u1', name: 'Dr. John Doe', email: 'john.doe@university.edu', role: 'Principal', department: 'Administration', branch: 'Main', avatar: '' },
+  { user_id: 'u6', name: 'Demo Work Role', email: 'demo.work@university.edu', role: 'Demo Work Role', department: 'Administration', branch: 'Main', avatar: '' },
   { user_id: 'u2', name: 'Dr. Jane Smith', email: 'jane.smith@university.edu', role: 'Registrar', department: 'Administration', branch: 'Main', avatar: '' },
   { user_id: 'u3', name: 'Dr. Maria Garcia', email: 'maria.garcia@university.edu', role: 'HOD', department: 'Computer Science', branch: 'Main', avatar: '' },
   { user_id: 'u4', name: 'Prof. Robert Brown', email: 'robert.brown@university.edu', role: 'Program Head', department: 'Computer Science', branch: 'Main', avatar: '' },
@@ -127,6 +135,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const roleTypeMap: Record<string, string> = {
         'principal': 'Principal',
+        'demo-work': 'Demo Work Role',
         'registrar': 'Registrar',
         'hod': 'HOD',
         'program-head': 'Program Head',

@@ -23,14 +23,14 @@ interface StatsCardProps {
 
 const StatsCard: React.FC<StatsCardProps> = ({ title, value, icon, color, description }) => (
   <Card>
-    <CardContent className="p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className={`text-2xl font-bold text-${color}-600`}>{value}</p>
-          {description && <p className="text-xs text-gray-500 mt-1">{description}</p>}
+    <CardContent className="p-3 sm:p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{title}</p>
+          <p className={`text-lg sm:text-2xl font-bold text-${color}-600`}>{value}</p>
+          {description && <p className="text-[10px] sm:text-xs text-gray-500 mt-1 truncate">{description}</p>}
         </div>
-        <div className={`p-2 bg-${color}-100 rounded-lg`}>
+        <div className={`p-1.5 sm:p-2 bg-${color}-100 rounded-lg flex-shrink-0`}>
           {icon}
         </div>
       </div>
@@ -237,7 +237,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatsCard
             title="Pending LiveMeet+"
             value={stats.pendingRequests}
@@ -319,8 +319,8 @@ export const LiveMeetingRequestManager: React.FC = () => {
             .filter((request: any) => !request.title.includes('Approval Request'))
             .map((request: any) => {
               const sourceDocuments = {
-                'Faculty Meeting Minutes – Q4 2024': { type: 'Circular', date: '2024-01-15' },
-                'Budget Request – Lab Equipment': { type: 'Letter', date: '2024-01-13' },
+                'Faculty Meeting Minutes': { type: 'Circular', date: '2024-01-15' },
+                'Budget Request': { type: 'Letter', date: '2024-01-13' },
                 'Student Event Proposal – Tech Fest 2024': { type: 'Circular', date: '2024-01-14' },
                 'Research Grant Application': { type: 'Report', date: '2024-01-10' },
                 'Event Permission Request': { type: 'Letter', date: '2024-01-09' },
@@ -334,12 +334,12 @@ export const LiveMeetingRequestManager: React.FC = () => {
 
               return (
                 <Card key={request.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col lg:flex-row gap-6">
                       <div className="flex-1 space-y-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                           <div>
-                            <div className="flex items-center gap-3 mb-0">
+                            <div className="flex flex-wrap items-center gap-3 mb-0">
                               <h3 className="font-semibold text-lg flex items-center gap-2">
                                 <div className="relative w-4 h-4">
                                   <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
@@ -347,7 +347,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                                 </div>
                                 {request.title}
                               </h3>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${displayType === 'Circular' ? 'bg-blue-100 text-blue-800' :
                                   displayType === 'Letter' ? 'bg-green-100 text-green-800' :
                                     'bg-purple-100 text-purple-800'
@@ -362,7 +362,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Clock className="h-4 w-4 text-yellow-600" />
                             <Badge variant="warning">Pending</Badge>
                             <Badge variant="outline" className={`font-semibold flex items-center gap-1 ${request.priority === 'immediate' ? 'text-red-600' :
@@ -377,31 +377,34 @@ export const LiveMeetingRequestManager: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-1">
-                              <User className="h-4 w-4" />
-                              <span className="font-medium">From:</span> {user?.name} • {user?.role.toUpperCase()}
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium min-w-[60px]">From:</span>
+                              <span>{user?.name} • {user?.role.toUpperCase()}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              <span className="font-medium">Date:</span> {request.requestedDate || new Date().toLocaleDateString()}
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium min-w-[60px]">Date:</span>
+                              <span>{request.requestedDate || new Date().toLocaleDateString()}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Settings className="h-4 w-4" />
-                              <span className="font-medium">Meeting Purpose:</span>
+                            <div className="flex items-center gap-2">
+                              <Settings className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium min-w-[60px]">Purpose:</span>
                               <div className="flex items-center gap-1">
                                 <FileText className="h-4 w-4" />
                                 {request.purpose}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium">Time: From:</span> {request.startTime || '10:00 AM'} — To: {request.endTime || '11:00 AM'}
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium min-w-[60px]">Time:</span>
+                              <span>From: {request.startTime || '10:00 AM'} — To: {request.endTime || '11:00 AM'}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
-                              <span className="font-medium">Meeting Format:</span>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium min-w-[60px]">Format:</span>
                               <div className="flex items-center gap-1">
                                 {request.meetingFormat === 'online' && <><Monitor className="h-4 w-4" /> Online</>}
                                 {request.meetingFormat === 'in_person' && <><Building className="h-4 w-4" /> In-Person</>}
@@ -409,9 +412,9 @@ export const LiveMeetingRequestManager: React.FC = () => {
                               </div>
                             </div>
                             {request.location && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-4 w-4" />
-                                <span className="font-medium">Meeting Location:</span>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium min-w-[60px]">Location:</span>
                                 <div className="flex items-center gap-1">
                                   <Globe className="h-4 w-4" />
                                   {request.location}
@@ -419,19 +422,23 @@ export const LiveMeetingRequestManager: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <MessageSquare className="h-4 w-4" />
-                            <span className="text-sm font-medium">Description & Agenda</span>
-                          </div>
-                          <div className="bg-muted p-3 rounded text-sm">
-                            <p>{request.description}</p>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1">
+                              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">Description & Agenda</span>
+                            </div>
+                            <div className="bg-muted p-3 rounded text-sm">
+                              <p>{request.description}</p>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 min-w-[150px]">
+                      <div className="flex flex-col gap-2 min-w-full sm:min-w-[150px]">
                         <Button
                           variant="outline"
                           size="sm"
+                          className="w-full"
                           onClick={() => {
                             toast({
                               title: "LiveMeet+ Requests Accepted",
@@ -452,6 +459,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="w-full"
                           onClick={() => {
                             toast({
                               title: "LiveMeet+ Request Declined",
@@ -487,20 +495,20 @@ export const LiveMeetingRequestManager: React.FC = () => {
 
           {/* Faculty Meeting Minutes Card */}
           <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1 space-y-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-3 mb-0">
+                      <div className="flex flex-wrap items-center gap-3 mb-0">
                         <h3 className="font-semibold text-lg flex items-center gap-2">
                           <div className="relative w-4 h-4">
                             <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
                             <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
                           </div>
-                          Faculty Meeting Minutes – Q4 2024
+                          Faculty Meeting Minutes
                         </h3>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
                             <FileText className="h-3 w-3" />
                             Circular
@@ -512,59 +520,72 @@ export const LiveMeetingRequestManager: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-yellow-600" />
                       <Badge variant="warning">Pending</Badge>
                       <Badge variant="outline" className="text-red-600 font-semibold flex items-center gap-1">
                         <Zap className="w-3 h-3" />
-                        Immediate
+                        Immediate Priority
                       </Badge>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span className="font-medium">From:</span> {user?.name} • {user?.role.toUpperCase()}
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">From:</span> Dr. Sarah Smith • DEAN
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span className="font-medium">Date:</span> 09/26/2025
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Date:</span> 2024-01-20
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-4 w-4" />
-                        <span className="font-medium">Meeting Purpose:</span>
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Purpose:</span>
                         <div className="flex items-center gap-1">
                           <FileText className="h-4 w-4" />
-                          Need Clarification
+                          Review & Sign
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-medium">Time: From:</span> 10:56 AM — To: 11:56 AM
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Time:</span> 10:00 AM — 11:00 AM
                       </div>
-                      <div className="md:col-span-2 flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span className="font-medium">Meeting Format:</span>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Format:</span>
                         <div className="flex items-center gap-1">
                           <Monitor className="h-4 w-4" />
                           Online
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Location:</span>
+                        <div className="flex items-center gap-1">
+                          <Globe className="h-4 w-4" />
+                          Zoom Meeting
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="text-sm font-medium">Description & Agenda</span>
-                    </div>
-                    <div className="bg-muted p-3 rounded text-sm">
-                      <p>Add a risk-mitigation section to highlight potential delays or issues.</p>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Description & Agenda</span>
+                      </div>
+                      <div className="bg-muted p-3 rounded text-sm">
+                        <p>Discussion of last quarter's faculty performance and upcoming curriculum changes for the medical department.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 min-w-[150px]">
+                <div className="flex flex-col gap-2 min-w-full sm:min-w-[150px]">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full"
                     onClick={() => {
                       toast({
                         title: "LiveMeet+ Requests Accepted",
@@ -573,7 +594,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                       });
                       notificationService.addNotification({
                         title: "LiveMeet+ Requests Accepted",
-                        message: `Your LiveMeet+ Requests for "Faculty Meeting Minutes – Q4 2024" has been Accepted By ${user?.name}.`,
+                        message: `Your LiveMeet+ Requests for "Faculty Meeting Minutes" has been Accepted By ${user?.name}.`,
                         type: "meeting",
                         urgent: false
                       });
@@ -593,7 +614,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                       });
                       notificationService.addNotification({
                         title: "LiveMeet+ Request Declined",
-                        message: `Your LiveMeet+ Requests for "Faculty Meeting Minutes – Q4 2024" has been Declined By ${user?.name}.`,
+                        message: `Your LiveMeet+ Requests for "Faculty Meeting Minutes" has been Declined By ${user?.name}.`,
                         type: "meeting",
                         urgent: false
                       });
@@ -609,92 +630,97 @@ export const LiveMeetingRequestManager: React.FC = () => {
 
           {/* Budget Request Card */}
           <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1 space-y-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-3 mb-0">
+                      <div className="flex flex-wrap items-center gap-3 mb-0">
                         <h3 className="font-semibold text-lg flex items-center gap-2">
                           <div className="relative w-4 h-4">
                             <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
                             <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
                           </div>
-                          Budget Request – Lab Equipment
+                          Budget Request Q1
                         </h3>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
                             <FileText className="h-3 w-3" />
                             Letter
                           </div>
                           <div className="flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
                             <Calendar className="h-3 w-3" />
-                            2024-01-13
+                            2024-01-16
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-yellow-600" />
                       <Badge variant="warning">Pending</Badge>
-                      <Badge variant="outline" className="text-orange-600 flex items-center gap-1">
+                      <Badge variant="outline" className="text-orange-600 font-semibold flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
-                        Urgent
+                        Urgent Priority
                       </Badge>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span className="font-medium">From:</span> {user?.name} • {user?.role.toUpperCase()}
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">From:</span> Dr. James Wong • HOD
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span className="font-medium">Date:</span> 09/26/2025
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Date:</span> 2024-01-22
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-4 w-4" />
-                        <span className="font-medium">Meeting Purpose:</span>
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Purpose:</span>
                         <div className="flex items-center gap-1">
                           <FileText className="h-4 w-4" />
-                          Need Clarification
+                          Authorization
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-medium">Time: From:</span> 10:56 AM — To: 11:56 AM
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Time:</span> 02:00 PM — 02:30 PM
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        <span className="font-medium">Meeting Format:</span>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Format:</span>
                         <div className="flex items-center gap-1">
                           <Building className="h-4 w-4" />
                           In-Person
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span className="font-medium">Meeting Location:</span>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium min-w-[60px]">Location:</span>
                         <div className="flex items-center gap-1">
                           <Globe className="h-4 w-4" />
-                          Conference Room A
+                          Office 302
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="h-4 w-4" />
-                      <span className="text-sm font-medium">Description & Agenda</span>
-                    </div>
-                    <div className="bg-muted p-3 rounded text-sm">
-                      <p>Consider revising the scope to focus on priority items within this quarter's budget.</p>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Description & Agenda</span>
+                      </div>
+                      <div className="bg-muted p-3 rounded text-sm">
+                        <p>Quarterly budget review for the research department including new equipment procurement requests.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 min-w-[150px]">
+                <div className="flex flex-col gap-2 min-w-full sm:min-w-[150px]">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full"
                     onClick={() => {
                       toast({
                         title: "LiveMeet+ Requests Accepted",
@@ -703,7 +729,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                       });
                       notificationService.addNotification({
                         title: "LiveMeet+ Requests Accepted",
-                        message: `Your LiveMeet+ Requests for "Budget Request – Lab Equipment" has been Accepted By ${user?.name}.`,
+                        message: `Your LiveMeet+ Requests for "Budget Request" has been Accepted By ${user?.name}.`,
                         type: "meeting",
                         urgent: false
                       });
@@ -715,6 +741,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="w-full"
                     onClick={() => {
                       toast({
                         title: "LiveMeet+ Request Declined",
@@ -723,7 +750,7 @@ export const LiveMeetingRequestManager: React.FC = () => {
                       });
                       notificationService.addNotification({
                         title: "LiveMeet+ Request Declined",
-                        message: `Your LiveMeet+ Requests for "Budget Request – Lab Equipment" has been Declined By ${user?.name}.`,
+                        message: `Your LiveMeet+ Requests for "Budget Request" has been Declined By ${user?.name}.`,
                         type: "meeting",
                         urgent: false
                       });

@@ -87,8 +87,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
 
   // Chat service
   const [chatService] = useState(() => new DecentralizedChatService(
-    import.meta.env.VITE_WS_URL || 'ws://localhost:8080',
-    import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+    import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
 
   // State
@@ -1186,16 +1186,16 @@ Generated on: ${new Date().toLocaleString()}`;
 
     return (
       <div className={cn(
-        "flex gap-3 p-2 hover:bg-muted/50 group",
+        "flex gap-2 sm:gap-3 p-1.5 sm:p-2 hover:bg-muted/50 group",
         isOwnMessage && "flex-row-reverse",
         isSystemMessage && "justify-center",
         selectedMessages.includes(message.id) && "bg-blue-50 border-l-4 border-l-blue-500",
         pinnedMessages.includes(message.id) && "bg-yellow-50 border border-yellow-200"
       )}>
         {!isSystemMessage && (
-          <Avatar className="w-8 h-8">
+          <Avatar className="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0">
             <AvatarImage src={sender?.avatar} />
-            <AvatarFallback>
+            <AvatarFallback className="text-[10px] sm:text-xs">
               {sender?.fullName?.substring(0, 2).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
@@ -1207,15 +1207,15 @@ Generated on: ${new Date().toLocaleString()}`;
           isSystemMessage && "text-center"
         )}>
           {!isSystemMessage && (
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium">
-                {isOwnMessage ? 'You' : sender?.fullName || 'You'}
+            <div className={cn("flex items-center gap-1.5 sm:gap-2 mb-1", isOwnMessage && "justify-end")}>
+              <span className="text-xs sm:text-sm font-medium">
+                {isOwnMessage ? 'You' : sender?.fullName || 'User'}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">
                 {formatTimestamp(message.timestamp)}
               </span>
               {message.editedAt && (
-                <span className="text-xs text-muted-foreground">(edited)</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">(edited)</span>
               )}
               {getMessageStatusIcon(message.status)}
             </div>
@@ -1264,13 +1264,13 @@ Generated on: ${new Date().toLocaleString()}`;
             </div>
           ) : (
             <div className={cn(
-              "inline-block p-3 rounded-lg",
-              message.metadata?.pollId ? "max-w-full" : "max-w-[80%]",
+              "inline-block p-2.5 sm:p-3 rounded-lg shadow-sm border sm:border-none",
+              message.metadata?.pollId ? "max-w-full" : "max-w-[85%] sm:max-w-[80%]",
               isSystemMessage
-                ? "bg-blue-50 text-blue-800 border border-blue-200 text-sm"
+                ? "bg-blue-50 text-blue-800 border-blue-200 text-xs sm:text-sm"
                 : isOwnMessage
-                  ? "bg-gray-200 text-gray-900"
-                  : "bg-muted"
+                  ? "bg-primary/10 sm:bg-gray-200 text-foreground sm:text-gray-900 border-primary/20"
+                  : "bg-muted text-foreground border-muted-foreground/10"
             )}>
               <p className={cn(
                 "whitespace-pre-wrap",
@@ -1406,11 +1406,11 @@ Generated on: ${new Date().toLocaleString()}`;
         </div>
 
         {!isSystemMessage && (
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="opacity-100 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 self-center">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost">
-                  <MoreVertical className="w-4 h-4" />
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                  <MoreVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -1758,42 +1758,63 @@ Generated on: ${new Date().toLocaleString()}`;
                 <Lock className="w-5 h-5" />
                 <div>
                   <h2 className="font-semibold">{activeChannel.name}</h2>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                       {activeChannel.members.length} members
                       {typingUsers.length > 0 && (
-                        <span className="ml-2">
+                        <span className="hidden sm:inline ml-2">
                           • {typingUsers.length} typing...
                         </span>
                       )}
                     </p>
-                    <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Auto-delete: 24h
+                    <Badge variant="outline" className="text-[10px] sm:text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20 px-1 sm:px-2 h-5 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span className="hidden xs:inline">Auto-delete: 24h</span>
                     </Badge>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={() => setShowSearch(!showSearch)}>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setShowSearch(!showSearch)} className="h-8 w-8 p-0">
                   <Search className="w-4 h-4" />
                 </Button>
                 <Button
                   size="sm"
                   variant={activeVideoCallId ? "secondary" : "ghost"}
                   onClick={() => setShowVideoCall(true)}
-                  className={activeVideoCallId ? "animate-pulse" : ""}
+                  className={cn("h-8 w-8 p-0", activeVideoCallId && "animate-pulse")}
                 >
                   <Video className={`w-4 h-4 ${activeVideoCallId ? 'text-green-600' : ''}`} />
-                  {activeVideoCallId && <span className="ml-1 text-xs">Live</span>}
+                  {activeVideoCallId && <span className="ml-1 text-[10px] hidden sm:inline">Live</span>}
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowNewChannelModal(true)}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowAddRecipientsModal(true)}>
-                  <UserPlus className="w-4 h-4" />
-                </Button>
+
+                <div className="hidden sm:flex items-center gap-1">
+                  <Button size="sm" variant="ghost" onClick={() => setShowNewChannelModal(true)} className="h-8 w-8 p-0">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowAddRecipientsModal(true)} className="h-8 w-8 p-0">
+                    <UserPlus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="sm:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setShowNewChannelModal(true)}>
+                        <Plus className="w-4 h-4 mr-2" /> New Channel
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setShowAddRecipientsModal(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" /> Add Recipient
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             </div>
           </div>
@@ -1801,18 +1822,18 @@ Generated on: ${new Date().toLocaleString()}`;
 
         {/* Search Bar */}
         {showSearch && (
-          <div className="p-4 border-b bg-muted/20">
+          <div className="p-2 sm:p-4 border-b bg-muted/20">
             <Input
               placeholder="Search messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-base sm:text-sm"
+              className="w-full h-9 sm:h-10 text-base sm:text-sm"
             />
           </div>
         )}
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-2 sm:p-4">
           <div className="space-y-2">
             {useMemo(() =>
               messages
@@ -1843,8 +1864,8 @@ Generated on: ${new Date().toLocaleString()}`;
         )}
 
         {/* Message Input */}
-        <div className="p-4 border-t bg-background">
-          <div className="flex items-center gap-2">
+        <div className="p-2 sm:p-4 border-t bg-background">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -1858,25 +1879,48 @@ Generated on: ${new Date().toLocaleString()}`;
               size="sm"
               variant="ghost"
               onClick={() => fileInputRef.current?.click()}
+              className="h-9 w-9 p-0"
             >
               <Paperclip className="w-4 h-4" />
             </Button>
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowPollModal(true)}
-            >
-              <BarChart3 className="w-4 h-4" />
-            </Button>
+            <div className="hidden sm:flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowPollModal(true)}
+                className="h-9 w-9 p-0"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            >
-              <Smile className="w-4 h-4" />
-            </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="h-9 w-9 p-0"
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="sm:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-9 w-9 p-0">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" align="start">
+                  <DropdownMenuItem onClick={() => setShowPollModal(true)}>
+                    <BarChart3 className="w-4 h-4 mr-2" /> Create Poll
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                    <Smile className="w-4 h-4 mr-2" /> Emoji
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
             <div className="flex-1 relative">
               <Textarea
@@ -2278,7 +2322,7 @@ Generated on: ${new Date().toLocaleString()}`;
 
       {/* Channel Members Modal */}
       <AlertDialog open={showChannelMembersModal} onOpenChange={setShowChannelMembersModal}>
-        <AlertDialogContent className="max-w-2xl">
+        <AlertDialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-4 sm:p-6">
           <button
             onClick={() => setShowChannelMembersModal(false)}
             className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"

@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useResponsive } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 import {
   Search,
   ChevronDown,
@@ -63,6 +65,7 @@ const HIERARCHY_ORDER = {
   'HOD': 5,
   'Registrar': 6,
   'Principal': 7,
+  'Demo Work Role': 7,
   // Administrative roles - placed appropriately in hierarchy
   'Controller of Examinations': 5,
   'Asst. Dean IIIC': 5,
@@ -104,7 +107,7 @@ const groupRecipients = (recipients: Recipient[]): RecipientGroup[] => {
     let groupTitle = role;
     let groupIcon = Users;
 
-    if (role === 'Principal' || role === 'Registrar' || role === 'Dean' || role === 'Chairman') {
+    if (role === 'Principal' || role === 'Demo Work Role' || role === 'Registrar' || role === 'Dean' || role === 'Chairman') {
       groupKey = 'leadership';
       groupTitle = 'Leadership';
       groupIcon = Crown;
@@ -142,6 +145,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
   onRecipientsChange,
   maxSelections
 }) => {
+  const { isMobile } = useResponsive();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     'hods': false,
@@ -335,8 +339,17 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                   return (
                     <div key={recipient.id} className="flex items-center gap-1">
                       <span className="text-[10px] text-muted-foreground font-mono">{index + 1}.</span>
-                      <Badge variant="secondary" className={`flex items-center gap-1 pr-1 max-w-[150px] xs:max-w-[200px] sm:max-w-xs ${colorClass}`}>
-                        <span className="text-[10px] sm:text-xs truncate">
+                      <Badge variant="secondary" className={cn(
+                        "flex items-center gap-1 pr-1 transition-all",
+                        // Mobile: slightly taller fixed height, rounded corners, specific padding
+                        "h-7 px-2 py-0 text-xs rounded-lg",
+                        // Desktop: revert to original pill shape and sizing
+                        "sm:h-auto sm:py-0.5 sm:px-2.5 sm:rounded-full",
+                        // Width constraints
+                        "max-w-[150px] xs:max-w-[200px] sm:max-w-xs",
+                        colorClass
+                      )}>
+                        <span className="text-xs truncate">
                           {recipient.name}
                           {recipient.branch && ` (${recipient.branch})`}
                         </span>
@@ -354,7 +367,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                 })}
               </div>
             </ScrollArea>
-            <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+            <div className="text-sm text-muted-foreground bg-muted/30 p-2 rounded">
               {useHierarchicalOrder
                 ? 'Recipients are Automatically Arranged in Hierarchical Order'
                 : 'Recipients are in Random Selection Order'}
@@ -367,16 +380,16 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
         {/* Role Hierarchy Display */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Approval Flow Hierarchy</Label>
-          <div className="flex flex-wrap items-center gap-2 text-[10px] xs:text-xs sm:text-sm text-muted-foreground bg-muted/30 p-2 sm:p-3 rounded-lg">
+          <div className="flex flex-wrap items-center gap-2 text-xs xs:text-sm text-muted-foreground bg-muted/30 p-2 sm:p-3 rounded-lg underline-offset-4">
             <span className="font-semibold text-primary/80">Employee</span>
-            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="font-semibold text-primary/80">Program Head</span>
-            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="font-semibold text-primary/80">HOD</span>
-            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="font-semibold text-primary/80">Registrar</span>
-            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-            <span className="font-semibold text-primary/80">Principal</span>
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+            <span className="font-semibold text-primary/80">Principal / Demo Work</span>
           </div>
         </div>
 
@@ -407,7 +420,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                               <p className="text-sm text-muted-foreground">
                                 {group.recipients.length} recipient(s)
                                 {selectionState !== 'none' && (
-                                  <span className="ml-1 sm:ml-2 text-xs sm:text-sm whitespace-nowrap">
+                                  <span className="ml-1 sm:ml-2 text-sm whitespace-nowrap">
                                     • {selectedRecipients.filter(id => group.recipients.some(r => r.id === id)).length} selected
                                   </span>
                                 )}
@@ -461,25 +474,45 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                           {group.recipients.map((recipient) => (
                             <div
                               key={recipient.id}
-                              className="flex items-center space-x-3 p-2 hover:bg-muted/30 rounded"
+                              className={cn(
+                                "flex items-center space-x-3 p-2 hover:bg-muted/30 rounded transition-colors cursor-pointer",
+                                isMobile && "p-4 space-x-4 min-h-[56px]" // Touch-friendly on mobile
+                              )}
+                              onClick={() => isMobile && toggleRecipient(recipient.id)}
                             >
-                              <Checkbox
-                                id={recipient.id}
-                                checked={selectedRecipients.includes(recipient.id)}
-                                onCheckedChange={() => toggleRecipient(recipient.id)}
-                                disabled={
-                                  maxSelections &&
-                                  selectedRecipients.length >= maxSelections &&
-                                  !selectedRecipients.includes(recipient.id)
-                                }
-                              />
+                              {/* Mobile: Radio circles */}
+                              {isMobile ? (
+                                <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary shrink-0">
+                                  {selectedRecipients.includes(recipient.id) && (
+                                    <div className="w-3 h-3 rounded-full bg-primary" />
+                                  )}
+                                </div>
+                              ) : (
+                                /* Desktop: Checkboxes */
+                                <Checkbox
+                                  id={recipient.id}
+                                  checked={selectedRecipients.includes(recipient.id)}
+                                  onCheckedChange={() => toggleRecipient(recipient.id)}
+                                  disabled={
+                                    maxSelections &&
+                                    selectedRecipients.length >= maxSelections &&
+                                    !selectedRecipients.includes(recipient.id)
+                                  }
+                                />
+                              )}
                               <div className="flex-1 min-w-0">
                                 <Label
                                   htmlFor={recipient.id}
                                   className="flex flex-col gap-1 cursor-pointer"
                                 >
-                                  <span className="font-medium">{recipient.name}</span>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                                  <span className={cn(
+                                    "font-medium",
+                                    isMobile && "text-base"
+                                  )}>{recipient.name}</span>
+                                  <div className={cn(
+                                    "flex items-center gap-2 text-xs text-muted-foreground flex-wrap",
+                                    isMobile && "text-sm"
+                                  )}>
                                     <span>{recipient.role}</span>
                                     {recipient.department && (
                                       <>

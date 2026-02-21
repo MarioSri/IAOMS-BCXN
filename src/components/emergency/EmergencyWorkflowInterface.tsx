@@ -36,6 +36,8 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
+import { useResponsive } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -80,6 +82,8 @@ const getRecipientName = (recipientId: string) => {
   // Map of common recipient IDs to their display names
   const recipientMap: { [key: string]: string } = {
     // Leadership
+    'u1': 'Dr. Robert Principal',
+    'u6': 'Demo Work Role',
     'principal-dr.-robert-principal': 'Dr. Robert Principal',
     'registrar-prof.-sarah-registrar': 'Prof. Sarah Registrar',
     'dean-dr.-maria-dean': 'Dr. Maria Dean',
@@ -159,6 +163,7 @@ const getRecipientName = (recipientId: string) => {
 
 export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProps> = ({ userRole }) => {
   const { user } = useAuth();
+  const { isMobile } = useResponsive();
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [viewingFile, setViewingFile] = useState<File | null>(null);
@@ -211,7 +216,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
       description: 'Severe water leakage affecting electrical systems in Block A',
       reason: 'Infrastructure failure requiring immediate attention',
       urgencyLevel: 'critical',
-      recipients: ['principal', 'registrar', 'maintenance-head'],
+      recipients: ['principal', 'demo-work', 'registrar', 'maintenance-head'],
       submittedBy: 'Maintenance Team',
       submittedAt: new Date('2024-01-10T08:30:00'),
       status: 'resolved',
@@ -272,6 +277,10 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
     }
   };
 
+  const handleDocumentTypeRadio = (typeId: string) => {
+    setEmergencyData({ ...emergencyData, documentTypes: [typeId] });
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setEmergencyData({ ...emergencyData, uploadedFiles: [...emergencyData.uploadedFiles, ...files] });
@@ -294,6 +303,8 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
     // Map recipient IDs to proper names with designations like other cards
     const recipientMap: { [key: string]: string } = {
       'cdc-head-dr.-cdc-head': 'Dr. CDC Head',
+      'u1': 'Dr. Robert Smith',
+      'u6': 'Demo Work Role',
       'principal-dr.-robert-principal': 'Dr. Robert Smith',
       'registrar-prof.-sarah-registrar': 'Prof. Sarah Registrar',
       'hod-dr.-cse-hod': 'Prof. Michael Chen',
@@ -995,72 +1006,74 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
       </Card>
 
       {/* Emergency Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-elegant border-l-4 border-l-destructive">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Siren className="w-5 h-5 text-destructive" />
+      {!isEmergencyMode && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="shadow-elegant border-l-4 border-l-destructive">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Active Emergencies</p>
+                  <p className="text-lg sm:text-2xl font-bold text-destructive">
+                    {emergencyHistory.filter(e => e.status === 'submitted').length}
+                  </p>
+                </div>
+                <div className="p-1.5 sm:p-2 bg-red-100 rounded-lg">
+                  <Siren className="w-4 h-4 sm:w-5 sm:h-5 text-destructive" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-destructive">
-                  {emergencyHistory.filter(e => e.status === 'submitted').length}
-                </p>
-                <p className="text-sm text-muted-foreground">Active Emergencies</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-elegant border-l-4 border-l-warning">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock className="w-5 h-5 text-warning" />
+          <Card className="shadow-elegant border-l-4 border-l-warning">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Avg Response Time</p>
+                  <p className="text-lg sm:text-2xl font-bold text-warning">
+                    {emergencyHistory.length > 0
+                      ? Math.round(emergencyHistory.reduce((acc, e) => acc + (e.responseTime || 0), 0) / emergencyHistory.length)
+                      : 0
+                    }m
+                  </p>
+                </div>
+                <div className="p-1.5 sm:p-2 bg-yellow-100 rounded-lg">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-warning">
-                  {emergencyHistory.length > 0
-                    ? Math.round(emergencyHistory.reduce((acc, e) => acc + (e.responseTime || 0), 0) / emergencyHistory.length)
-                    : 0
-                  }m
-                </p>
-                <p className="text-sm text-muted-foreground">Avg Response Time</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-elegant border-l-4 border-l-success">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 text-success" />
+          <Card className="shadow-elegant border-l-4 border-l-success">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Resolved This Month</p>
+                  <p className="text-lg sm:text-2xl font-bold text-success">
+                    {emergencyHistory.filter(e => e.status === 'resolved').length}
+                  </p>
+                </div>
+                <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-success">
-                  {emergencyHistory.filter(e => e.status === 'resolved').length}
-                </p>
-                <p className="text-sm text-muted-foreground">Resolved This Month</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="shadow-elegant border-l-4 border-l-primary">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Shield className="w-5 h-5 text-primary" />
+          <Card className="shadow-elegant border-l-4 border-l-primary">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Response Rate</p>
+                  <p className="text-lg sm:text-2xl font-bold text-primary">98.5%</p>
+                </div>
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-primary">98.5%</p>
-                <p className="text-sm text-muted-foreground">Response Rate</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Emergency Submission Form */}
       {isEmergencyMode && (
@@ -1071,7 +1084,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emergency-title">Emergency Title</Label>
+                <Label htmlFor="emergency-title" className="text-base font-medium">Emergency Title</Label>
                 <Input
                   id="emergency-title"
                   value={emergencyData.title}
@@ -1082,7 +1095,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="priority-level">Priority Level</Label>
+                <Label htmlFor="priority-level" className="text-base font-medium">Priority Level</Label>
                 <Select
                   value={emergencyData.urgencyLevel}
                   onValueChange={(value: any) => setEmergencyData({ ...emergencyData, urgencyLevel: value })}
@@ -1130,7 +1143,31 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
               {/* Document Type Selection */}
               <div className="space-y-3">
                 <Label className="text-base font-medium">Document Type</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Mobile: Radio circles */}
+                <div className="grid grid-cols-1 gap-3 sm:hidden">
+                  {documentTypeOptions.map((option) => {
+                    const IconComponent = option.icon;
+                    return (
+                      <div
+                        key={option.id}
+                        className="flex items-center space-x-2 p-3 border-2 border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        onClick={() => handleDocumentTypeRadio(option.id)}
+                      >
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-red-600">
+                          {emergencyData.documentTypes.includes(option.id) && (
+                            <div className="w-3 h-3 rounded-full bg-red-600" />
+                          )}
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer text-base text-red-800 font-medium">
+                          <IconComponent className="w-4 h-4 text-red-600" />
+                          {option.label}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Desktop: Checkboxes */}
+                <div className="hidden sm:grid sm:grid-cols-3 gap-3">
                   {documentTypeOptions.map((option) => {
                     const IconComponent = option.icon;
                     return (
@@ -1140,7 +1177,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                           checked={emergencyData.documentTypes.includes(option.id)}
                           onCheckedChange={(checked) => handleDocumentTypeChange(option.id, !!checked)}
                         />
-                        <Label htmlFor={option.id} className="flex items-center gap-2 cursor-pointer text-red-800">
+                        <Label htmlFor={option.id} className="flex items-center gap-2 cursor-pointer text-sm text-red-800 font-medium">
                           <IconComponent className="w-4 h-4 text-red-600" />
                           {option.label}
                         </Label>
@@ -1165,7 +1202,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                   <label htmlFor="emergency-file-upload" className="cursor-pointer">
                     <div className="text-center">
                       <Upload className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                      <p className="text-sm text-red-700 mb-1 font-medium">
+                      <p className="text-base sm:text-sm text-red-700 mb-1 font-medium">
                         Drag and drop emergency files or click to upload
                       </p>
                       <p className="text-xs text-red-600">
@@ -1181,35 +1218,39 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                     <Label className="text-sm font-medium">Uploaded Files ({emergencyData.uploadedFiles.length})</Label>
                     <div className="space-y-2">
                       {emergencyData.uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-accent rounded-md">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm">{file.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {(file.size / 1024 / 1024).toFixed(1)} MB
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                              onClick={() => handleViewFile(file)}
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="text-xs cursor-pointer hover:bg-primary/10"
-                              onClick={() => setShowWatermarkModal(true)}
-                            >
-                              <Settings className="w-3 h-3 mr-1" />
-                              Watermark
-                            </Badge>
+                        <div key={index} className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-2 bg-accent rounded-md gap-2 sm:gap-0">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full pr-8 sm:pr-0">
+                            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+                              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-sm truncate max-w-[150px] sm:max-w-xs">{file.name}</span>
+                              <Badge variant="outline" className="text-xs shrink-0">
+                                {(file.size / 1024 / 1024).toFixed(1)} MB
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                                onClick={() => handleViewFile(file)}
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-xs cursor-pointer hover:bg-primary/10"
+                                onClick={() => setShowWatermarkModal(true)}
+                              >
+                                <Settings className="w-3 h-3 mr-1" />
+                                Watermark
+                              </Badge>
+                            </div>
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => removeFile(index)}
-                            className="h-6 w-6"
+                            className="absolute top-2 right-2 sm:static h-6 w-6 shrink-0"
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -1223,12 +1264,13 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
               {/* Assignment Preview */}
               {emergencyData.uploadedFiles.length > 1 && selectedRecipients.length > 1 && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
                     <Label className="text-base font-medium">Document Assignment</Label>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowAssignmentModal(true)}
+                      className="w-full sm:w-auto"
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Customize Assignment
@@ -1253,7 +1295,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
             </div>
 
             {emergencyData.autoEscalation && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-[3fr_2fr] gap-3 sm:grid-cols-2 sm:gap-4">
                 <div>
                   <label className="text-sm font-medium">Auto-Forward Timeout</label>
                   <Input
@@ -1287,20 +1329,23 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
             )}
 
             {/* Notification Alert Options */}
-            <div className="space-y-4 p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
+            <div className="space-y-4 p-4 border-2 border-red-200 rounded-lg bg-red-50">
               <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Bell className="w-5 h-5 text-orange-600" />
+                <Bell className="w-5 h-5 text-destructive" />
                 Emergency Notification Settings
               </h3>
 
               {/* Notification Behavior Options */}
               <div className="space-y-3">
-                <h4 className="font-semibold text-base">🔔 Notification Behavior Options</h4>
+                <h4 className="font-semibold text-base flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-destructive" />
+                  Notification Behavior Options
+                </h4>
 
                 {/* Use Profile Defaults */}
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                   <div className="flex items-center gap-3">
-                    <Settings className="w-5 h-5 text-muted-foreground" />
+                    <Settings className="w-7 h-7 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
                     <div>
                       <p className="font-medium">Receive Notifications Based on Selected Recipients' Profile Settings</p>
                       <p className="text-sm text-muted-foreground">Each selected recipient receives one-time notifications through all channels (Email, SMS, Push, WhatsApp) - no recurring notifications</p>
@@ -1318,7 +1363,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 {/* Override for Emergency */}
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-orange-600" />
+                    <AlertTriangle className="w-7 h-7 sm:w-5 sm:h-5 text-destructive shrink-0" />
                     <div>
                       <p className="font-medium">Override for Emergency (Takes Priority)</p>
                       <p className="text-sm text-muted-foreground">Manually define emergency-specific notification channels and custom scheduling for alerts</p>
@@ -1583,12 +1628,15 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 </div>
               )}
 
-              {/* ⚙️ Behavior Summary */}
+              {/* Behavior Summary */}
               <div className="space-y-3 pt-4 border-t">
-                <h4 className="text-base font-semibold">⚙️ Behavior Summary</h4>
+                <h4 className="text-base font-semibold flex items-center gap-2">
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                  Behavior Summary
+                </h4>
                 {useProfileDefaults && (
-                  <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" />
+                  <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded flex items-center gap-3">
+                    <CheckCircle2 className="w-7 h-7 sm:w-4 sm:h-4 shrink-0" />
                     <div>
                       <p className="font-medium">One-Time Notification Mode Active</p>
                       <p className="text-xs">Recipients will receive notifications only once through all available channels (Email, SMS, Push, WhatsApp)</p>
@@ -1596,10 +1644,10 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                   </div>
                 )}
                 {overrideNotifications && (
-                  <div className="text-sm text-orange-600 bg-orange-50 p-3 rounded flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
+                  <div className="text-sm text-destructive bg-red-50 p-3 rounded flex items-center gap-3 border border-red-100">
+                    <AlertTriangle className="w-7 h-7 sm:w-4 sm:h-4 shrink-0" />
                     <div>
-                      <p className="font-medium">Emergency Override Active</p>
+                      <p className="font-medium text-destructive">Emergency Override Active</p>
                       <p className="text-xs">Default preferences are bypassed. Emergency alerts will follow manually configured settings, ensuring critical updates reach recipients immediately through selected channels.</p>
                     </div>
                   </div>
@@ -1647,20 +1695,20 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                     </div>
 
                     {/* Smart Recipient Delivery with Bypass Option */}
-                    <div className="space-y-3 p-3 border-2 border-orange-200 rounded-lg bg-orange-50">
+                    <div className="space-y-3 p-3 border-2 border-red-200 rounded-lg bg-red-50">
                       <div className="flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-orange-600" />
-                        <Label className="text-base font-medium text-orange-800">
+                        <Shield className="w-5 h-5 text-destructive" />
+                        <Label className="text-base font-medium text-red-800">
                           Smart Recipient Delivery With ByPass Option
                         </Label>
                       </div>
-                      <div className="text-sm text-orange-700 bg-orange-100 p-3 rounded-md">
+                      <div className="text-sm text-red-700 bg-red-100 p-3 rounded-md">
                         <p className="font-medium mb-1">Enhanced Emergency Delivery:</p>
                         <p className="mb-2">This advanced option bypasses normal approval workflows and delivers emergency documents directly to all selected recipients instantly. When rejections occur, the system automatically bypasses to the next selected recipients, ensuring critical information reaches everyone without any procedural delays.</p>
                       </div>
-                      <div className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div className="flex items-center justify-between p-2 bg-white rounded border border-red-200">
                         <div className="flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-orange-600" />
+                          <Zap className="w-4 h-4 text-destructive" />
                           <span className="text-sm font-medium">Enable Bypass Mode</span>
                         </div>
                         <Switch
@@ -1669,7 +1717,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                         />
                       </div>
                       {emergencyData.bypassMode && (
-                        <div className="text-xs text-orange-600 bg-orange-100 p-2 rounded flex items-center gap-2">
+                        <div className="text-xs text-destructive bg-red-100 p-2 rounded flex items-center gap-2">
                           <AlertTriangle className="w-4 h-4" />
                           <span>Bypass mode active - Documents will be delivered instantly without approval workflow</span>
                         </div>
@@ -1782,7 +1830,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
 
       {/* Document Assignment Modal */}
       <Dialog open={showAssignmentModal} onOpenChange={setShowAssignmentModal}>
-        <DialogContent className="max-w-4xl w-[95vw] sm:w-auto max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Assign Documents to Recipients</DialogTitle>
             <DialogDescription>
@@ -1802,22 +1850,63 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {selectedRecipients.map((recipientId) => (
-                      <div key={recipientId} className="flex items-center space-x-2 p-2 border rounded">
-                        <Checkbox
-                          id={`${file.name}-${recipientId}`}
-                          checked={documentAssignments[file.name]?.includes(recipientId) ?? true}
-                          onCheckedChange={(checked) => {
+                      <div
+                        key={recipientId}
+                        className={cn(
+                          "flex items-center space-x-2 p-2 border rounded cursor-pointer",
+                          isMobile ? "py-3 bg-muted/20" : "hover:bg-muted/50"
+                        )}
+                        onClick={() => {
+                          if (isMobile) {
+                            const isChecked = documentAssignments[file.name]?.includes(recipientId) ?? true;
                             setDocumentAssignments(prev => {
                               const current = prev[file.name] || [];
-                              if (checked) {
+                              if (!isChecked) {
                                 return { ...prev, [file.name]: [...current, recipientId] };
                               } else {
                                 return { ...prev, [file.name]: current.filter(id => id !== recipientId) };
                               }
                             });
-                          }}
-                        />
-                        <Label htmlFor={`${file.name}-${recipientId}`} className="text-sm cursor-pointer">
+                          }
+                        }}
+                      >
+                        {!isMobile && (
+                          <Checkbox
+                            id={`${file.name}-${recipientId}`}
+                            checked={documentAssignments[file.name]?.includes(recipientId) ?? true}
+                            onCheckedChange={(checked) => {
+                              setDocumentAssignments(prev => {
+                                const current = prev[file.name] || [];
+                                if (checked) {
+                                  return { ...prev, [file.name]: [...current, recipientId] };
+                                } else {
+                                  return { ...prev, [file.name]: current.filter(id => id !== recipientId) };
+                                }
+                              });
+                            }}
+                          />
+                        )}
+
+                        {isMobile && (
+                          <div className={cn(
+                            "flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition-all",
+                            (documentAssignments[file.name]?.includes(recipientId) ?? true)
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground"
+                          )}>
+                            {(documentAssignments[file.name]?.includes(recipientId) ?? true) && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                        )}
+
+                        <Label
+                          htmlFor={!isMobile ? `${file.name}-${recipientId}` : undefined}
+                          className={cn(
+                            "text-sm cursor-pointer flex-1",
+                            isMobile && "ml-2"
+                          )}
+                        >
                           {recipientId.replace('-', ' ').toUpperCase()}
                         </Label>
                       </div>

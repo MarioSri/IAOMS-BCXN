@@ -38,8 +38,8 @@ export default function CommunicationCenter() {
   const [notifications, setNotifications] = useState<ChatNotification[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [chatService] = useState(() => new DecentralizedChatService(
-    process.env.VITE_WS_URL || 'ws://localhost:8080',
-    process.env.VITE_API_URL || 'http://localhost:3000/api'
+    import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
+    import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
 
 

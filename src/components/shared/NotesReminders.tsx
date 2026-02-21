@@ -37,6 +37,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useResponsive } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 
 interface Note {
   id: number;
@@ -72,6 +74,7 @@ interface StickyNoteItemProps {
   isDragging: boolean;
   draggedNoteId: number | null;
   isLocked: boolean;
+  isMobile: boolean;
   onMouseDown: (e: React.MouseEvent, note: Note) => void;
   onTouchStart: (e: React.TouchEvent, note: Note) => void;
   onTogglePin: (id: number) => void;
@@ -79,41 +82,49 @@ interface StickyNoteItemProps {
   onDelete: (id: number) => void;
 }
 
-function StickyNoteItem({ 
-  note, 
-  isMessagesPage, 
-  isDragging, 
-  draggedNoteId, 
-  isLocked, 
-  onMouseDown, 
+function StickyNoteItem({
+  note,
+  isMessagesPage,
+  isDragging,
+  draggedNoteId,
+  isLocked,
+  isMobile,
+  onMouseDown,
   onTouchStart,
-  onTogglePin, 
-  onEdit, 
-  onDelete 
+  onTogglePin,
+  onEdit,
+  onDelete
 }: StickyNoteItemProps) {
   const noteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (noteRef.current) {
+    if (noteRef.current && !isMobile) {
+      noteRef.current.style.position = 'absolute';
       noteRef.current.style.left = `${note.position.x}px`;
       noteRef.current.style.top = `${note.position.y}px`;
       noteRef.current.style.zIndex = note.pinned ? '10' : isDragging && draggedNoteId === note.id ? '50' : '1';
       noteRef.current.style.willChange = isDragging && draggedNoteId === note.id ? 'transform' : 'auto';
+    } else if (noteRef.current && isMobile) {
+      noteRef.current.style.position = 'relative';
+      noteRef.current.style.left = '0';
+      noteRef.current.style.top = '0';
+      noteRef.current.style.zIndex = 'auto';
+      noteRef.current.style.willChange = 'auto';
     }
-  }, [note.position.x, note.position.y, note.pinned, isDragging, draggedNoteId, note.id]);
+  }, [note.position.x, note.position.y, note.pinned, isDragging, draggedNoteId, note.id, isMobile]);
 
   return (
     <div
       ref={noteRef}
-      className={`sticky-note w-64 p-4 rounded-lg shadow-md hover:shadow-lg animate-scale-in ${note.color} ${
-        isMessagesPage && !isLocked ? 'cursor-move' : 'cursor-default'
-      } ${
-        isDragging && draggedNoteId === note.id 
-          ? 'transition-none transform-gpu scale-105 shadow-2xl' 
-          : 'transition-all duration-200'
-      }`}
-      onMouseDown={(e) => isMessagesPage && onMouseDown(e, note)}
-      onTouchStart={(e) => isMessagesPage && onTouchStart(e, note)}
+      className={cn(
+        "p-4 rounded-lg shadow-md hover:shadow-lg animate-scale-in transition-all duration-200",
+        note.color,
+        isMobile ? "w-full" : "w-64",
+        isMessagesPage && !isLocked && !isMobile ? 'cursor-move' : 'cursor-default',
+        isDragging && draggedNoteId === note.id && !isMobile ? 'transition-none transform-gpu scale-105 shadow-2xl' : ''
+      )}
+      onMouseDown={(e) => isMessagesPage && !isMobile && onMouseDown(e, note)}
+      onTouchStart={(e) => isMessagesPage && !isMobile && onTouchStart(e, note)}
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-sm pr-2">{note.title}</h4>
@@ -121,9 +132,8 @@ function StickyNoteItem({
           <button
             onClick={() => onTogglePin(note.id)}
             title={note.pinned ? "Unpin note" : "Pin note"}
-            className={`p-1 rounded transition-colors ${
-              note.pinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-            }`}
+            className={`p-1 rounded transition-colors ${note.pinned ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+              }`}
           >
             <Pin className="w-3 h-3" />
           </button>
@@ -160,6 +170,7 @@ function StickyNoteItem({
 }
 
 export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemindersProps) {
+  const { isMobile } = useResponsive();
   const [draggedNoteId, setDraggedNoteId] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -298,7 +309,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
   };
 
   const togglePin = (id: number) => {
-    setNotes(notes.map(note => 
+    setNotes(notes.map(note =>
       note.id === id ? { ...note, pinned: !note.pinned } : note
     ));
   };
@@ -322,8 +333,8 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
 
   const saveEditNote = () => {
     if (editingNote) {
-      setNotes(notes.map(note => 
-        note.id === editingNote 
+      setNotes(notes.map(note =>
+        note.id === editingNote
           ? { ...note, ...editNoteData }
           : note
       ));
@@ -340,34 +351,34 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
   // Advanced mouse-based drag functionality (from Dashboard)
   const handleMouseDown = (e: React.MouseEvent, note: Note) => {
     if (!isMessagesPage || isLocked) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
 
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       setDragOffset({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       });
     }
-    
+
     setDraggedNoteId(note.id);
     setIsDragging(true);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!draggedNoteId || !isDragging || !isMessagesPage) return;
-    
+
     e.preventDefault();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       const noteWidth = 256; // w-64 = 256px
       const noteHeight = 200; // approximate height
-      
+
       const newX = Math.max(0, Math.min(
         containerRect.width - noteWidth,
         e.clientX - containerRect.left - dragOffset.x
@@ -377,8 +388,8 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
         e.clientY - containerRect.top - dragOffset.y
       ));
 
-      setNotes(prev => prev.map(note => 
-        note.id === draggedNoteId 
+      setNotes(prev => prev.map(note =>
+        note.id === draggedNoteId
           ? { ...note, position: { x: newX, y: newY } }
           : note
       ));
@@ -394,36 +405,36 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
 
   const handleTouchStart = (e: React.TouchEvent, note: Note) => {
     if (!isMessagesPage || isLocked) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const touch = e.touches[0];
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       setDragOffset({
         x: touch.clientX - rect.left,
         y: touch.clientY - rect.top
       });
     }
-    
+
     setDraggedNoteId(note.id);
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!draggedNoteId || !isDragging || !isMessagesPage) return;
-    
+
     e.preventDefault();
     const touch = e.touches[0];
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       const noteWidth = 256;
       const noteHeight = 200;
-      
+
       const newX = Math.max(0, Math.min(
         containerRect.width - noteWidth,
         touch.clientX - containerRect.left - dragOffset.x
@@ -433,8 +444,8 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
         touch.clientY - containerRect.top - dragOffset.y
       ));
 
-      setNotes(prev => prev.map(note => 
-        note.id === draggedNoteId 
+      setNotes(prev => prev.map(note =>
+        note.id === draggedNoteId
           ? { ...note, position: { x: newX, y: newY } }
           : note
       ));
@@ -449,7 +460,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
   };
 
   const toggleReminder = (id: number) => {
-    setReminders(reminders.map(reminder => 
+    setReminders(reminders.map(reminder =>
       reminder.id === id ? { ...reminder, completed: !reminder.completed } : reminder
     ));
   };
@@ -463,7 +474,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
     return colors[priority as keyof typeof colors];
   };
 
-  const filteredNotes = notes.filter(note => 
+  const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -505,7 +516,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   <Input
                     placeholder="Reminder title"
                     value={newReminder.title}
-                    onChange={(e) => setNewReminder({...newReminder, title: e.target.value})}
+                    onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -513,7 +524,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   <Textarea
                     placeholder="Reminder description"
                     value={newReminder.description}
-                    onChange={(e) => setNewReminder({...newReminder, description: e.target.value})}
+                    onChange={(e) => setNewReminder({ ...newReminder, description: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -522,7 +533,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                     <Input
                       type="date"
                       value={newReminder.dueDate}
-                      onChange={(e) => setNewReminder({...newReminder, dueDate: e.target.value})}
+                      onChange={(e) => setNewReminder({ ...newReminder, dueDate: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
@@ -530,14 +541,14 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                     <Input
                       type="time"
                       value={newReminder.dueTime}
-                      onChange={(e) => setNewReminder({...newReminder, dueTime: e.target.value})}
+                      onChange={(e) => setNewReminder({ ...newReminder, dueTime: e.target.value })}
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Priority</label>
-                    <Select value={newReminder.priority} onValueChange={(value: any) => setNewReminder({...newReminder, priority: value})}>
+                    <Select value={newReminder.priority} onValueChange={(value: any) => setNewReminder({ ...newReminder, priority: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -550,7 +561,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
-                    <Select value={newReminder.category} onValueChange={(value) => setNewReminder({...newReminder, category: value})}>
+                    <Select value={newReminder.category} onValueChange={(value) => setNewReminder({ ...newReminder, category: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -574,7 +585,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
               </div>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="gradient">
@@ -593,7 +604,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   <Input
                     placeholder="Note title"
                     value={newNote.title}
-                    onChange={(e) => setNewNote({...newNote, title: e.target.value})}
+                    onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -601,7 +612,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   <Textarea
                     placeholder="Note content"
                     value={newNote.content}
-                    onChange={(e) => setNewNote({...newNote, content: e.target.value})}
+                    onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
                     rows={4}
                   />
                 </div>
@@ -613,17 +624,16 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                         <button
                           key={color.class}
                           title={`Select ${color.name.toLowerCase()} color`}
-                          className={`w-8 h-8 rounded-full border-2 ${color.class} ${
-                            newNote.color === color.class ? 'border-primary' : 'border-border'
-                          }`}
-                          onClick={() => setNewNote({...newNote, color: color.class})}
+                          className={`w-8 h-8 rounded-full border-2 ${color.class} ${newNote.color === color.class ? 'border-primary' : 'border-border'
+                            }`}
+                          onClick={() => setNewNote({ ...newNote, color: color.class })}
                         />
                       ))}
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
-                    <Select value={newNote.category} onValueChange={(value) => setNewNote({...newNote, category: value})}>
+                    <Select value={newNote.category} onValueChange={(value) => setNewNote({ ...newNote, category: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -663,7 +673,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
               <Input
                 placeholder="Note title"
                 value={editNoteData.title}
-                onChange={(e) => setEditNoteData({...editNoteData, title: e.target.value})}
+                onChange={(e) => setEditNoteData({ ...editNoteData, title: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -671,7 +681,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
               <Textarea
                 placeholder="Note content"
                 value={editNoteData.content}
-                onChange={(e) => setEditNoteData({...editNoteData, content: e.target.value})}
+                onChange={(e) => setEditNoteData({ ...editNoteData, content: e.target.value })}
                 rows={4}
               />
             </div>
@@ -683,17 +693,16 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                     <button
                       key={color.class}
                       title={`Select ${color.name.toLowerCase()} color`}
-                      className={`w-8 h-8 rounded-full border-2 ${color.class} ${
-                        editNoteData.color === color.class ? 'border-primary' : 'border-border'
-                      }`}
-                      onClick={() => setEditNoteData({...editNoteData, color: color.class})}
+                      className={`w-8 h-8 rounded-full border-2 ${color.class} ${editNoteData.color === color.class ? 'border-primary' : 'border-border'
+                        }`}
+                      onClick={() => setEditNoteData({ ...editNoteData, color: color.class })}
                     />
                   ))}
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category</label>
-                <Select value={editNoteData.category} onValueChange={(value) => setEditNoteData({...editNoteData, category: value})}>
+                <Select value={editNoteData.category} onValueChange={(value) => setEditNoteData({ ...editNoteData, category: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -726,7 +735,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                 Sticky Notes
               </CardTitle>
               <div className="flex items-center gap-2">
-                {isMessagesPage && (
+                {isMessagesPage && !isMobile && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -743,16 +752,21 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                     placeholder="Search notes..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
+                    className={cn("pl-10", isMobile ? "w-full" : "w-64")}
                   />
                 </div>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               ref={containerRef}
-              className="relative min-h-[500px] bg-gradient-subtle rounded-lg p-4 overflow-hidden select-none"
+              className={cn(
+                "relative bg-gradient-subtle rounded-lg p-4 select-none",
+                isMobile
+                  ? "flex flex-col gap-4 min-h-[300px]"
+                  : "min-h-[500px] overflow-hidden"
+              )}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
@@ -760,7 +774,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
               onTouchEnd={handleTouchEnd}
             >
               {/* Status indicators in top-right corner - matches Dashboard design */}
-              {isMessagesPage && isLocked && (
+              {isMessagesPage && isLocked && !isMobile && (
                 <div className="absolute top-2 right-2 z-20">
                   <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">
                     <Lock className="w-3 h-3 mr-1" />
@@ -768,8 +782,8 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   </Badge>
                 </div>
               )}
-              
-              {isMessagesPage && !isLocked && sortedNotes.length > 0 && (
+
+              {isMessagesPage && !isLocked && sortedNotes.length > 0 && !isMobile && (
                 <div className="absolute top-2 right-2 z-20">
                   <Badge variant="outline" className="text-xs bg-white/80">
                     <Move className="w-3 h-3 mr-1" />
@@ -777,7 +791,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   </Badge>
                 </div>
               )}
-              
+
               {sortedNotes.map((note) => (
                 <StickyNoteItem
                   key={note.id}
@@ -786,6 +800,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   isDragging={isDragging}
                   draggedNoteId={draggedNoteId}
                   isLocked={isLocked}
+                  isMobile={isMobile}
                   onMouseDown={handleMouseDown}
                   onTouchStart={handleTouchStart}
                   onTogglePin={togglePin}
@@ -793,7 +808,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                   onDelete={deleteNote}
                 />
               ))}
-              
+
               {sortedNotes.length === 0 && (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <div className="text-center">
@@ -820,9 +835,9 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                 key={reminder.id}
                 className="p-3 border rounded-lg space-y-2 hover:bg-accent transition-colors animate-fade-in"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-center justify-between">
                   <h4 className="font-medium text-sm">{reminder.title}</h4>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
                     <Badge className={`text-xs ${getPriorityColor(reminder.priority)}`}>
                       {reminder.priority}
                     </Badge>
@@ -851,7 +866,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
                 </Badge>
               </div>
             ))}
-            
+
             {upcomingReminders.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
                 <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />

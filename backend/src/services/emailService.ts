@@ -1,10 +1,15 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export class EmailService {
   static async sendNotification(to: string, subject: string, html: string) {
     try {
+      if (!resend) {
+        console.warn('Email service skipped: RESEND_API_KEY is not configured');
+        return { success: false, error: 'Email service not configured' };
+      }
+
       const { data, error } = await resend.emails.send({
         from: 'noreply@yourdomain.com',
         to,

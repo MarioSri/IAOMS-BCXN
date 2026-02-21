@@ -1,8 +1,8 @@
-import { 
-  Meeting, 
-  MeetingLinks, 
-  GoogleMeetInfo, 
-  ZoomMeetingInfo, 
+import {
+  Meeting,
+  MeetingLinks,
+  GoogleMeetInfo,
+  ZoomMeetingInfo,
   TeamsMeetingInfo,
   CreateMeetingResponse,
   ConflictCheck,
@@ -39,7 +39,7 @@ export class MeetingAPIService {
     this.msClientId = import.meta.env.VITE_MS_CLIENT_ID || '';
     this.msClientSecret = import.meta.env.VITE_MS_CLIENT_SECRET || '';
     this.msTenantId = import.meta.env.VITE_MS_TENANT_ID || '';
-    this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    this.apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
     this.isDevelopment = import.meta.env.DEV || false;
   }
 
@@ -90,7 +90,7 @@ export class MeetingAPIService {
       }
 
       const isSignedIn = authInstance.isSignedIn?.get();
-      
+
       if (!isSignedIn) {
         console.warn('User not signed in to Google. Attempting to sign in...');
         try {
@@ -151,7 +151,7 @@ export class MeetingAPIService {
       }
 
       const conferenceData = response.result.conferenceData;
-      
+
       // Safe property access with proper fallback logic
       let meetingLink = 'https://meet.google.com/new';
       if (conferenceData?.entryPoints && Array.isArray(conferenceData.entryPoints)) {
@@ -174,7 +174,7 @@ export class MeetingAPIService {
       };
     } catch (error: any) {
       console.error('Google Meet creation failed:', error);
-      
+
       // If API call fails, provide helpful error message
       if (error.message?.includes('authentication')) {
         throw new Error('Google authentication required. Please sign in with your Google account.');
@@ -191,7 +191,7 @@ export class MeetingAPIService {
     try {
       // Get Zoom access token
       const accessToken = await this.getZoomAccessToken();
-      
+
       // Calculate meeting start time
       const startDateTime = this.formatISODateTime(meeting.date!, meeting.time!);
 
@@ -265,7 +265,7 @@ export class MeetingAPIService {
       }
     } catch (error: any) {
       console.error('Zoom meeting creation failed:', error);
-      
+
       // Provide helpful error messages
       if (error.message?.includes('access token')) {
         throw new Error('Zoom authentication failed. Please check your credentials.');
@@ -322,7 +322,7 @@ export class MeetingAPIService {
   async createTeamsMeeting(meeting: Partial<Meeting>): Promise<TeamsMeetingInfo> {
     try {
       const accessToken = await this.getMicrosoftAccessToken();
-      
+
       const meetingData = {
         subject: meeting.title,
         body: {
@@ -445,7 +445,7 @@ export class MeetingAPIService {
     if (this.isDevelopment) {
       return mockMeetingService.createMeeting(meeting as Meeting);
     }
-    
+
     try {
       const meetingLinks: MeetingLinks = {
         primary: meeting.type === 'online' ? 'google-meet' : 'physical'
@@ -455,7 +455,7 @@ export class MeetingAPIService {
       if (meeting.type === 'online' || meeting.type === 'hybrid') {
         // Check if meeting already has a primary platform preference
         const preferredPlatform = meeting.meetingLinks?.primary || meeting.location?.toLowerCase();
-        
+
         switch (preferredPlatform) {
           case 'google-meet':
           case 'meet':
@@ -506,7 +506,7 @@ export class MeetingAPIService {
     if (this.isDevelopment) {
       return mockMeetingService.checkConflicts(meeting);
     }
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -553,7 +553,7 @@ export class MeetingAPIService {
     if (this.isDevelopment) {
       return mockMeetingService.getAISchedulingSuggestions(meeting);
     }
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
@@ -737,11 +737,11 @@ export class MeetingAPIService {
     const [hours, minutes] = time.split(':');
     const meetingDate = new Date(date);
     meetingDate.setHours(parseInt(hours), parseInt(minutes));
-    
+
     if (durationMinutes) {
       meetingDate.setMinutes(meetingDate.getMinutes() + durationMinutes);
     }
-    
+
     return meetingDate.toISOString();
   }
 

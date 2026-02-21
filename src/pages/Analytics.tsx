@@ -21,8 +21,6 @@ export default function Analytics() {
     activeSessions: 0
   });
 
-  if (!user) return null;
-
 
   useEffect(() => {
     const allDocs = [...trackDocuments, ...approvalCards];
@@ -74,7 +72,9 @@ export default function Analytics() {
     };
   }, [trackDocuments, approvalCards]);
 
-  const departmentStats = user.role === 'principal' ? [
+  if (!user) return null;
+
+  const departmentStats = (user.role === 'principal' || user.role === 'demo-work') ? [
     { name: "Computer Science", submitted: 45, approved: 38, rejected: 7, pending: 0 },
     { name: "Electrical Engineering", submitted: 32, approved: 28, rejected: 2, pending: 2 },
     { name: "Mechanical Engineering", submitted: 28, approved: 24, rejected: 3, pending: 1 },
@@ -82,7 +82,7 @@ export default function Analytics() {
     { name: "Civil Engineering", submitted: 22, approved: 20, rejected: 1, pending: 1 }
   ] : [];
 
-  const monthlyTrends = user.role === 'principal' ? [
+  const monthlyTrends = (user.role === 'principal' || user.role === 'demo-work') ? [
     { month: "Oct", documents: 120, approved: 98, rejected: 15, avgTime: 2.3 },
     { month: "Nov", documents: 135, approved: 115, rejected: 12, avgTime: 2.1 },
     { month: "Dec", documents: 98, approved: 85, rejected: 8, avgTime: 1.9 },
@@ -97,18 +97,18 @@ export default function Analytics() {
           <p className="text-sm sm:text-base text-muted-foreground">Comprehensive insights into document workflow performance</p>
         </div>
 
-        {user.role === 'principal' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {(user.role === 'principal' || user.role === 'demo-work') && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <Card className="shadow-sm border-muted/20">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg shrink-0">
-                    <FileText className="h-6 w-6 text-primary" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-primary/10 rounded-lg shrink-0">
+                    <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl sm:text-2xl font-bold truncate">{metrics.totalDocuments}</p>
-                      {isConnected && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
+                      <p className="text-lg sm:text-2xl font-bold truncate">{metrics.totalDocuments}</p>
+                      {isConnected && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Documents</p>
                     <div className="flex items-center gap-1 mt-1">
@@ -121,15 +121,15 @@ export default function Analytics() {
             </Card>
 
             <Card className="shadow-sm border-muted/20">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-success/10 rounded-lg shrink-0">
-                    <CheckCircle2 className="h-6 w-6 text-success" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-success/10 rounded-lg shrink-0">
+                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl sm:text-2xl font-bold truncate">{metrics.approved}</p>
-                      {isConnected && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
+                      <p className="text-lg sm:text-2xl font-bold truncate">{metrics.approved}</p>
+                      {isConnected && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">Approved</p>
                     <div className="flex items-center gap-1 mt-1">
@@ -141,15 +141,15 @@ export default function Analytics() {
             </Card>
 
             <Card className="shadow-sm border-muted/20">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-warning/10 rounded-lg shrink-0">
-                    <Clock className="h-6 w-6 text-warning" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-warning/10 rounded-lg shrink-0">
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-warning" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl sm:text-2xl font-bold truncate">{metrics.avgProcessingTime}</p>
-                      {isConnected && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
+                      <p className="text-lg sm:text-2xl font-bold truncate">{metrics.avgProcessingTime}</p>
+                      {isConnected && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">Avg. Days</p>
                     <div className="flex items-center gap-1 mt-1">
@@ -161,15 +161,15 @@ export default function Analytics() {
             </Card>
 
             <Card className="shadow-sm border-muted/20">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-destructive/10 rounded-lg shrink-0">
-                    <XCircle className="h-6 w-6 text-destructive" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="p-2 sm:p-3 bg-destructive/10 rounded-lg shrink-0">
+                    <XCircle className="h-5 w-5 sm:h-6 sm:w-6 text-destructive" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xl sm:text-2xl font-bold truncate">{metrics.rejected}</p>
-                      {isConnected && <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
+                      <p className="text-lg sm:text-2xl font-bold truncate">{metrics.rejected}</p>
+                      {isConnected && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">Rejected</p>
                     <div className="flex items-center gap-1 mt-1">
@@ -183,11 +183,31 @@ export default function Analytics() {
         )}
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="flex w-full overflow-x-auto overflow-y-hidden no-scrollbar justify-start sm:grid sm:grid-cols-4 h-auto p-1 bg-muted/50">
-            <TabsTrigger value="overview" className="flex-shrink-0 py-2">Overview</TabsTrigger>
-            <TabsTrigger value="departments" className="flex-shrink-0 py-2">Departments</TabsTrigger>
-            <TabsTrigger value="trends" className="flex-shrink-0 py-2">Trends</TabsTrigger>
-            <TabsTrigger value="performance" className="flex-shrink-0 py-2">Performance</TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto overflow-y-hidden hide-scrollbar justify-start xs:justify-center sm:grid sm:grid-cols-4 h-auto p-1.5 bg-muted/30 backdrop-blur-md border border-muted/20 rounded-xl gap-1 shadow-sm">
+            <TabsTrigger
+              value="overview"
+              className="flex-shrink-0 xs:flex-1 py-2.5 px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-elegant font-semibold text-sm"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="departments"
+              className="flex-shrink-0 xs:flex-1 py-2.5 px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-elegant font-semibold text-sm"
+            >
+              Departments
+            </TabsTrigger>
+            <TabsTrigger
+              value="trends"
+              className="flex-shrink-0 xs:flex-1 py-2.5 px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-elegant font-semibold text-sm"
+            >
+              Trends
+            </TabsTrigger>
+            <TabsTrigger
+              value="performance"
+              className="flex-shrink-0 xs:flex-1 py-2.5 px-4 rounded-lg transition-all duration-300 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-elegant font-semibold text-sm"
+            >
+              Performance
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">

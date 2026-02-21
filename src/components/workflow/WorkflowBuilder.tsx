@@ -29,15 +29,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Users, 
-  UserCheck, 
-  Building, 
-  Crown, 
-  Clock, 
-  GitBranch, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Users,
+  UserCheck,
+  Building,
+  Crown,
+  Clock,
+  GitBranch,
+  CheckCircle,
+  XCircle,
   Timer,
   AlertTriangle,
   Play,
@@ -170,7 +170,8 @@ const edgeTypes: EdgeTypes = {
 const RoleNode = ({ data, selected }: { data: any; selected: boolean }) => {
   const getRoleIcon = (role: string) => {
     switch (role) {
-      case 'Principal': return <Crown className="h-4 w-4" />;
+      case 'Principal':
+      case 'Demo Work Role': return <Crown className="h-4 w-4" />;
       case 'Registrar': return <UserCheck className="h-4 w-4" />;
       case 'HOD': return <Building className="h-4 w-4" />;
       case 'Program Head': return <Users className="h-4 w-4" />;
@@ -181,7 +182,8 @@ const RoleNode = ({ data, selected }: { data: any; selected: boolean }) => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Principal': return 'bg-green-100 border-green-500 text-green-800';
+      case 'Principal':
+      case 'Demo Work Role': return 'bg-green-100 border-green-500 text-green-800';
       case 'Registrar': return 'bg-blue-100 border-blue-500 text-blue-800';
       case 'HOD': return 'bg-purple-100 border-purple-500 text-purple-800';
       case 'Program Head': return 'bg-indigo-100 border-indigo-500 text-indigo-800';
@@ -455,42 +457,42 @@ export const WorkflowBuilder = () => {
       case 'priority':
         return {
           type: 'animated',
-          data: { 
-            color: '#f59e0b', 
-            weight: 3, 
-            animated: true, 
-            label: 'Priority' 
+          data: {
+            color: '#f59e0b',
+            weight: 3,
+            animated: true,
+            label: 'Priority'
           },
           style: { stroke: '#f59e0b', strokeWidth: 3 }
         };
       case 'emergency':
         return {
           type: 'straight',
-          data: { 
-            color: '#ef4444', 
-            weight: 4, 
-            label: 'Emergency' 
+          data: {
+            color: '#ef4444',
+            weight: 4,
+            label: 'Emergency'
           },
           style: { stroke: '#ef4444', strokeWidth: 4 }
         };
       case 'conditional':
         return {
           type: 'smooth',
-          data: { 
-            color: '#3b82f6', 
-            weight: 2, 
-            dashed: true, 
-            label: 'Conditional' 
+          data: {
+            color: '#3b82f6',
+            weight: 2,
+            dashed: true,
+            label: 'Conditional'
           },
           style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '8,4' }
         };
       default:
         return {
           type: 'smooth',
-          data: { 
-            color: '#64748b', 
-            weight: 2, 
-            label: 'Normal' 
+          data: {
+            color: '#64748b',
+            weight: 2,
+            label: 'Normal'
           },
           style: { stroke: '#64748b', strokeWidth: 2 }
         };
@@ -502,19 +504,19 @@ export const WorkflowBuilder = () => {
       // Add validation for connections
       const sourceNode = nodes.find(n => n.id === params.source);
       const targetNode = nodes.find(n => n.id === params.target);
-      
+
       // Prevent self-connections
       if (params.source === params.target) return;
-      
+
       // Prevent multiple connections between same nodes
       const existingConnection = edges.find(
         edge => edge.source === params.source && edge.target === params.target
       );
       if (existingConnection) return;
-      
+
       // Get connection style based on current mode
       const connectionStyle = getConnectionStyle(connectionMode);
-      
+
       // Add the edge with enhanced styling
       const newEdge: Edge = {
         ...params,
@@ -522,7 +524,7 @@ export const WorkflowBuilder = () => {
         markerEnd: { type: MarkerType.ArrowClosed },
         ...connectionStyle,
       };
-      
+
       setEdges((eds) => addEdge(newEdge, eds));
     },
     [setEdges, nodes, edges, connectionMode]
@@ -563,8 +565,8 @@ export const WorkflowBuilder = () => {
   };
 
   const updateNode = (nodeId: string, newData: any) => {
-    setNodes((nds) => 
-      nds.map((node) => 
+    setNodes((nds) =>
+      nds.map((node) =>
         node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
       )
     );
@@ -585,12 +587,12 @@ export const WorkflowBuilder = () => {
       edges,
       createdAt: new Date().toISOString()
     };
-    
+
     // Save to localStorage for demo purposes
     const savedWorkflows = JSON.parse(localStorage.getItem('workflows') || '[]');
     savedWorkflows.push(workflow);
     localStorage.setItem('workflows', JSON.stringify(savedWorkflows));
-    
+
     alert(`Workflow "${workflowName}" saved successfully!`);
   };
 
@@ -612,87 +614,94 @@ export const WorkflowBuilder = () => {
   };
 
   const nodeLibrary = [
-    { 
-      type: 'startNode', 
-      data: { label: 'Start' }, 
-      icon: Play, 
+    {
+      type: 'startNode',
+      data: { label: 'Start' },
+      icon: Play,
       color: 'bg-green-100 hover:bg-green-200',
       description: 'Workflow start point'
     },
-    { 
-      type: 'endNode', 
-      data: { label: 'End' }, 
-      icon: Square, 
+    {
+      type: 'endNode',
+      data: { label: 'End' },
+      icon: Square,
       color: 'bg-red-100 hover:bg-red-200',
       description: 'Workflow end point'
     },
-    { 
-      type: 'roleNode', 
-      data: { role: 'Principal', label: 'Principal Review', description: 'Review by Principal' }, 
-      icon: Crown, 
+    {
+      type: 'roleNode',
+      data: { role: 'Principal', label: 'Principal Review', description: 'Review by Principal' },
+      icon: Crown,
       color: 'bg-green-100 hover:bg-green-200',
       description: 'Principal role task'
     },
-    { 
-      type: 'roleNode', 
-      data: { role: 'Registrar', label: 'Registrar Check', description: 'Check by Registrar' }, 
-      icon: UserCheck, 
+    {
+      type: 'roleNode',
+      data: { role: 'Demo Work Role', label: 'Demo Work Role Review', description: 'Review by Demo Work Role' },
+      icon: Crown,
+      color: 'bg-green-100 hover:bg-green-200',
+      description: 'Demo Work Role task'
+    },
+    {
+      type: 'roleNode',
+      data: { role: 'Registrar', label: 'Registrar Check', description: 'Check by Registrar' },
+      icon: UserCheck,
       color: 'bg-blue-100 hover:bg-blue-200',
       description: 'Registrar role task'
     },
-    { 
-      type: 'roleNode', 
-      data: { role: 'HOD', label: 'HOD Approval', description: 'Department head approval' }, 
-      icon: Building, 
+    {
+      type: 'roleNode',
+      data: { role: 'HOD', label: 'HOD Approval', description: 'Department head approval' },
+      icon: Building,
       color: 'bg-purple-100 hover:bg-purple-200',
       description: 'HOD role task'
     },
-    { 
-      type: 'roleNode', 
-      data: { role: 'Program Head', label: 'Program Review', description: 'Program head review' }, 
-      icon: Users, 
+    {
+      type: 'roleNode',
+      data: { role: 'Program Head', label: 'Program Review', description: 'Program head review' },
+      icon: Users,
       color: 'bg-indigo-100 hover:bg-indigo-200',
       description: 'Program head role task'
     },
-    { 
-      type: 'roleNode', 
-      data: { role: 'Employee', label: 'Employee Task', description: 'Employee task' }, 
-      icon: Users, 
+    {
+      type: 'roleNode',
+      data: { role: 'Employee', label: 'Employee Task', description: 'Employee task' },
+      icon: Users,
       color: 'bg-gray-100 hover:bg-gray-200',
       description: 'Employee role task'
     },
-    { 
-      type: 'decisionNode', 
-      data: { label: 'Decision Point' }, 
-      icon: Diamond, 
+    {
+      type: 'decisionNode',
+      data: { label: 'Decision Point' },
+      icon: Diamond,
       color: 'bg-yellow-100 hover:bg-yellow-200',
       description: 'Decision/branching point'
     },
-    { 
-      type: 'processNode', 
-      data: { label: 'Process Step', description: 'Processing step' }, 
-      icon: Circle, 
+    {
+      type: 'processNode',
+      data: { label: 'Process Step', description: 'Processing step' },
+      icon: Circle,
       color: 'bg-blue-100 hover:bg-blue-200',
       description: 'General process step'
     },
-    { 
-      type: 'statusNode', 
-      data: { status: 'approved', description: 'Approved status' }, 
-      icon: CheckCircle, 
+    {
+      type: 'statusNode',
+      data: { status: 'approved', description: 'Approved status' },
+      icon: CheckCircle,
       color: 'bg-green-100 hover:bg-green-200',
       description: 'Status node'
     },
-    { 
-      type: 'statusNode', 
-      data: { status: 'rejected', description: 'Rejected status' }, 
-      icon: XCircle, 
+    {
+      type: 'statusNode',
+      data: { status: 'rejected', description: 'Rejected status' },
+      icon: XCircle,
       color: 'bg-red-100 hover:bg-red-200',
       description: 'Rejection status'
     },
-    { 
-      type: 'statusNode', 
-      data: { status: 'pending', description: 'Pending status' }, 
-      icon: Clock, 
+    {
+      type: 'statusNode',
+      data: { status: 'pending', description: 'Pending status' },
+      icon: Clock,
       color: 'bg-yellow-100 hover:bg-yellow-200',
       description: 'Pending status'
     },
@@ -837,28 +846,28 @@ export const WorkflowBuilder = () => {
             }}
             connectionLineStyle={{
               strokeWidth: 3,
-              stroke: connectionMode === 'priority' ? '#f59e0b' : 
-                     connectionMode === 'emergency' ? '#ef4444' :
-                     connectionMode === 'conditional' ? '#3b82f6' : '#64748b',
+              stroke: connectionMode === 'priority' ? '#f59e0b' :
+                connectionMode === 'emergency' ? '#ef4444' :
+                  connectionMode === 'conditional' ? '#3b82f6' : '#64748b',
               strokeDasharray: connectionMode === 'conditional' ? '8,4' : undefined,
             }}
           >
-            <Controls 
-              showZoom 
-              showFitView 
+            <Controls
+              showZoom
+              showFitView
               showInteractive
               className="bg-background border rounded-lg shadow-sm"
             />
-            <MiniMap 
-              zoomable 
-              pannable 
+            <MiniMap
+              zoomable
+              pannable
               nodeStrokeWidth={3}
               className="bg-background border rounded-lg shadow-sm"
               style={{ backgroundColor: 'hsl(var(--muted))' }}
             />
-            <Background 
-              gap={20} 
-              size={1} 
+            <Background
+              gap={20}
+              size={1}
               color="hsl(var(--muted-foreground))"
               style={{ opacity: 0.1 }}
             />
@@ -883,12 +892,12 @@ export const WorkflowBuilder = () => {
                   <Circle className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-800">Node Selected</span>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium">Node Type</Label>
                   <p className="text-sm text-muted-foreground capitalize">{selectedNode.type}</p>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium">Node ID</Label>
                   <p className="text-sm text-muted-foreground font-mono">{selectedNode.id}</p>
@@ -916,18 +925,18 @@ export const WorkflowBuilder = () => {
                 )}
 
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setEditingNode(selectedNode)}
                     className="flex-1"
                   >
                     <Edit3 className="h-4 w-4 mr-1" />
                     Edit
                   </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => deleteNode(selectedNode.id)}
                     className="flex-1"
                   >
@@ -942,17 +951,17 @@ export const WorkflowBuilder = () => {
                   <Route className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium text-green-800">Connection Selected</span>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium">Connection ID</Label>
                   <p className="text-sm text-muted-foreground font-mono">{selectedEdge.id}</p>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium">Connection Type</Label>
                   <p className="text-sm text-muted-foreground capitalize">{selectedEdge.type}</p>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm font-medium">From → To</Label>
                   <p className="text-sm text-muted-foreground">{selectedEdge.source} → {selectedEdge.target}</p>
@@ -968,25 +977,24 @@ export const WorkflowBuilder = () => {
                 <div>
                   <Label className="text-sm font-medium">Connection Style</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    <div 
-                      className={`w-8 h-0.5 rounded ${
-                        selectedEdge.data?.color === '#f59e0b' ? 'bg-yellow-500' :
+                    <div
+                      className={`w-8 h-0.5 rounded ${selectedEdge.data?.color === '#f59e0b' ? 'bg-yellow-500' :
                         selectedEdge.data?.color === '#ef4444' ? 'bg-red-500' :
-                        selectedEdge.data?.color === '#3b82f6' ? 'bg-blue-500 border-dashed' : 'bg-gray-400'
-                      }`}
+                          selectedEdge.data?.color === '#3b82f6' ? 'bg-blue-500 border-dashed' : 'bg-gray-400'
+                        }`}
                     ></div>
                     <span className="text-xs text-muted-foreground">
                       {selectedEdge.data?.color === '#f59e0b' ? 'Priority' :
-                       selectedEdge.data?.color === '#ef4444' ? 'Emergency' :
-                       selectedEdge.data?.color === '#3b82f6' ? 'Conditional' : 'Normal'}
+                        selectedEdge.data?.color === '#ef4444' ? 'Emergency' :
+                          selectedEdge.data?.color === '#3b82f6' ? 'Conditional' : 'Normal'}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => deleteEdge(selectedEdge.id)}
                     className="flex-1"
                   >
@@ -996,10 +1004,10 @@ export const WorkflowBuilder = () => {
                 </div>
               </div>
             ) : editingNode ? (
-              <NodeEditForm 
-                node={editingNode} 
-                onSave={updateNode} 
-                onCancel={() => setEditingNode(null)} 
+              <NodeEditForm
+                node={editingNode}
+                onSave={updateNode}
+                onCancel={() => setEditingNode(null)}
               />
             ) : (
               <div className="text-center py-8">
@@ -1015,7 +1023,7 @@ export const WorkflowBuilder = () => {
                       Click on any node or wire to configure it
                     </p>
                   </div>
-                  
+
                   <div className="pt-4 border-t">
                     <Label className="text-sm font-medium mb-3 block">Wire Connection Types</Label>
                     <div className="space-y-3">
@@ -1048,10 +1056,10 @@ export const WorkflowBuilder = () => {
 };
 
 // Node Edit Form Component
-const NodeEditForm = ({ node, onSave, onCancel }: { 
-  node: Node; 
-  onSave: (nodeId: string, newData: any) => void; 
-  onCancel: () => void; 
+const NodeEditForm = ({ node, onSave, onCancel }: {
+  node: Node;
+  onSave: (nodeId: string, newData: any) => void;
+  onCancel: () => void;
 }) => {
   const [formData, setFormData] = useState({
     label: String(node.data.label || ''),

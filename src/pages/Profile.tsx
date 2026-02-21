@@ -1,37 +1,29 @@
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResponsiveLayout } from "@/components/layout/ResponsiveLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { useTheme } from "next-themes";
 import {
   User,
-  Mail,
-  Phone,
   Bell,
-  Palette,
-  Lock,
   Camera,
-  Save,
   Edit,
-  Settings,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useResponsive } from "@/hooks/useResponsive";
+import { cn } from "@/lib/utils";
 import { PersonalInformationForm, PersonalInfoData } from "@/components/shared/PersonalInformationForm";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { isMobile } = useResponsive();
   const [isEditing, setIsEditing] = useState(false);
-  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
 
   const [profileData, setProfileData] = useState<PersonalInfoData>({
@@ -52,19 +44,9 @@ export default function Profile() {
     whatsapp: { enabled: false, interval: 1, unit: 'hours' }
   });
 
-  const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    pushNotifications: true,
-    smsAlerts: false,
-    whatsappNotifications: false,
-    autoSave: true,
-    twoFactorAuth: false
-  });
-
   const { toast } = useToast();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
 
   useEffect(() => {
     const loadProfileData = () => {
@@ -102,10 +84,6 @@ export default function Profile() {
     loadProfileData();
   }, [user]);
 
-  function handleLogout() {
-    navigate("/");
-  }
-
   const handleSaveProfile = async (data: PersonalInfoData) => {
     try {
       localStorage.setItem('user-profile', JSON.stringify(data));
@@ -123,14 +101,6 @@ export default function Profile() {
         variant: "destructive"
       });
     }
-  };
-
-  const handlePreferenceChange = (key: string, value: boolean | string) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
-    toast({
-      title: "Preference Updated",
-      description: `${key} has been updated.`,
-    });
   };
 
   const handleNotificationPreferenceChange = (channel: string, field: string, value: any) => {
@@ -178,7 +148,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <DashboardLayout userRole={user?.role || 'employee'} onLogout={handleLogout}>
+      <ResponsiveLayout>
         <div className="container mx-auto p-4 md:p-6 max-w-4xl">
           <div className="mb-6 h-8 w-48 bg-muted animate-pulse rounded"></div>
           <div className="space-y-4">
@@ -186,12 +156,12 @@ export default function Profile() {
             <div className="h-64 bg-muted animate-pulse rounded-lg"></div>
           </div>
         </div>
-      </DashboardLayout>
+      </ResponsiveLayout>
     );
   }
 
   return (
-    <DashboardLayout userRole={user?.role || 'employee'} onLogout={handleLogout}>
+    <ResponsiveLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Profile Settings</h1>
@@ -199,11 +169,9 @@ export default function Profile() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-12">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            <TabsTrigger value="security" disabled>Security</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
+          <TabsList className={cn("grid w-full grid-cols-2", isMobile ? "h-auto p-1" : "h-12")}>
+            <TabsTrigger value="profile" className="h-9 md:h-10">Profile</TabsTrigger>
+            <TabsTrigger value="preferences" className="h-9 md:h-10">Preferences</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
@@ -293,9 +261,9 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Bell className="w-5 h-5" />Notifications</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
+              <CardContent className="space-y-6 mt-2">
+                <div className="flex items-center justify-between p-1 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="space-y-0.5">
                     <p className="font-medium">Email Notifications</p>
                     <p className="text-sm text-muted-foreground">Receive updates via email</p>
                   </div>
@@ -304,8 +272,8 @@ export default function Profile() {
                     onCheckedChange={(checked) => handleNotificationPreferenceChange('email', 'enabled', checked)}
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between p-1 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="space-y-0.5">
                     <p className="font-medium">Push Notifications</p>
                     <p className="text-sm text-muted-foreground">Browser and mobile notifications</p>
                   </div>
@@ -317,44 +285,13 @@ export default function Profile() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5" />Appearance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                    <p className="font-medium">Dark Mode</p>
-                  </div>
-                  <Switch
-                    checked={theme === 'dark'}
-                    onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="account">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5" />Management</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
+            <Card className="border-destructive/20 bg-destructive/5">
+              <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Auto-save</p>
-                    <p className="text-sm text-muted-foreground">Automatically save drafts</p>
+                    <h4 className="font-semibold text-destructive">Sign Out</h4>
+                    <p className="text-sm text-muted-foreground">Terminate your current session</p>
                   </div>
-                  <Switch
-                    checked={preferences.autoSave}
-                    onCheckedChange={(checked) => handlePreferenceChange('autoSave', checked)}
-                  />
-                </div>
-                <Separator />
-                <div>
-                  <h4 className="font-medium text-destructive mb-3">Danger Zone</h4>
                   <Button variant="destructive" onClick={handleSignOut}>Sign Out</Button>
                 </div>
               </CardContent>
@@ -362,6 +299,6 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </ResponsiveLayout>
   );
 }

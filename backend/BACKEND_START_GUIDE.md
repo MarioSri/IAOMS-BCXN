@@ -5,9 +5,9 @@
 - **Runtime**: Node.js 18+
 - **Language**: TypeScript
 - **Framework**: Express.js
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (JWT)
-- **Real-time**: Socket.IO + Supabase Realtime
+- **Database**: localStorage / in-memory storage
+- **Authentication**: JWT + Google OAuth2
+- **Real-time**: Socket.IO
 - **File Storage**: Google Drive API
 - **Email**: Resend API
 - **API Docs**: Swagger UI
@@ -30,11 +30,6 @@ copy .env.example .env
 ```env
 PORT=3001
 NODE_ENV=development
-
-# Supabase (from your Supabase dashboard)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # JWT Secret (generate a random string)
 JWT_SECRET=your_random_secret_key_here
@@ -157,14 +152,14 @@ await EmailService.sendDocumentApprovalRequest(
 - Chat functionality
 
 ### Cache Service (`cacheService.ts`)
-- Supabase Edge Functions for caching
-- Reduces database load
+- In-memory caching
+- Reduces redundant data operations
 
 ---
 
 ## 🔐 Authentication Flow
 
-1. User logs in via Supabase Auth
+1. User logs in via Google OAuth or local credentials
 2. Backend validates JWT token
 3. Token stored in Authorization header: `Bearer <token>`
 4. Protected routes use `auth` middleware
@@ -173,10 +168,7 @@ await EmailService.sendDocumentApprovalRequest(
 
 ## 📊 Database Schema
 
-Located in:
-- `supabase-schema.sql` - Main tables
-- `supabase-workflow-schema.sql` - Workflow tables
-- `supabase-recipients-schema.sql` - Recipients table
+The application uses localStorage and mock data for data persistence.
 
 ---
 
@@ -189,9 +181,9 @@ netstat -ano | findstr :3001
 taskkill /PID <PID> /F
 ```
 
-### Supabase Connection Issues
-- Verify `SUPABASE_URL` and keys in `.env`
-- Check Supabase dashboard for service status
+### Server Connection Issues
+- Verify the backend is running on port 3001
+- Check `.env` for correct configuration
 
 ### Email Not Sending
 - Verify `RESEND_API_KEY` is valid

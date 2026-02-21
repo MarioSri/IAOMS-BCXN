@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "deepface": "python deepface_server_ipfs.py",
     "register-face": "python register_user_ipfs.py",
-    "migrate": "node -e \"console.log('Run Supabase migrations manually')\""
+    "migrate": "node -e \"console.log('No migrations configured')\""
   },
   "dependencies": {
     "@types/compression": "^1.8.1",
