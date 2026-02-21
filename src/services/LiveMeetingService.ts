@@ -107,15 +107,18 @@ class LiveMeetingService {
   }
 
   // Get live meeting stats
-  async getStats(): Promise<LiveMeetingStats> {
+  async getStats(userRole?: string): Promise<LiveMeetingStats> {
     const requests = JSON.parse(localStorage.getItem('live_meeting_requests') || '[]');
+
+    // Check if user is demo-work role
+    const isDemoRole = userRole === 'demo-work';
 
     return {
       totalRequests: requests.length,
-      pendingRequests: requests.filter((r: any) => r.status === 'pending').length,
-      immediateRequests: requests.filter((r: any) => r.urgency === 'immediate').length,
-      urgentRequests: requests.filter((r: any) => r.urgency === 'urgent').length,
-      todaysMeetings: 8,
+      pendingRequests: requests.filter((r: LiveMeetingRequest) => r.status === 'pending').length,
+      immediateRequests: requests.filter((r: LiveMeetingRequest) => r.urgency === 'immediate').length,
+      urgentRequests: requests.filter((r: LiveMeetingRequest) => r.urgency === 'urgent').length,
+      todaysMeetings: isDemoRole ? 8 : 0,
       successRate: 94,
       averageResponseTime: 12 // minutes
     };
@@ -123,13 +126,13 @@ class LiveMeetingService {
 
   // Check if user can request meeting from target user
   canRequestMeeting(userRole: string, targetUserRole: string): boolean {
-    const allowedRoles = (LIVE_MEETING_PERMISSIONS as any)[userRole] || [];
+    const allowedRoles = LIVE_MEETING_PERMISSIONS[userRole] || [];
     return allowedRoles.includes(targetUserRole) || allowedRoles.includes('all');
   }
 
   // Get available participants based on current user role
-  async getAvailableParticipants(currentUserRole: string): Promise<any[]> {
-    const allowedRoles = (LIVE_MEETING_PERMISSIONS as any)[currentUserRole] || [];
+  async getAvailableParticipants(currentUserRole: string): Promise<typeof MOCK_PARTICIPANTS> {
+    const allowedRoles = LIVE_MEETING_PERMISSIONS[currentUserRole] || [];
 
     return MOCK_PARTICIPANTS
       .filter(user =>

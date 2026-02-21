@@ -33,12 +33,14 @@ import { Badge } from '@/components/ui/badge';
 export default function ApprovalRouting() {
   const { user } = useAuth();
   const [isBypassMode, setIsBypassMode] = useState(false);
+  const isDemoRole = user?.role === 'demo-work';
+
   const stats = {
-    pendingApprovals: 12,
-    completedToday: 8,
-    averageTime: '2.3 hours',
-    escalationRate: '5%',
-    counterApprovals: 3
+    pendingApprovals: isDemoRole ? 12 : 0,
+    completedToday: isDemoRole ? 8 : 0,
+    averageTime: isDemoRole ? '2.3 hours' : '0 hours',
+    bypassCount: isDemoRole ? '8' : '0',
+    responseRate: isDemoRole ? '94%' : '0'
   };
 
 
@@ -138,8 +140,8 @@ export default function ApprovalRouting() {
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Escalation Rate</p>
-                    <p className="text-lg sm:text-2xl font-bold">{stats.escalationRate}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Bypass Count</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.bypassCount}</p>
                   </div>
                   <Zap className="w-5 h-5 sm:w-8 sm:h-8 text-yellow-500" />
                 </div>
@@ -150,8 +152,8 @@ export default function ApprovalRouting() {
               <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Counter</p>
-                    <p className="text-lg sm:text-2xl font-bold">{stats.counterApprovals}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Response Rate</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.responseRate}</p>
                   </div>
                   <Shield className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500" />
                 </div>

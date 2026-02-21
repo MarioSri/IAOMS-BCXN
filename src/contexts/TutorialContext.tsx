@@ -1,12 +1,12 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useTutorial } from '@/hooks/useTutorial';
+import { useTutorial, TutorialStep } from '@/hooks/useTutorial';
 
 interface TutorialContextType {
   isActive: boolean;
   currentStep: number;
   totalSteps: number;
   isCompleted: boolean;
-  getCurrentStep: () => any;
+  getCurrentStep: () => TutorialStep;
   isCurrentRoute: (route: string) => boolean;
   navigateToCurrentStep: (navigate: (path: string) => void) => void;
   startTutorial: () => void;
@@ -14,7 +14,7 @@ interface TutorialContextType {
   previousStep: () => void;
   skipTutorial: () => void;
   completeTutorial: () => void;
-  steps: any[];
+  steps: TutorialStep[];
 }
 
 const TutorialContext = createContext<TutorialContextType | undefined>(undefined);

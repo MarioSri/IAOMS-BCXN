@@ -148,7 +148,7 @@ export default function Analytics() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-lg sm:text-2xl font-bold truncate">{metrics.avgProcessingTime}</p>
+                      <p className="text-lg sm:text-2xl font-bold truncate">{user.role === 'demo-work' ? metrics.avgProcessingTime : 0}</p>
                       {isConnected && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse flex-shrink-0" title="Live"></div>}
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground truncate">Avg. Days</p>
@@ -456,7 +456,7 @@ export default function Analytics() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Avg. Processing</p>
-                          <p className="font-medium">{month.avgTime} days</p>
+                          <p className="font-medium">{user.role === 'demo-work' ? month.avgTime : 0} days</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Success Rate</p>
@@ -483,7 +483,7 @@ export default function Analytics() {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm">Average Processing Time</span>
-                        <span className="font-medium">2.2 days</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "2.2 days" : "0 days"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Fastest Approval</span>

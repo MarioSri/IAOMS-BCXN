@@ -30,21 +30,29 @@ export default function Messages() {
   const [isInitialized, setIsInitialized] = useState(false);
 
 
+  const isDemoRole = user?.role === 'demo-work';
+
   const [stats, setStats] = useState({
-    unreadMessages: 26,
-    pendingSignatures: 2,
-    activePolls: 1,
-    onlineUsers: 23,
-    totalChannels: 5,
-    notifications: 4,
-    liveMeetingRequests: 3
+    unreadMessages: isDemoRole ? 26 : 0,
+    pendingSignatures: isDemoRole ? 2 : 0,
+    activePolls: isDemoRole ? 1 : 0,
+    onlineUsers: isDemoRole ? 23 : 0,
+    totalChannels: isDemoRole ? 5 : 0,
+    notifications: isDemoRole ? 4 : 0,
+    liveMeetingRequests: isDemoRole ? 3 : 0
   });
 
-  const [channelMessageCounts, setChannelMessageCounts] = useState<{ [key: string]: number }>({
-    'Administrative Council': 9,
-    'Faculty Board': 5,
-    'General': 12
-  });
+  const [channelMessageCounts, setChannelMessageCounts] = useState<{ [key: string]: number }>(
+    isDemoRole ? {
+      'Administrative Council': 9,
+      'Faculty Board': 5,
+      'General': 12
+    } : {
+      'Administrative Council': 0,
+      'Faculty Board': 0,
+      'General': 0
+    }
+  );
 
   const [liveMeetRequests, setLiveMeetRequests] = useState<any[]>([]);
 
@@ -79,6 +87,7 @@ export default function Messages() {
 
 
   const updateMessageCounts = useCallback(() => {
+    if (!isDemoRole) return;
     setChannelMessageCounts(prev => {
       const channels = Object.keys(prev);
       const randomChannel = channels[Math.floor(Math.random() * channels.length)];
@@ -87,7 +96,7 @@ export default function Messages() {
 
       return newCounts;
     });
-  }, []);
+  }, [isDemoRole]);
 
 
   useEffect(() => {

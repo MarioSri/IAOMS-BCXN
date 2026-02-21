@@ -8,7 +8,7 @@ export function useAuditLog() {
     recipientName: string,
     recipientRole: string,
     actionType: 'approve' | 'reject',
-    signatureData?: any
+    signatureData?: unknown
   ) => {
     try {
       const result = await recordAction({

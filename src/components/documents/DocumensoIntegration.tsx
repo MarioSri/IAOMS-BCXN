@@ -44,6 +44,39 @@ interface DocumensoIntegrationProps {
   files?: File[]; // Multiple document files to preview
 }
 
+interface SignatureMetadata {
+  id: string;
+  data: string;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+  rotation: number;
+  pageNumber?: number;
+  fileIndex?: number;
+  docWidth: number;
+  docHeight: number;
+  signedBy?: string;
+  signedAt?: string;
+  pixelX?: number;
+  pixelY?: number;
+}
+
+interface FileContent {
+  type: 'pdf' | 'word' | 'excel' | 'image' | 'unsupported';
+  pageCanvases?: string[];
+  totalPages?: number;
+  url?: string;
+  html?: string;
+}
+
+interface SignedFile {
+  name: string;
+  type: string;
+  size: number;
+  data: string;
+}
+
 export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   isOpen,
   onClose,
@@ -70,7 +103,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const [savedSignatures, setSavedSignatures] = useState<Array<{ id: string, name: string, data: string, type: 'draw' | 'upload' }>>([]);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showFileViewer, setShowFileViewer] = useState(false);
-  const [fileContent, setFileContent] = useState<any>(null);
+  const [fileContent, setFileContent] = useState<FileContent | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileZoom, setFileZoom] = useState(100);
@@ -87,24 +120,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   const currentFile = isMultiFile ? files[currentFileIndex] : file;
 
   // Signature placement on document - Using NORMALIZED coordinates (0-1 range) for accuracy
-  const [placedSignatures, setPlacedSignatures] = useState<Array<{
-    id: string;
-    data: string;
-    // Normalized coordinates (0-1 range) - independent of zoom/screen size
-    xPercent: number;      // X position as percentage of document width (0-1)
-    yPercent: number;      // Y position as percentage of document height (0-1)
-    widthPercent: number;  // Width as percentage of document width (0-1)
-    heightPercent: number; // Height as percentage of document height (0-1)
-    rotation: number;      // Rotation in degrees
-    pageNumber?: number;   // Page number for multi-page PDFs (1-based, undefined = single-page/non-PDF)
-    fileIndex?: number;    // File index for multi-file documents (0-based)
-    // Store original document dimensions for reference
-    docWidth: number;      // Original document width at 100% zoom
-    docHeight: number;     // Original document height at 100% zoom
-    // Track signature attribution for approval chain visibility
-    signedBy?: string;     // Name of the user who placed this signature
-    signedAt?: string;     // ISO timestamp when signature was placed
-  }>>([]);
+  const [placedSignatures, setPlacedSignatures] = useState<SignatureMetadata[]>([]);
   const [selectedSignatureId, setSelectedSignatureId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -160,14 +176,14 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     // Try to load from pending-approvals first (for recipients in approval chain)
     try {
       const pendingApprovals = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-      const currentDoc = pendingApprovals.find((doc: any) => doc.id === document.id);
+      const currentDoc = pendingApprovals.find((doc: { id: string, signatureMetadata?: SignatureMetadata[] }) => doc.id === document.id);
 
       if (currentDoc?.signatureMetadata && Array.isArray(currentDoc.signatureMetadata)) {
         console.log('✅ Loading', currentDoc.signatureMetadata.length, 'existing signature(s) from approval chain');
         setPlacedSignatures(currentDoc.signatureMetadata);
 
         // Log signature details for verification
-        currentDoc.signatureMetadata.forEach((sig: any, idx: number) => {
+        currentDoc.signatureMetadata.forEach((sig: SignatureMetadata, idx: number) => {
           console.log(`  Signature ${idx + 1}:`, {
             page: sig.pageNumber || 'N/A',
             file: sig.fileIndex ?? 'N/A',
@@ -183,14 +199,14 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     // Fallback: Try submitted-documents (for original submitter or tracking)
     try {
       const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-      const currentDoc = submittedDocs.find((doc: any) => doc.id === document.id);
+      const currentDoc = submittedDocs.find((doc: { id: string, signatureMetadata?: SignatureMetadata[] }) => doc.id === document.id);
 
       if (currentDoc?.signatureMetadata && Array.isArray(currentDoc.signatureMetadata)) {
         console.log('✅ Loading', currentDoc.signatureMetadata.length, 'existing signature(s) from submitted documents');
         setPlacedSignatures(currentDoc.signatureMetadata);
 
         // Log signature details for verification
-        currentDoc.signatureMetadata.forEach((sig: any, idx: number) => {
+        currentDoc.signatureMetadata.forEach((sig: SignatureMetadata, idx: number) => {
           console.log(`  Signature ${idx + 1}:`, {
             page: sig.pageNumber || 'N/A',
             file: sig.fileIndex ?? 'N/A',
@@ -303,7 +319,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
     };
 
     loadFile();
-  }, [currentFile, isOpen]);
+  }, [currentFile, isOpen, currentFileIndex]);
 
   // Multi-file navigation handlers
   const handlePreviousFile = () => {
@@ -351,7 +367,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       canvasEl.height = viewport.height;
       canvasEl.width = viewport.width;
 
-      await page.render({ canvasContext: context, viewport: viewport } as any).promise;
+      await page.render({ canvasContext: context, viewport: viewport } as import('pdfjs-dist/types/src/display/api').RenderParameters).promise;
       pageCanvases.push(canvasEl.toDataURL());
     }
 
@@ -382,7 +398,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
   };
 
   // Merge signature overlays with the document file
-  const mergeSignaturesWithDocument = async (): Promise<any[]> => {
+  const mergeSignaturesWithDocument = async (): Promise<SignedFile[]> => {
     if (placedSignatures.length === 0) {
       console.warn('⚠️ No signatures to merge');
       return fileContent?.type === 'pdf' && fileContent.pageCanvases
@@ -401,7 +417,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
       documentId: document.id
     });
 
-    const signedFiles: any[] = [];
+    const signedFiles: SignedFile[] = [];
 
     // Handle PDF documents
     if (fileContent?.type === 'pdf' && fileContent.pageCanvases) {
@@ -595,7 +611,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
         // Update submitted-documents (Track Documents) - store metadata only
         try {
           const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-          const updatedSubmittedDocs = submittedDocs.map((doc: any) => {
+          const updatedSubmittedDocs = submittedDocs.map((doc: { id: string, signedBy?: string[] }) => {
             if (doc.id === document.id) {
               console.log('✅ Updating Track Document with signature metadata');
               const updatedSignedBy = [...(doc.signedBy || []), user.name];
@@ -624,7 +640,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
         // Update pending-approvals (Approval Center) - store metadata only
         try {
           const pendingApprovals = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-          const updatedApprovals = pendingApprovals.map((approval: any) => {
+          const updatedApprovals = pendingApprovals.map((approval: { id: string, signedBy?: string[] }) => {
             if (approval.id === document.id) {
               console.log('✅ Updating Approval Center with signature metadata');
               const updatedSignedBy = [...(approval.signedBy || []), user.name];
@@ -647,8 +663,8 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
 
         // Calculate recipient counts for dynamic tracking
         const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-        const currentDoc = submittedDocs.find((doc: any) => doc.id === document.id);
-        const totalRecipients = currentDoc?.workflow?.steps?.filter((step: any) =>
+        const currentDoc = submittedDocs.find((doc: { id: string, workflow?: { steps: { name: string, assignee: string }[] }, signedBy?: string[], submittedBy?: string }) => doc.id === document.id);
+        const totalRecipients = currentDoc?.workflow?.steps?.filter((step: { name: string, assignee: string }) =>
           step.name !== 'Submission' && step.assignee !== currentDoc.submittedBy
         ).length || 1;
         const currentSignedCount = (currentDoc?.signedBy?.length || 0) + 1; // +1 for current signature
@@ -1956,8 +1972,8 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-black text-white shadow-lg flex items-center justify-center z-[60] border border-black hover:bg-gray-800 transition-all pointer-events-auto ${isSidebarOpen
-                    ? 'right-0 rounded-l-xl border-r-0'
-                    : '-right-10 rounded-r-xl border-l-0'
+                  ? 'right-0 rounded-l-xl border-r-0'
+                  : '-right-10 rounded-r-xl border-l-0'
                   }`}
                 title="Toggle Signature Tools"
               >

@@ -159,6 +159,7 @@ interface MeetingSchedulerProps {
 export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isDemoRole = user?.role === 'demo-work' || userRole === 'demo-work';
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -235,8 +236,44 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
     comments: []
   });
 
+  // Meeting Statistics calculations
+  const meetingStats = useMemo(() => {
+    if (!isDemoRole) {
+      return {
+        total: "0",
+        thisWeek: "0",
+        online: "0",
+        avgDuration: "0m"
+      };
+    }
+
+    const total = meetings.length;
+    const online = meetings.filter(m => m.type === 'online' || m.type === 'hybrid').length;
+
+    // Average duration
+    const totalDuration = meetings.reduce((acc, m) => acc + (m.duration || 0), 0);
+    const avg = total > 0 ? Math.round(totalDuration / total) : 0;
+
+    // Calculate This Week
+    const today = new Date();
+    const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+    const endOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (6 - today.getDay()));
+
+    const countThisWeek = meetings.filter(m => {
+      const d = new Date(m.date);
+      return d >= startOfWeek && d <= endOfWeek;
+    }).length;
+
+    return {
+      total: total.toString(),
+      thisWeek: countThisWeek.toString(),
+      online: online.toString(),
+      avgDuration: `${avg}m`
+    };
+  }, [meetings, isDemoRole]);
+
   // Save calendar data to localStorage for search
-  const saveCalendarData = () => {
+  const saveCalendarData = useCallback(() => {
     const calendarEvents = [
       { id: 'event1', title: 'Faculty Recruitment Board Meeting', description: 'Review applications for new faculty positions', type: 'meeting' },
       { id: 'event2', title: 'Budget Review - Q1 2024', description: 'Quarterly budget analysis and financial planning', type: 'meeting' },
@@ -245,7 +282,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       { id: 'event5', title: 'Training Session - Digital Tools', description: 'Staff training on new digital platforms' }
     ];
     localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
-  };
+  }, []);
 
   const loadMeetings = useCallback(async () => {
     setLoading(true);
@@ -427,7 +464,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       window.removeEventListener('meetings-updated', handleStorageChange);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [loadMeetings]);
+  }, [loadMeetings, user, saveCalendarData]);
 
   // Helper functions
   const timeSlots = [
@@ -441,7 +478,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
     "22:00", "22:15", "22:30", "22:45", "23:00", "23:15", "23:30"
   ];
 
-  const [availableAttendees, setAvailableAttendees] = useState<any[]>([]);
+  const [availableAttendees, setAvailableAttendees] = useState<MeetingAttendee[]>([]);
 
   // Load available attendees from recipients list
   useEffect(() => {
@@ -449,12 +486,15 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       try {
         const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
         const recipients = MOCK_RECIPIENTS;
-        const attendees = recipients.map(r => ({
+        const attendees: MeetingAttendee[] = recipients.map(r => ({
           id: r.user_id,
           name: r.name,
           email: r.email,
           role: r.role,
-          department: r.department
+          department: r.department,
+          status: "invited",
+          isRequired: true,
+          canEdit: false
         }));
         setAvailableAttendees(attendees);
       } catch (error) {
@@ -511,7 +551,51 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
   };
 
   // Event handlers
-  const handleCreateMeeting = async () => {
+  const resetNewMeetingForm = useCallback(() => {
+    setNewMeeting({
+      title: "",
+      description: "",
+      date: "",
+      time: "",
+      duration: 60,
+      attendees: [],
+      location: "",
+      type: "online",
+      status: "scheduled",
+      priority: "medium",
+      category: "academic",
+      isRecurring: false,
+      tags: [],
+      department: user?.department || "",
+      notifications: {
+        email: true,
+        push: true,
+        sms: false,
+        whatsapp: false,
+        reminders: [
+          { type: 'email', timing: 1440, enabled: true },
+          { type: 'push', timing: 60, enabled: true },
+          { type: 'email', timing: 10, enabled: true }
+        ],
+        escalation: {
+          enabled: false,
+          escalateAfterHours: 24,
+          escalateTo: [],
+          autoApprove: false
+        }
+      }
+    });
+    setRecurringPattern({
+      frequency: 'weekly',
+      interval: 1,
+      daysOfWeek: [],
+      endDate: undefined,
+      occurrences: undefined,
+      exceptions: []
+    });
+  }, [user]);
+
+  const handleCreateMeeting = useCallback(async () => {
     if (!newMeeting.title || !newMeeting.date || !newMeeting.time) {
       toast({
         title: "Validation Error",
@@ -533,15 +617,31 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       }
 
       // Create the meeting
-      const response: CreateMeetingResponse = await meetingAPI.createMeeting({
-        ...newMeeting,
+      const meetingData: Meeting = {
+        title: newMeeting.title || "",
+        description: newMeeting.description || "",
+        date: newMeeting.date || "",
+        time: newMeeting.time || "",
+        duration: newMeeting.duration || 60,
+        attendees: (newMeeting.attendees || []) as MeetingAttendee[],
+        location: newMeeting.location || "",
+        type: newMeeting.type || "online",
+        status: newMeeting.status || "scheduled",
+        priority: newMeeting.priority || "medium",
+        category: newMeeting.category || "academic",
+        isRecurring: !!newMeeting.isRecurring,
+        tags: newMeeting.tags || [],
+        department: newMeeting.department || user?.department || "",
         createdBy: user?.id || 'unknown',
         createdAt: new Date(),
         updatedAt: new Date(),
         id: `meeting-${Date.now()}`,
         approvalWorkflow: approvalWorkflow.isRequired ? approvalWorkflow : undefined,
-        recurringPattern: newMeeting.isRecurring ? recurringPattern : undefined
-      } as Meeting);
+        recurringPattern: newMeeting.isRecurring ? recurringPattern : undefined,
+        documents: []
+      };
+
+      const response: CreateMeetingResponse = await meetingAPI.createMeeting(meetingData);
 
       console.log('[MeetingScheduler] ✨ New meeting created:', {
         id: response.meeting.id,
@@ -589,13 +689,13 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
     } finally {
       setLoading(false);
     }
-  };
+  }, [newMeeting, user, approvalWorkflow, recurringPattern, toast, resetNewMeetingForm]);
 
-  const handleGetAISuggestions = async () => {
+  const handleGetAISuggestions = useCallback(async () => {
     if (!newMeeting.title || !newMeeting.attendees?.length) {
       toast({
-        title: "Information Needed",
-        description: "Please provide meeting title and select attendees for AI suggestions",
+        title: "Information Missing",
+        description: "Please provide a title and at least one attendee for AI suggestions",
         variant: "default"
       });
       return;
@@ -607,60 +707,24 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       setAiSuggestions(suggestions);
       setShowAISuggestionsDialog(true);
     } catch (error) {
-      console.error('AI suggestions failed:', error);
       toast({
-        title: "AI Suggestions Unavailable",
-        description: "Unable to get AI suggestions at this time",
-        variant: "default"
+        title: "AI Help Unavailable",
+        description: "Could not generate scheduling suggestions at this time",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [newMeeting, toast]);
 
-  const resetNewMeetingForm = () => {
-    setNewMeeting({
-      title: "",
-      description: "",
-      date: "",
-      time: "",
-      duration: 60,
-      attendees: [],
-      location: "",
-      type: "online",
-      status: "scheduled",
-      priority: "medium",
-      category: "academic",
-      isRecurring: false,
-      tags: [],
-      department: user?.department || "",
-      notifications: {
-        email: true,
-        push: true,
-        sms: false,
-        whatsapp: false,
-        reminders: [
-          { type: 'email', timing: 1440, enabled: true },
-          { type: 'push', timing: 60, enabled: true },
-          { type: 'email', timing: 10, enabled: true }
-        ],
-        escalation: {
-          enabled: false,
-          escalateAfterHours: 24,
-          escalateTo: [],
-          autoApprove: false
-        }
-      }
-    });
-  };
 
-  const addAttendee = (attendeeData: any) => {
+  const addAttendee = useCallback((attendeeData: Partial<MeetingAttendee>) => {
     const attendee: MeetingAttendee = {
-      id: attendeeData.id,
-      name: attendeeData.name,
-      email: attendeeData.email,
-      role: attendeeData.role,
-      department: attendeeData.department,
+      id: attendeeData.id || '', // Provide default empty string for id
+      name: attendeeData.name || '', // Provide default empty string for name
+      email: attendeeData.email || '', // Provide default empty string for email
+      role: attendeeData.role || '', // Provide default empty string for role
+      department: attendeeData.department || '', // Provide default empty string for department
       status: "invited",
       isRequired: true,
       canEdit: false
@@ -670,14 +734,14 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       ...prev,
       attendees: [...(prev.attendees || []), attendee]
     }));
-  };
+  }, []);
 
-  const removeAttendee = (attendeeId: string) => {
+  const removeAttendee = useCallback((attendeeId: string) => {
     setNewMeeting(prev => ({
       ...prev,
-      attendees: prev.attendees?.filter(a => a.id !== attendeeId) || []
+      attendees: prev.attendees?.filter(a => a.id !== attendeeId)
     }));
-  };
+  }, []);
 
   const handleJoinMeeting = (meeting: Meeting) => {
     const links = meeting.meetingLinks;
@@ -838,11 +902,11 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
             <div className="flex items-center gap-2 text-sm justify-between sm:justify-start">
               <Badge variant="outline" className="gap-1 flex-1 sm:flex-none justify-center">
                 <Calendar className="w-3 h-3" />
-                {meetings.length} Meetings
+                {isDemoRole ? meetings.length : 0} Meetings
               </Badge>
               <Badge variant="outline" className="gap-1 flex-1 sm:flex-none justify-center">
                 <Clock className="w-3 h-3" />
-                {meetings.filter(m => m.status === 'scheduled').length} Scheduled
+                {isDemoRole ? meetings.filter(m => m.status === 'scheduled').length : 0} Scheduled
               </Badge>
             </div>
 
@@ -854,7 +918,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
         </div>
 
         {/* View Mode Tabs */}
-        <Tabs value={viewMode} onValueChange={(value: any) => setViewMode(value)} className="w-full">
+        <Tabs value={viewMode} onValueChange={(value: 'calendar' | 'list' | 'live-requests') => setViewMode(value)} className="w-full">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <TabsList className="grid w-full h-auto sm:h-10 sm:w-fit grid-cols-2">
               <TabsTrigger value="calendar" className="gap-1.5 sm:gap-2 text-xs sm:text-sm py-2 sm:py-1.5">
@@ -868,7 +932,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
             </TabsList>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Select value={filterBy} onValueChange={(value: any) => setFilterBy(value)}>
+              <Select value={filterBy} onValueChange={(value: 'all' | 'today' | 'week' | 'month') => setFilterBy(value)}>
                 <SelectTrigger className="w-full sm:w-32 text-base sm:text-sm">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue />
@@ -1034,7 +1098,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Total Meetings</p>
-                          <p className="text-lg sm:text-2xl font-bold">2</p>
+                          <p className="text-lg sm:text-2xl font-bold">{meetingStats.total}</p>
                         </div>
                         <CalendarIcon className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
@@ -1046,7 +1110,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs sm:text-sm text-muted-foreground">This Week</p>
-                          <p className="text-lg sm:text-2xl font-bold">0</p>
+                          <p className="text-lg sm:text-2xl font-bold">{meetingStats.thisWeek}</p>
                         </div>
                         <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
@@ -1058,7 +1122,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Online Meetings</p>
-                          <p className="text-lg sm:text-2xl font-bold">2</p>
+                          <p className="text-lg sm:text-2xl font-bold">{meetingStats.online}</p>
                         </div>
                         <Video className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>
@@ -1070,7 +1134,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs sm:text-sm text-muted-foreground">Avg Duration</p>
-                          <p className="text-lg sm:text-2xl font-bold">105m</p>
+                          <p className="text-lg sm:text-2xl font-bold">{meetingStats.avgDuration}</p>
                         </div>
                         <Timer className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground" />
                       </div>

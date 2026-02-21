@@ -8,11 +8,12 @@ interface ProtectedRouteProps {
   requiredPermissions?: string[];
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredPermissions = [] 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requiredPermissions = []
 }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -21,8 +22,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       </div>
     );
   }
-
-  const location = useLocation();
 
   if (!isAuthenticated || !user) {
     // Store current location for redirect after login

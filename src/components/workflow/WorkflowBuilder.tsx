@@ -21,6 +21,8 @@ import {
   BaseEdge,
   getSmoothStepPath,
   getStraightPath,
+  EdgeProps,
+  NodeProps
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,8 +59,23 @@ import {
   RotateCw
 } from "lucide-react";
 
+interface WorkflowNodeData extends Record<string, unknown> {
+  label: string;
+  role?: string;
+  description?: string;
+  status?: string;
+}
+
+interface WorkflowEdgeData extends Record<string, unknown> {
+  label?: string;
+  color?: string;
+  animated?: boolean;
+  dashed?: boolean;
+  weight?: number;
+}
+
 // Custom Edge Components
-const AnimatedEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: any) => {
+const AnimatedEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: EdgeProps<Edge<WorkflowEdgeData>>) => {
   const [edgePath] = getBezierPath({
     sourceX,
     sourceY,
@@ -93,7 +110,7 @@ const AnimatedEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, 
   );
 };
 
-const SmoothEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: any) => {
+const SmoothEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: EdgeProps<Edge<WorkflowEdgeData>>) => {
   const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -128,7 +145,7 @@ const SmoothEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, ta
   );
 };
 
-const StraightEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: any) => {
+const StraightEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, data }: EdgeProps<Edge<WorkflowEdgeData>>) => {
   const [edgePath] = getStraightPath({
     sourceX,
     sourceY,
@@ -167,7 +184,7 @@ const edgeTypes: EdgeTypes = {
 };
 
 // Custom Node Components
-const RoleNode = ({ data, selected }: { data: any; selected: boolean }) => {
+const RoleNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'Principal':
@@ -216,7 +233,7 @@ const RoleNode = ({ data, selected }: { data: any; selected: boolean }) => {
   );
 };
 
-const StartNode = ({ data, selected }: { data: any; selected: boolean }) => (
+const StartNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => (
   <div className={`relative bg-green-200 border-2 border-green-600 rounded-full w-16 h-16 flex items-center justify-center ${selected ? 'ring-2 ring-blue-400' : ''}`}>
     <Play className="h-6 w-6 text-green-800" />
     <div className="absolute -bottom-6 text-xs font-medium text-green-800 whitespace-nowrap">
@@ -230,7 +247,7 @@ const StartNode = ({ data, selected }: { data: any; selected: boolean }) => (
   </div>
 );
 
-const EndNode = ({ data, selected }: { data: any; selected: boolean }) => (
+const EndNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => (
   <div className={`relative bg-red-200 border-2 border-red-600 rounded-full w-16 h-16 flex items-center justify-center ${selected ? 'ring-2 ring-blue-400' : ''}`}>
     <Square className="h-6 w-6 text-red-800" />
     <div className="absolute -bottom-6 text-xs font-medium text-red-800 whitespace-nowrap">
@@ -244,7 +261,7 @@ const EndNode = ({ data, selected }: { data: any; selected: boolean }) => (
   </div>
 );
 
-const DecisionNode = ({ data, selected }: { data: any; selected: boolean }) => (
+const DecisionNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => (
   <div className={`relative transform rotate-45 bg-yellow-100 border-2 border-yellow-500 w-20 h-20 flex items-center justify-center ${selected ? 'ring-2 ring-blue-400' : ''}`}>
     <div className="transform -rotate-45">
       <GitBranch className="h-4 w-4 text-yellow-800" />
@@ -277,7 +294,7 @@ const DecisionNode = ({ data, selected }: { data: any; selected: boolean }) => (
   </div>
 );
 
-const ProcessNode = ({ data, selected }: { data: any; selected: boolean }) => (
+const ProcessNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => (
   <div className={`relative bg-blue-100 border-2 border-blue-500 rounded-lg px-4 py-3 min-w-[140px] ${selected ? 'ring-2 ring-blue-400' : ''}`}>
     <Handle
       type="target"
@@ -300,7 +317,7 @@ const ProcessNode = ({ data, selected }: { data: any; selected: boolean }) => (
   </div>
 );
 
-const StatusNode = ({ data, selected }: { data: any; selected: boolean }) => {
+const StatusNode = ({ data, selected }: NodeProps<Node<WorkflowNodeData>>) => {
   const getStatusDisplay = (status: string) => {
     switch (status) {
       case 'approved': return { icon: <CheckCircle className="h-4 w-4" />, color: 'bg-green-100 border-green-500 text-green-800', label: 'Approved' };
@@ -540,7 +557,7 @@ export const WorkflowBuilder = () => {
     setSelectedEdge(null);
   }, []);
 
-  const updateEdge = (edgeId: string, newData: any) => {
+  const updateEdge = (edgeId: string, newData: Partial<Edge>) => {
     setEdges((eds) =>
       eds.map((edge) =>
         edge.id === edgeId ? { ...edge, ...newData } : edge
@@ -554,7 +571,7 @@ export const WorkflowBuilder = () => {
     setSelectedEdge(null);
   };
 
-  const addNode = (type: string, nodeData: any) => {
+  const addNode = (type: string, nodeData: Partial<WorkflowNodeData>) => {
     const newNode: Node = {
       id: `${type}-${Date.now()}`,
       type,
@@ -564,7 +581,7 @@ export const WorkflowBuilder = () => {
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const updateNode = (nodeId: string, newData: any) => {
+  const updateNode = (nodeId: string, newData: Partial<WorkflowNodeData>) => {
     setNodes((nds) =>
       nds.map((node) =>
         node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
@@ -1058,7 +1075,7 @@ export const WorkflowBuilder = () => {
 // Node Edit Form Component
 const NodeEditForm = ({ node, onSave, onCancel }: {
   node: Node;
-  onSave: (nodeId: string, newData: any) => void;
+  onSave: (nodeId: string, newData: Partial<WorkflowNodeData>) => void;
   onCancel: () => void;
 }) => {
   const [formData, setFormData] = useState({

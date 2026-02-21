@@ -568,7 +568,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
       : [];
 
     // Initialize workflow steps based on mode
-    let workflowSteps: { name: string; status: 'completed' | 'current' | 'pending'; assignee: string; completedDate: string }[] = [
+    const workflowSteps: { name: string; status: 'completed' | 'current' | 'pending'; assignee: string; completedDate: string }[] = [
       {
         name: 'Submission',
         status: 'completed',
@@ -1030,8 +1030,10 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Avg Response Time</p>
                   <p className="text-lg sm:text-2xl font-bold text-warning">
-                    {emergencyHistory.length > 0
-                      ? Math.round(emergencyHistory.reduce((acc, e) => acc + (e.responseTime || 0), 0) / emergencyHistory.length)
+                    {userRole === 'demo-work'
+                      ? (emergencyHistory.length > 0
+                        ? Math.round(emergencyHistory.reduce((acc, e) => acc + (e.responseTime || 0), 0) / emergencyHistory.length)
+                        : 0)
                       : 0
                     }m
                   </p>
@@ -1049,7 +1051,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Resolved This Month</p>
                   <p className="text-lg sm:text-2xl font-bold text-success">
-                    {emergencyHistory.filter(e => e.status === 'resolved').length}
+                    {userRole === 'demo-work' ? emergencyHistory.filter(e => e.status === 'resolved').length : 0}
                   </p>
                 </div>
                 <div className="p-1.5 sm:p-2 bg-green-100 rounded-lg">

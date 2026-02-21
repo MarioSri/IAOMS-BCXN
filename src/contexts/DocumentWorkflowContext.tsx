@@ -37,27 +37,39 @@ export function useDocumentWorkflow(): DocumentWorkflowContextType {
   return context;
 }
 
+interface SubmittedDocument {
+  id: string;
+  title: string;
+  workflow?: {
+    currentStep?: string;
+    progress?: number;
+    steps?: WorkflowStep[];
+    recipients?: string[];
+  };
+  signedBy?: string[];
+  status?: 'pending' | 'approved' | 'rejected' | 'in-review';
+}
+
 export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [workflows, setWorkflows] = useState<DocumentWorkflow[]>([]);
 
+  const loadWorkflows = React.useCallback(() => {
+    const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]') as SubmittedDocument[];
+    const workflowData = submittedDocs.map((doc: SubmittedDocument) => ({
+      id: doc.id,
+      title: doc.title,
+      currentStep: doc.workflow?.currentStep || 'Submission',
+      progress: doc.workflow?.progress || 0,
+      steps: doc.workflow?.steps || [],
+      recipients: doc.workflow?.recipients || [],
+      signedBy: doc.signedBy || [],
+      status: doc.status || 'pending'
+    }));
+    setWorkflows(workflowData);
+  }, []);
+
   useEffect(() => {
-    function loadWorkflows() {
-      const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-      const workflowData = submittedDocs.map((doc: any) => ({
-        id: doc.id,
-        title: doc.title,
-        currentStep: doc.workflow?.currentStep || 'Submission',
-        progress: doc.workflow?.progress || 0,
-        steps: doc.workflow?.steps || [],
-        recipients: doc.workflow?.recipients || [],
-        signedBy: doc.signedBy || [],
-        status: doc.status || 'pending'
-      }));
-      setWorkflows(workflowData);
-    };
-
     loadWorkflows();
-
 
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'submitted-documents') {
@@ -67,16 +79,15 @@ export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> =
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [loadWorkflows]);
 
-  function updateWorkflow(docId: string, updates: Partial<DocumentWorkflow>) {
+  const updateWorkflow = React.useCallback((docId: string, updates: Partial<DocumentWorkflow>) => {
     setWorkflows(prev => prev.map(workflow =>
       workflow.id === docId ? { ...workflow, ...updates } : workflow
     ));
 
-
-    const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
-    const updatedDocs = submittedDocs.map((doc: any) => {
+    const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]') as SubmittedDocument[];
+    const updatedDocs = submittedDocs.map((doc: SubmittedDocument) => {
       if (doc.id === docId) {
         return {
           ...doc,
@@ -90,9 +101,9 @@ export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> =
       return doc;
     });
     localStorage.setItem('submitted-documents', JSON.stringify(updatedDocs));
-  }
+  }, []);
 
-  function signDocument(docId: string, signerName: string) {
+  const signDocument = React.useCallback((docId: string, signerName: string) => {
     const workflow = workflows.find(w => w.id === docId);
     if (!workflow) return;
 
@@ -118,19 +129,19 @@ export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> =
       signedBy: newSignedBy,
       progress: newProgress,
       currentStep: newCurrentStep,
-      status: newStatus
+      status: newStatus as 'pending' | 'approved' | 'rejected' | 'in-review'
     });
-  }
+  }, [updateWorkflow, workflows]);
 
-  function rejectDocument(docId: string) {
+  const rejectDocument = React.useCallback((docId: string) => {
     updateWorkflow(docId, {
       status: 'rejected',
       currentStep: 'Rejected',
       progress: 0,
     });
-  }
+  }, [updateWorkflow]);
 
-  function getNextRecipient(docId: string): string | null {
+  const getNextRecipient = React.useCallback((docId: string): string | null => {
     const workflow = workflows.find(w => w.id === docId);
     if (!workflow) return null;
 
@@ -138,7 +149,7 @@ export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> =
     if (currentStepIndex === -1 || currentStepIndex === workflow.steps.length - 1) return null;
 
     return workflow.steps[currentStepIndex + 1]?.recipientId ?? null;
-  }
+  }, [workflows]);
 
   return (
     <DocumentWorkflowContext.Provider value={{

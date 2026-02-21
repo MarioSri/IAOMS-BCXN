@@ -43,6 +43,15 @@ interface WatermarkFeatureProps {
 
 type TabType = 'basic' | 'style' | 'preview' | 'generate';
 
+interface FileContent {
+  type: 'pdf' | 'image' | 'word' | 'excel' | 'unsupported';
+  url?: string;
+  totalPages?: number;
+  pageCanvases?: string[];
+  html?: string;
+  sheetNames?: string[];
+}
+
 interface WatermarkStyle {
   font: string;
   size: number;
@@ -76,7 +85,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
   const [generatedStyle, setGeneratedStyle] = useState<WatermarkStyle | null>(null);
   const [viewingFile, setViewingFile] = useState<File | null>(null);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
-  const [fileContent, setFileContent] = useState<any>(null);
+  const [fileContent, setFileContent] = useState<FileContent | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileZoom, setFileZoom] = useState(100);
@@ -109,7 +118,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
     if (files && files.length > 0 && originalFiles.length === 0) {
       setOriginalFiles([...files]);
     }
-  }, [files]);
+  }, [files, originalFiles.length]);
 
   // Set initial viewing file when files prop changes
   useEffect(() => {
@@ -179,7 +188,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
       canvasEl.height = viewport.height;
       canvasEl.width = viewport.width;
 
-      await page.render({ canvasContext: context, viewport: viewport } as any).promise;
+      await page.render({ canvasContext: context, viewport: viewport } as import('pdfjs-dist/types/src/display/api').RenderParameters).promise;
       pageCanvases.push(canvasEl.toDataURL());
     }
 
@@ -531,8 +540,8 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
       const scaledWidth = (img.width * imageScale) / 50;
       const scaledHeight = (img.height * imageScale) / 50;
 
-      let x = width / 2 - scaledWidth / 2;
-      let y = height / 2 - scaledHeight / 2;
+      const x = width / 2 - scaledWidth / 2;
+      const y = height / 2 - scaledHeight / 2;
 
       ctx.save();
       ctx.translate(x + scaledWidth / 2, y + scaledHeight / 2);
@@ -673,7 +682,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
-        await page.render({ canvasContext: ctx, viewport: viewport } as any).promise;
+        await page.render({ canvasContext: ctx, viewport: viewport } as import('pdfjs-dist/types/src/display/api').RenderParameters).promise;
 
         // Only apply watermark to pages in the specified range
         if (pagesToWatermark.includes(i)) {
@@ -1097,7 +1106,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
           <Label className="text-sm font-medium">Repeat Pattern</Label>
           <Select
             value={repeatMode}
-            onValueChange={(value: any) => {
+            onValueChange={(value: 'none' | 'diagonal' | 'grid') => {
               setRepeatMode(value);
               // Set good defaults when switching modes
               if (value === 'diagonal') {

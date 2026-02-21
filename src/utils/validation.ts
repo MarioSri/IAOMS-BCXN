@@ -3,7 +3,7 @@ export interface ValidationRule {
   minLength?: number;
   maxLength?: number;
   pattern?: RegExp;
-  custom?: (value: any) => string | null;
+  custom?: (value: unknown) => string | null;
 }
 
 export interface ValidationSchema {
@@ -14,7 +14,7 @@ export interface ValidationErrors {
   [key: string]: string;
 }
 
-export function validateField(value: any, rules: ValidationRule): string | null {
+export function validateField(value: unknown, rules: ValidationRule): string | null {
   if (rules.required && (!value || (typeof value === 'string' && !value.trim()))) {
     return 'This field is required';
   }
@@ -40,7 +40,7 @@ export function validateField(value: any, rules: ValidationRule): string | null 
   return null;
 }
 
-export function validateForm(data: Record<string, any>, schema: ValidationSchema): ValidationErrors {
+export function validateForm(data: Record<string, unknown>, schema: ValidationSchema): ValidationErrors {
   const errors: ValidationErrors = {};
 
   Object.keys(schema).forEach(field => {
@@ -56,7 +56,7 @@ export function validateForm(data: Record<string, any>, schema: ValidationSchema
 
 export const validationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  phone: /^[\+]?[1-9][\d]{0,15}$/,
+  phone: /^[+]?[1-9][\d]{0,15}$/,
   hitamEmail: /^[^\s@]+@hitam\.org$/,
   employeeId: /^HITAM-[A-Z]{2,4}-\d{3,4}$/,
   documentId: /^DOC-\d{4}-\d{3,4}$/,
@@ -68,7 +68,7 @@ export const authValidationSchema: ValidationSchema = {
     required: true,
     pattern: validationPatterns.hitamEmail,
     custom: (value) => {
-      if (value && !validationPatterns.hitamEmail.test(value)) {
+      if (typeof value === 'string' && value && !validationPatterns.hitamEmail.test(value)) {
         return 'Please use your HITAM email address (@hitam.org)';
       }
       return null;
@@ -78,7 +78,7 @@ export const authValidationSchema: ValidationSchema = {
     required: true,
     minLength: 8,
     custom: (value) => {
-      if (value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+      if (typeof value === 'string' && value && !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
         return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
       }
       return null;
@@ -114,7 +114,7 @@ export const documentValidationSchema: ValidationSchema = {
       }
 
       const maxSize = 10 * 1024 * 1024; // 10MB
-      const invalidFiles = value.filter((file: File) => file.size > maxSize);
+      const invalidFiles = (value as File[]).filter((file: File) => file.size > maxSize);
       if (invalidFiles.length > 0) {
         return 'Some files exceed the 10MB size limit';
       }

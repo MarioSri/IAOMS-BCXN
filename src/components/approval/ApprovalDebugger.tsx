@@ -1,28 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { isUserInRecipients } from '@/utils/recipientMatching';
 
+interface PendingApproval {
+  id: string;
+  title: string;
+  type?: string;
+  submitter?: string;
+  submittedDate?: string;
+  priority?: string;
+  description?: string;
+  recipients?: string[];
+  recipientIds?: string[];
+  isEmergency?: boolean;
+  isParallel?: boolean;
+  source?: string;
+  workflow?: {
+    steps: Array<{ assignee: string; status: string }>;
+  };
+}
+
 export const ApprovalDebugger: React.FC = () => {
   const { user } = useAuth();
-  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [debugInfo, setDebugInfo] = useState<string>('');
 
-  useEffect(() => {
-    loadApprovalCards();
-  }, []);
-
-  const loadApprovalCards = () => {
+  const loadApprovalCards = useCallback(() => {
     const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
     setPendingApprovals(stored);
-    
+
     let info = `📊 Debug Information:\n`;
     info += `👤 Current User: ${user?.name} (${user?.role})\n`;
     info += `📋 Total Cards in Storage: ${stored.length}\n\n`;
-    
-    stored.forEach((doc: any, index: number) => {
+
+    stored.forEach((doc: PendingApproval, index: number) => {
       const shouldShow = isUserInRecipients({
         user: {
           name: user?.name,
@@ -34,7 +48,7 @@ export const ApprovalDebugger: React.FC = () => {
         recipientIds: doc.recipientIds,
         workflowSteps: doc.workflow?.steps
       });
-      
+
       info += `${index + 1}. "${doc.title}"\n`;
       info += `   Recipients: ${JSON.stringify(doc.recipients || [])}\n`;
       info += `   Recipient IDs: ${JSON.stringify(doc.recipientIds || [])}\n`;
@@ -42,12 +56,16 @@ export const ApprovalDebugger: React.FC = () => {
       info += `   Source: ${doc.source || 'N/A'}\n`;
       info += `   Is Parallel: ${doc.isParallel || false}\n\n`;
     });
-    
+
     setDebugInfo(info);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadApprovalCards();
+  }, [loadApprovalCards]);
 
   const createTestCard = () => {
-    const testCard = {
+    const testCard: PendingApproval = {
       id: 'debug-test-' + Date.now(),
       title: `Test Card for ${user?.role}`,
       type: 'Letter',
@@ -55,7 +73,7 @@ export const ApprovalDebugger: React.FC = () => {
       submittedDate: new Date().toISOString().split('T')[0],
       priority: 'high',
       description: 'Test card created by debug tool',
-      recipients: [user?.name],
+      recipients: [user?.name || ''],
       recipientIds: [user?.role?.toLowerCase() + '-' + (user?.name || '').toLowerCase().replace(/\s+/g, '-')],
       isEmergency: false,
       isParallel: false,
@@ -65,27 +83,27 @@ export const ApprovalDebugger: React.FC = () => {
     const existing = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
     const updated = [...existing, testCard];
     localStorage.setItem('pending-approvals', JSON.stringify(updated));
-    
+
     // Trigger storage event
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'pending-approvals',
       newValue: JSON.stringify(updated)
     }));
-    
+
     loadApprovalCards();
   };
 
   const clearTestCards = () => {
     const existing = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-    const filtered = existing.filter((card: any) => !card.id.startsWith('debug-test-'));
+    const filtered = existing.filter((card: PendingApproval) => !card.id.startsWith('debug-test-'));
     localStorage.setItem('pending-approvals', JSON.stringify(filtered));
-    
+
     // Trigger storage event
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'pending-approvals',
       newValue: JSON.stringify(filtered)
     }));
-    
+
     loadApprovalCards();
   };
 
@@ -106,11 +124,11 @@ export const ApprovalDebugger: React.FC = () => {
             Clear Test Cards
           </Button>
         </div>
-        
+
         <div className="bg-gray-100 p-4 rounded-lg">
           <pre className="text-sm whitespace-pre-wrap">{debugInfo}</pre>
         </div>
-        
+
         <div className="space-y-2">
           <h3 className="font-semibold">Cards in Storage:</h3>
           {pendingApprovals.map((doc, index) => {
@@ -125,7 +143,7 @@ export const ApprovalDebugger: React.FC = () => {
               recipientIds: doc.recipientIds,
               workflowSteps: doc.workflow?.steps
             });
-            
+
             return (
               <Card key={doc.id} className={shouldShow ? 'border-green-500' : 'border-red-500'}>
                 <CardContent className="p-4">

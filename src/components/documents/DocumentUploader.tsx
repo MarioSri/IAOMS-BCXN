@@ -43,9 +43,20 @@ import { WatermarkFeature } from "@/components/documents/WatermarkFeature";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileViewer } from "@/components/documents/FileViewer";
 
+interface DocumentSubmissionData {
+  title: string;
+  documentType: string[];
+  files: File[];
+  recipients: string[];
+  description: string;
+  priority: string;
+  timestamp: string;
+  assignments: Record<string, string[]>;
+}
+
 interface DocumentUploaderProps {
   userRole: string;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: DocumentSubmissionData) => void;
 }
 
 export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) {
@@ -59,9 +70,9 @@ export function DocumentUploader({ userRole, onSubmit }: DocumentUploaderProps) 
   const [priority, setPriority] = useState("normal");
   const [documentTitle, setDocumentTitle] = useState("");
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
-  const [documentAssignments, setDocumentAssignments] = useState<{ [key: string]: string[] }>({});
+  const [documentAssignments, setDocumentAssignments] = useState<Record<string, string[]>>({});
   const [showWatermarkModal, setShowWatermarkModal] = useState(false);
-  const [pendingSubmissionData, setPendingSubmissionData] = useState<any>(null);
+  const [pendingSubmissionData, setPendingSubmissionData] = useState<DocumentSubmissionData | null>(null);
   const [viewingFile, setViewingFile] = useState<File | null>(null);
   const [showFileViewer, setShowFileViewer] = useState(false);
 
