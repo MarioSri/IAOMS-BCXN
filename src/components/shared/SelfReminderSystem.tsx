@@ -225,7 +225,7 @@ export const SelfReminderSystem: React.FC<SelfReminderSystemProps> = ({ userRole
 
   const createRecurringReminder = (originalReminder: Reminder) => {
     const dueDate = new Date(`${originalReminder.dueDate}T${originalReminder.dueTime}`);
-    let nextDate = new Date(dueDate);
+    const nextDate = new Date(dueDate);
 
     switch (originalReminder.repeat) {
       case 'daily':

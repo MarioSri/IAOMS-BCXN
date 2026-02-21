@@ -18,6 +18,8 @@ import {
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
+import { LiveMeetingRequest } from "@/types/liveMeeting";
+import { ChatMessage } from "@/types/chat";
 
 export default function Messages() {
   const { user } = useAuth();
@@ -54,7 +56,7 @@ export default function Messages() {
     }
   );
 
-  const [liveMeetRequests, setLiveMeetRequests] = useState<any[]>([]);
+  const [liveMeetRequests, setLiveMeetRequests] = useState<LiveMeetingRequest[]>([]);
 
 
   const messagesData = useMemo(() => ({
@@ -117,24 +119,15 @@ export default function Messages() {
       const currentUserId = user.id;
       const currentUserName = user.name;
 
-      const filteredRequests = allRequests.filter((request: any) => {
-        if (request.submitter && currentUserName) {
-          if (request.submitter.toLowerCase().trim() === currentUserName.toLowerCase().trim()) {
+      const filteredRequests = allRequests.filter((request: LiveMeetingRequest) => {
+        if (request.requesterName && currentUserName) {
+          if (request.requesterName.toLowerCase().trim() === currentUserName.toLowerCase().trim()) {
             return false;
           }
         }
 
-        if (request.targetParticipantIds && Array.isArray(request.targetParticipantIds)) {
-          if (request.targetParticipantIds.includes(currentUserId)) {
-            return true;
-          }
-        }
-
-        if (request.targetParticipants && Array.isArray(request.targetParticipants)) {
-          const nameMatch = request.targetParticipants.some((name: string) =>
-            name.toLowerCase().trim() === currentUserName?.toLowerCase().trim()
-          );
-          if (nameMatch) {
+        if (request.participants && Array.isArray(request.participants)) {
+          if (request.participants.some(p => p.userId === currentUserId)) {
             return true;
           }
         }

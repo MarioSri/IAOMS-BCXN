@@ -169,7 +169,7 @@ export const AdvancedDigitalSignature: React.FC<AdvancedDigitalSignatureProps> =
     const data = imageData.data;
     
     let nonWhitePixels = 0;
-    let totalPixels = data.length / 4;
+    const totalPixels = data.length / 4;
     
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
