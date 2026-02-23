@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Brain, 
-  Sparkles, 
-  FileText, 
-  Users, 
-  Clock, 
+import {
+  Brain,
+  Sparkles,
+  FileText,
+  Users,
+  Clock,
   TrendingUp,
   MessageSquare,
   CheckCircle2,
@@ -44,7 +44,7 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
       confidence: 95
     },
     {
-      id: "2", 
+      id: "2",
       type: "suggestion",
       title: "Recipient Recommendation",
       content: "Based on document type and content, suggest sending to: HOD-CSE, Registrar, and Principal for approval workflow.",
@@ -72,7 +72,7 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
     }
 
     setIsProcessing(true);
-    
+
     // Simulate AI processing
     setTimeout(() => {
       const newInsight: AIInsight = {
@@ -82,10 +82,10 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
         content: `Key points identified: ${documentText.slice(0, 100)}...`,
         confidence: 87
       };
-      
+
       setInsights(prev => [newInsight, ...prev]);
       setIsProcessing(false);
-      
+
       toast({
         title: "Summary Generated",
         description: "AI has analyzed your document and generated insights.",
@@ -95,13 +95,13 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
 
   const getRecipientSuggestions = () => {
     const suggestions = [];
-    
+
     if (userRole === "employee") {
       suggestions.push("HOD of your department", "Registrar");
     } else if (userRole.includes("hod")) {
       suggestions.push("Registrar", "Principal");
     }
-    
+
     return suggestions;
   };
 
@@ -141,9 +141,9 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
               rows={4}
             />
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
+            <Button
               onClick={generateSummary}
               disabled={isProcessing}
               className="flex items-center gap-2"
@@ -160,12 +160,12 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
                 </>
               )}
             </Button>
-            
+
             <Button variant="outline">
               <Users className="w-4 h-4 mr-2" />
               Suggest Recipients
             </Button>
-            
+
             <Button variant="outline">
               <MessageSquare className="w-4 h-4 mr-2" />
               Grammar Check
@@ -191,7 +191,7 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
                     <div className="flex-shrink-0 mt-1">
                       {getInsightIcon(insight.type)}
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium">{insight.title}</h4>
@@ -199,11 +199,11 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
                           <Badge variant="outline" className="text-xs">
                             {insight.confidence}% confidence
                           </Badge>
-                          <Badge 
+                          <Badge
                             variant={
                               insight.type === "summary" ? "default" :
-                              insight.type === "suggestion" ? "secondary" :
-                              insight.type === "optimization" ? "outline" : "default"
+                                insight.type === "suggestion" ? "secondary" :
+                                  insight.type === "optimization" ? "outline" : "default"
                             }
                             className="text-xs"
                           >
@@ -211,11 +211,11 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
                           </Badge>
                         </div>
                       </div>
-                      
+
                       <p className="text-sm text-muted-foreground mb-3">
                         {insight.content}
                       </p>
-                      
+
                       {insight.action && (
                         <Button variant="outline" size="sm">
                           {insight.action}
@@ -231,7 +231,6 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
         </CardContent>
       </Card>
 
-      {/* Workflow Analytics */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -246,25 +245,25 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
                 <Clock className="w-4 h-4 text-warning" />
                 <span className="text-sm font-medium">Avg. Approval Time</span>
               </div>
-              <p className="text-2xl font-bold">3.2 days</p>
+              <p className="text-2xl font-bold">{userRole === 'demo-work' ? "3.2 days" : "0 days"}</p>
               <p className="text-xs text-muted-foreground">Based on similar documents</p>
             </div>
-            
+
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="w-4 h-4 text-success" />
                 <span className="text-sm font-medium">Success Rate</span>
               </div>
-              <p className="text-2xl font-bold">94%</p>
+              <p className="text-2xl font-bold">{userRole === 'demo-work' ? "94%" : "0%"}</p>
               <p className="text-xs text-muted-foreground">First-time approvals</p>
             </div>
-            
+
             <div className="p-4 border rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <AlertCircle className="w-4 h-4 text-info" />
                 <span className="text-sm font-medium">Peak Hours</span>
               </div>
-              <p className="text-2xl font-bold">10-12 AM</p>
+              <p className="text-2xl font-bold">{userRole === 'demo-work' ? "10-12 AM" : "N/A"}</p>
               <p className="text-xs text-muted-foreground">Best time to submit</p>
             </div>
           </div>
@@ -282,17 +281,17 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
               <FileText className="w-4 h-4 mr-2" />
               Generate Template
             </Button>
-            
+
             <Button variant="outline" className="justify-start">
               <Users className="w-4 h-4 mr-2" />
               Optimize Recipients
             </Button>
-            
+
             <Button variant="outline" className="justify-start">
               <Clock className="w-4 h-4 mr-2" />
               Predict Timeline
             </Button>
-            
+
             <Button variant="outline" className="justify-start">
               <TrendingUp className="w-4 h-4 mr-2" />
               Process Insights
@@ -300,6 +299,6 @@ export function AIAssistant({ userRole }: AIAssistantProps) {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }

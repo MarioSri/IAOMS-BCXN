@@ -170,6 +170,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: authenticatedUser.role
       });
 
+      // Clean up document data from localStorage for non-demo roles
+      if (role !== 'demo-work') {
+        const documentKeys = [
+          'pending-approvals',
+          'submitted-documents',
+          'approval-history-new',
+          'livemeet-requests',
+          'approval-comments',
+          'shared-comments',
+          'document-comments',
+          'meetings',
+          'reminders',
+          'channels',
+          'stickyNotes'
+        ];
+        documentKeys.forEach(key => localStorage.removeItem(key));
+        console.log('🧹 [AuthContext] Cleaned document data from localStorage');
+      }
+
       setUser(authenticatedUser);
 
       // Store in sessionStorage for persistence during browser session only
@@ -191,9 +210,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   function logout(): void {
+    // Clean up all document data on logout
+    const documentKeys = [
+      'pending-approvals',
+      'submitted-documents',
+      'approval-history-new',
+      'livemeet-requests',
+      'approval-comments',
+      'shared-comments',
+      'document-comments',
+      'meetings',
+      'reminders',
+      'channels',
+      'stickyNotes'
+    ];
+    documentKeys.forEach(key => localStorage.removeItem(key));
+
     setUser(null);
     setIsLoading(false);
     sessionStorage.clear();
+    console.log('🧹 [AuthContext] Cleaned up on logout');
   }
 
   useEffect(() => {

@@ -13,7 +13,7 @@ import { QuickActionsWidget } from './widgets/QuickActionsWidget';
 import { DocumentsWidget } from './widgets/DocumentsWidget';
 import { CalendarWidget } from './widgets/CalendarWidget';
 import { NotificationsWidget } from './widgets/NotificationsWidget';
-import { AnalyticsWidget } from './widgets/AnalyticsWidget';
+
 interface DynamicDashboardProps {
   className?: string;
 }
@@ -26,8 +26,7 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ className })
 
   // Supported widget types - only these will be rendered
   const supportedWidgetTypes = [
-    'quickActions', 'documents', 'calendar', 'notifications',
-    'analytics'
+    'quickActions', 'documents', 'calendar', 'notifications'
   ];
 
   useEffect(() => {
@@ -75,15 +74,6 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ className })
         visible: true,
         permissions: []
       },
-      {
-        id: 'analytics',
-        type: 'analytics',
-        title: 'Analytics',
-        position: { x: 0, y: 5, w: isMobile ? 12 : 6, h: 2 },
-        visible: config.permissions.canViewAnalytics &&
-          !['employee', 'registrar', 'program-head', 'hod', 'principal'].includes(user?.role || ''),
-        permissions: ['canViewAnalytics']
-      },
     ];
 
     const filteredWidgets = defaultWidgets.filter(widget => {
@@ -127,8 +117,6 @@ export const DynamicDashboard: React.FC<DynamicDashboardProps> = ({ className })
           return <CalendarWidget {...widgetProps} />;
         case 'notifications':
           return <NotificationsWidget {...widgetProps} />;
-        case 'analytics':
-          return <AnalyticsWidget {...widgetProps} />;
         default:
           return <div>Unknown widget type: {widget.type}</div>;
       }

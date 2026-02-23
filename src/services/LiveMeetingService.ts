@@ -119,8 +119,8 @@ class LiveMeetingService {
       immediateRequests: requests.filter((r: LiveMeetingRequest) => r.urgency === 'immediate').length,
       urgentRequests: requests.filter((r: LiveMeetingRequest) => r.urgency === 'urgent').length,
       todaysMeetings: isDemoRole ? 8 : 0,
-      successRate: 94,
-      averageResponseTime: 12 // minutes
+      successRate: isDemoRole ? 94 : 0,
+      averageResponseTime: isDemoRole ? 12 : 0 // minutes
     };
   }
 

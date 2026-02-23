@@ -159,7 +159,10 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
     const loadRecipients = async () => {
       try {
         const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
-        setAllRecipients(MOCK_RECIPIENTS.map(r => ({
+        // Filter out Demo Work Role recipient only from this selector UI as requested
+        const filteredRecipients = MOCK_RECIPIENTS.filter(r => r.email !== 'demo.work@university.edu');
+
+        setAllRecipients(filteredRecipients.map(r => ({
           id: r.user_id,
           name: r.name,
           email: r.email,

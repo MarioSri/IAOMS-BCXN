@@ -294,7 +294,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
       const recipients = MOCK_RECIPIENTS;
 
       // Create mock meetings with real recipients
-      const mockMeetings: Meeting[] = recipients.length > 0 ? [
+      const mockMeetings: Meeting[] = (recipients.length > 0 && isDemoRole) ? [
         {
           id: "meeting-001",
           title: "Faculty Recruitment Board Meeting",
@@ -1439,17 +1439,6 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Meeting Type</Label>
-                    <Select value={newMeeting.type} onValueChange={(value: MeetingType) => setNewMeeting({ ...newMeeting, type: value })}>
-                      <SelectTrigger className="text-base sm:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="online">Online</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     <Label>Priority</Label>
                     <Select value={newMeeting.priority} onValueChange={(value: MeetingPriority) => setNewMeeting({ ...newMeeting, priority: value })}>
                       <SelectTrigger className="text-base sm:text-sm">
@@ -1463,30 +1452,6 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                     </Select>
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  {newMeeting.type === 'online' && (
-                    <div className="space-y-2">
-                      <Label>Meeting Platform</Label>
-                      <Select value={newMeeting.location} onValueChange={(value) => setNewMeeting({ ...newMeeting, location: value })}>
-                        <SelectTrigger className="text-base sm:text-sm">
-                          <SelectValue placeholder="Select platform" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {meetingPlatforms.filter(p => p.value !== 'physical').map((platform) => (
-                            <SelectItem key={platform.value} value={platform.value} disabled={platform.value === 'teams'}>
-                              <div className="flex items-center gap-2">
-                                {platform.icon}
-                                {platform.label}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="description">Description & Agenda</Label>
                   <Textarea
@@ -1497,18 +1462,6 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                     rows={4}
                     className="text-base sm:text-sm"
                   />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="recurring"
-                    checked={newMeeting.isRecurring}
-                    onCheckedChange={(checked) => setNewMeeting({ ...newMeeting, isRecurring: !!checked })}
-                  />
-                  <Label htmlFor="recurring" className="flex items-center gap-2">
-                    <Repeat className="w-4 h-4" />
-                    Make this a recurring meeting
-                  </Label>
                 </div>
               </TabsContent>
 
@@ -1624,7 +1577,7 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                       />
                     </div>
 
-                    <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center justify-between py-2 opacity-50">
                       <div className="flex items-center gap-3">
                         <Phone className="w-5 h-5 text-muted-foreground" />
                         <div>
@@ -1638,10 +1591,11 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                           ...newMeeting,
                           notifications: { ...newMeeting.notifications!, sms: checked }
                         })}
+                        disabled
                       />
                     </div>
 
-                    <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center justify-between py-2 opacity-50">
                       <div className="flex items-center gap-3">
                         <MessageSquare className="w-5 h-5 text-green-600" />
                         <div>
@@ -1655,30 +1609,12 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
                           ...newMeeting,
                           notifications: { ...newMeeting.notifications!, whatsapp: checked }
                         })}
+                        disabled
                       />
                     </div>
                   </div>
 
-                  <Separator />
 
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Reminder Settings</Label>
-                    <div className="space-y-2">
-                      {newMeeting.notifications?.reminders?.map((reminder, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 border rounded-md">
-                          <div className="flex items-center gap-2">
-                            <Bell className="w-4 h-4" />
-                            <span className="text-sm">
-                              {reminder.timing >= 1440 ? `${reminder.timing / 1440} day(s)` :
-                                reminder.timing >= 60 ? `${reminder.timing / 60} hour(s)` :
-                                  `${reminder.timing} minute(s)`} before
-                            </span>
-                          </div>
-                          <Switch checked={reminder.enabled} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </TabsContent>
 

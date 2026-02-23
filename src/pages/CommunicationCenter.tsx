@@ -78,14 +78,14 @@ export default function CommunicationCenter() {
   }, [user]);
 
   function loadStats() {
-
+    const isDemoRole = user?.role === 'demo-work';
     setStats({
-      unreadMessages: 12,
-      pendingSignatures: 3,
-      activePolls: 2,
-      onlineUsers: 45,
-      totalChannels: 8,
-      documentsShared: 156
+      unreadMessages: isDemoRole ? 12 : 0,
+      pendingSignatures: isDemoRole ? 3 : 0,
+      activePolls: isDemoRole ? 2 : 0,
+      onlineUsers: isDemoRole ? 45 : 0,
+      totalChannels: isDemoRole ? 8 : 0,
+      documentsShared: isDemoRole ? 156 : 0
     });
   }
 
@@ -431,15 +431,15 @@ export default function CommunicationCenter() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Today</span>
-                          <span className="font-medium">127 messages</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "127 messages" : "0 messages"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>This week</span>
-                          <span className="font-medium">892 messages</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "892 messages" : "0 messages"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Average response time</span>
-                          <span className="font-medium">4.2 minutes</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "4.2 minutes" : "0 minutes"}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -453,15 +453,15 @@ export default function CommunicationCenter() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span># general</span>
-                          <span className="font-medium">45 messages</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "45 messages" : "0 messages"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span># hod-channel</span>
-                          <span className="font-medium">32 messages</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "32 messages" : "0 messages"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span># cse-dept</span>
-                          <span className="font-medium">28 messages</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "28 messages" : "0 messages"}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -475,15 +475,15 @@ export default function CommunicationCenter() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Documents shared</span>
-                          <span className="font-medium">23 files</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "23 files" : "0 files"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Images shared</span>
-                          <span className="font-medium">67 images</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "67 images" : "0 images"}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Total storage</span>
-                          <span className="font-medium">2.4 GB</span>
+                          <span className="font-medium">{user?.role === 'demo-work' ? "2.4 GB" : "0 GB"}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -498,19 +498,27 @@ export default function CommunicationCenter() {
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">85%</div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {user?.role === 'demo-work' ? "85%" : "0%"}
+                        </div>
                         <div className="text-sm text-muted-foreground">Active Users</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">92%</div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {user?.role === 'demo-work' ? "92%" : "0%"}
+                        </div>
                         <div className="text-sm text-muted-foreground">Message Read Rate</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-600">3.2</div>
+                        <div className="text-2xl font-bold text-orange-600">
+                          {user?.role === 'demo-work' ? "3.2" : "0"}
+                        </div>
                         <div className="text-sm text-muted-foreground">Avg. Polls/Week</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">96%</div>
+                        <div className="text-2xl font-bold text-purple-600">
+                          {user?.role === 'demo-work' ? "96%" : "0%"}
+                        </div>
                         <div className="text-sm text-muted-foreground">Signature Completion</div>
                       </div>
                     </div>

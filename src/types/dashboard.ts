@@ -8,7 +8,7 @@ export interface DashboardConfig {
 
 export interface DashboardWidget {
   id: string;
-  type: 'documents' | 'calendar' | 'notifications' | 'analytics' | 'quickActions' | 'workflow';
+  type: 'documents' | 'calendar' | 'notifications' | 'analytics' | 'quickActions' | 'workflow' | 'chat' | 'stickyNotes';
   title: string;
   position: { x: number; y: number; w: number; h: number };
   visible: boolean;

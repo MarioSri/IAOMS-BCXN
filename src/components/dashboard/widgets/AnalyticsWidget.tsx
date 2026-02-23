@@ -77,33 +77,34 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
     const fetchAnalytics = async () => {
       setLoading(true);
 
+      const isDemoRole = userRole === 'demo-work';
       const mockAnalytics: AnalyticsData = {
         documentStats: {
-          total: (userRole === 'principal' || userRole === 'demo-work') ? 247 : userRole === 'registrar' ? 189 : userRole === 'hod' ? 67 : 23,
-          approved: (userRole === 'principal' || userRole === 'demo-work') ? 198 : userRole === 'registrar' ? 156 : userRole === 'hod' ? 52 : 18,
-          rejected: (userRole === 'principal' || userRole === 'demo-work') ? 31 : userRole === 'registrar' ? 21 : userRole === 'hod' ? 7 : 2,
-          pending: (userRole === 'principal' || userRole === 'demo-work') ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 8 : 3,
-          avgProcessingTime: (userRole === 'principal' || userRole === 'demo-work') ? 2.3 : userRole === 'registrar' ? 1.8 : userRole === 'hod' ? 1.5 : 0.8
+          total: isDemoRole ? 247 : 0,
+          approved: isDemoRole ? 198 : 0,
+          rejected: isDemoRole ? 31 : 0,
+          pending: isDemoRole ? 18 : 0,
+          avgProcessingTime: isDemoRole ? 2.3 : 0
         },
-        departmentStats: [
+        departmentStats: isDemoRole ? [
           { name: 'CSE', documents: 45, approvalRate: 89, avgTime: 2.1 },
           { name: 'EEE', documents: 38, approvalRate: 92, avgTime: 1.9 },
           { name: 'ECE', documents: 42, approvalRate: 87, avgTime: 2.3 },
           { name: 'MECH', documents: 35, approvalRate: 94, avgTime: 1.7 },
           { name: 'CSM', documents: 28, approvalRate: 91, avgTime: 2.0 },
           { name: 'CSO', documents: 25, approvalRate: 88, avgTime: 2.2 }
-        ],
-        trends: [
+        ] : [],
+        trends: isDemoRole ? [
           { period: 'Week 1', documents: 45, approvals: 38, rejections: 7 },
           { period: 'Week 2', documents: 52, approvals: 44, rejections: 8 },
           { period: 'Week 3', documents: 48, approvals: 41, rejections: 7 },
           { period: 'Week 4', documents: 56, approvals: 49, rejections: 7 }
-        ],
+        ] : [],
         userActivity: {
-          activeUsers: (userRole === 'principal' || userRole === 'demo-work') ? 156 : userRole === 'registrar' ? 89 : userRole === 'hod' ? 23 : 12,
-          documentsToday: (userRole === 'principal' || userRole === 'demo-work') ? 23 : userRole === 'registrar' ? 15 : userRole === 'hod' ? 8 : 3,
-          approvalsToday: (userRole === 'principal' || userRole === 'demo-work') ? 18 : userRole === 'registrar' ? 12 : userRole === 'hod' ? 6 : 0,
-          peakHours: '10:00 AM - 12:00 PM'
+          activeUsers: isDemoRole ? 156 : 0,
+          documentsToday: isDemoRole ? 23 : 0,
+          approvalsToday: isDemoRole ? 18 : 0,
+          peakHours: isDemoRole ? '10:00 AM - 12:00 PM' : 'N/A'
         }
       };
 
@@ -153,8 +154,9 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
 
   if (!analytics) return null;
 
-  const approvalRate = (analytics.documentStats.approved / analytics.documentStats.total) * 100;
-  const rejectionRate = (analytics.documentStats.rejected / analytics.documentStats.total) * 100;
+  const totalDocs = analytics.documentStats.total;
+  const approvalRate = totalDocs > 0 ? (analytics.documentStats.approved / totalDocs) * 100 : 0;
+  const rejectionRate = totalDocs > 0 ? (analytics.documentStats.rejected / totalDocs) * 100 : 0;
 
   return (
     <Card className={cn(
@@ -222,8 +224,12 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
               {approvalRate.toFixed(1)}%
             </p>
             <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3 h-3 text-success" />
-              <span className="text-xs text-success">+2.3% vs last {timeframe}</span>
+              {userRole === 'demo-work' && (
+                <>
+                  <TrendingUp className="w-3 h-3 text-success" />
+                  <span className="text-xs text-success">+2.3% vs last {timeframe}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -244,14 +250,18 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
               {analytics.documentStats.avgProcessingTime}d
             </p>
             <div className="flex items-center gap-1 mt-1">
-              <TrendingDown className="w-3 h-3 text-success" />
-              <span className="text-xs text-success">-0.5d improvement</span>
+              {userRole === 'demo-work' && (
+                <>
+                  <TrendingDown className="w-3 h-3 text-success" />
+                  <span className="text-xs text-success">-0.5d improvement</span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Department Performance (for Principal/Registrar) */}
-        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
+        {/* Department Performance (for demo-work) */}
+        {userRole === 'demo-work' && (
           <div>
             <h4 className={cn(
               "font-semibold mb-2",
@@ -338,8 +348,8 @@ export const AnalyticsWidget: React.FC<AnalyticsWidgetProps> = ({
           </div>
         </div>
 
-        {/* User Activity (for Principal/Registrar) */}
-        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
+        {/* User Activity (for demo-work) */}
+        {userRole === 'demo-work' && (
           <div className="pt-2 border-t">
             <div className="grid grid-cols-2 gap-3 text-center">
               <div className="p-2 bg-primary/10 rounded">

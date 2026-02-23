@@ -26,15 +26,15 @@ import {
   UserRole,
   MessageReaction
 } from '@/types/chat';
+import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
-import { VideoCallModal } from './VideoCallModal';
+
 import {
   Send,
   SendHorizontal,
   Paperclip,
   Smile,
-  Phone,
-  Video,
+
   Settings,
   Search,
   Hash,
@@ -81,6 +81,7 @@ interface ChatInterfaceProps {
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channelMessageCounts = {} }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isMobile } = useResponsive();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -127,8 +128,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedChannelsToDelete, setSelectedChannelsToDelete] = useState<string[]>([]);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [showVideoCall, setShowVideoCall] = useState(false);
-  const [activeVideoCallId, setActiveVideoCallId] = useState<string | null>(null);
+
   const [showChannelMembersModal, setShowChannelMembersModal] = useState(false);
   const [selectedChannelForMembers, setSelectedChannelForMembers] = useState<ChatChannel | null>(null);
   const [selectedMessages, setSelectedMessages] = useState<string[]>([]);
@@ -157,9 +157,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
     };
   }, [showEmojiPicker]);
 
+  // Filtered messages calculation (Outside JSX to follow Rules of Hooks)
+  const filteredMessages = useMemo(() => {
+    if (!activeChannel) return [];
+    return messages.filter(message =>
+      !searchQuery ||
+      message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (users.find(u => u.id === message.senderId)?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [messages, searchQuery, users, activeChannel]);
+
   // Memoized default channels for instant loading
   const defaultChannels = useMemo(() => {
-    if (!user) return [];
+    if (!user || user.role !== 'demo-work') return [];
     const channels: ChatChannel[] = [
       {
         id: 'general',
@@ -230,7 +240,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
 
   // Memoized users for instant loading
   const defaultUsers = useMemo(() => {
-    if (!user) return [];
+    if (!user || user.role !== 'demo-work') return [];
     return [
       {
         id: 'user-1',
@@ -270,6 +280,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
 
   // Load real recipients from MOCK_RECIPIENTS
   useEffect(() => {
+    if (user?.role !== 'demo-work') return;
     const loadRecipients = async () => {
       try {
         const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
@@ -316,7 +327,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
       }
     };
     loadRecipients();
-  }, [setAvailableRecipients]);
+  }, [setAvailableRecipients, user]);
 
   // Optimized initialization for instant loading
   useEffect(() => {
@@ -341,7 +352,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
         if (userDocumentChannels.length > 0) {
           const allChannels = [...userDocumentChannels, ...defaultChannels].map(channel => ({
             ...channel,
-            members: channel.members?.length > 0 ? channel.members : [user.id, 'principal', 'registrar', 'dean']
+            members: channel.members?.length > 0 ? channel.members : (user?.role === 'demo-work' ? [user.id, 'principal', 'registrar', 'dean'] : [user.id])
           }));
           setChannels(allChannels);
         }
@@ -379,54 +390,57 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   }, [user, defaultChannels, defaultUsers, chatService]);
 
   // Memoized sample messages for instant loading
-  const getSampleMessages = useCallback((channelId: string): ChatMessage[] => [
-    {
-      id: 'msg-1',
-      channelId,
-      senderId: 'user-1',
-      content: 'Here are the project documents',
-      type: 'file' as MessageType,
-      timestamp: new Date(Date.now() - 3600000),
-      status: 'delivered',
-      reactions: [],
-      mentions: [],
-      attachments: [
-        {
-          id: 'att-1',
-          name: 'project-report.pdf',
-          url: 'mock://project-report.pdf',
-          type: 'document',
-          size: 2048576,
-          mimeType: 'application/pdf'
-        }
-      ],
-      metadata: {},
-      readBy: []
-    },
-    {
-      id: 'msg-2',
-      channelId,
-      senderId: 'user-2',
-      content: 'Meeting photos from yesterday',
-      type: 'image' as MessageType,
-      timestamp: new Date(Date.now() - 1800000),
-      status: 'delivered',
-      reactions: [],
-      mentions: [],
-      attachments: [
-        {
-          id: 'att-2',
-          name: 'meeting-photo.jpg',
-          url: 'mock://meeting-photo.jpg',
-          type: 'image',
-          size: 1024000,
-          mimeType: 'image/jpeg'
-        }
-      ],
-      metadata: {},
-      readBy: []
-    }
-  ], []);
+  const getSampleMessages = useCallback((channelId: string): ChatMessage[] => {
+    if (user?.role !== 'demo-work') return [];
+    return [
+      {
+        id: 'msg-1',
+        channelId,
+        senderId: 'user-1',
+        content: 'Here are the project documents',
+        type: 'file' as MessageType,
+        timestamp: new Date(Date.now() - 3600000),
+        status: 'delivered',
+        reactions: [],
+        mentions: [],
+        attachments: [
+          {
+            id: 'att-1',
+            name: 'project-report.pdf',
+            url: 'mock://project-report.pdf',
+            type: 'document',
+            size: 2048576,
+            mimeType: 'application/pdf'
+          }
+        ],
+        metadata: {},
+        readBy: []
+      },
+      {
+        id: 'msg-2',
+        channelId,
+        senderId: 'user-2',
+        content: 'Meeting photos from yesterday',
+        type: 'image' as MessageType,
+        timestamp: new Date(Date.now() - 1800000),
+        status: 'delivered',
+        reactions: [],
+        mentions: [],
+        attachments: [
+          {
+            id: 'att-2',
+            name: 'meeting-photo.jpg',
+            url: 'mock://meeting-photo.jpg',
+            type: 'image',
+            size: 1024000,
+            mimeType: 'image/jpeg'
+          }
+        ],
+        metadata: {},
+        readBy: []
+      }
+    ];
+  }, [user?.role]);
 
   const scrollToBottom = useCallback((force = false) => {
     if (force) {
@@ -1274,17 +1288,8 @@ Generated on: ${new Date().toLocaleString()}`;
             )}>
               <p className={cn(
                 "whitespace-pre-wrap",
-                isSystemMessage ? "text-sm font-medium" : "text-sm",
-                message.metadata?.callType === 'video-start' && !message.metadata?.callEnded && "cursor-pointer hover:text-blue-600",
-                message.metadata?.callType === 'video-start' && message.metadata?.callEnded && "text-red-600"
-              )}
-                onClick={() => {
-                  if (message.metadata?.callType === 'video-start' && !message.metadata?.callEnded) {
-                    setActiveVideoCallId(message.metadata.meetingId);
-                    setShowVideoCall(true);
-                  }
-                }}
-              >
+                isSystemMessage ? "text-sm font-medium" : "text-sm"
+              )}>
                 {message.content}
               </p>
 
@@ -1537,7 +1542,7 @@ Generated on: ${new Date().toLocaleString()}`;
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
             {/* Add default channels with message counts if none exist */}
-            {channels.length === 0 && ([
+            {channels.length === 0 && user?.role === 'demo-work' && ([
               {
                 id: 'admin-council',
                 name: 'Administrative Council',
@@ -1623,7 +1628,7 @@ Generated on: ${new Date().toLocaleString()}`;
                   onClick={() => {
                     if (!deleteMode) {
                       setActiveChannel(channel);
-                      setShowSidebar(false); // Close sidebar on mobile
+                      if (isMobile) setShowSidebar(false); // Close sidebar on mobile
                     }
                   }}
                   disabled={deleteMode}
@@ -1673,7 +1678,7 @@ Generated on: ${new Date().toLocaleString()}`;
                   onClick={() => {
                     if (!deleteMode) {
                       setActiveChannel(channel);
-                      setShowSidebar(false); // Close sidebar on mobile
+                      if (isMobile) setShowSidebar(false); // Close sidebar on mobile
                     }
                   }}
                   disabled={deleteMode}
@@ -1746,79 +1751,80 @@ Generated on: ${new Date().toLocaleString()}`;
           </div>
         )}
         {/* Channel Header */}
-        {activeChannel && (
-          <div className="p-4 border-b bg-background">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {!showSidebar && (
-                  <Button size="sm" variant="ghost" onClick={() => setShowSidebar(true)}>
-                    <PanelRightOpen className="w-5 h-5" />
-                  </Button>
-                )}
-                <Lock className="w-5 h-5" />
-                <div>
-                  <h2 className="font-semibold">{activeChannel.name}</h2>
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                      {activeChannel.members.length} members
-                      {typingUsers.length > 0 && (
-                        <span className="hidden sm:inline ml-2">
-                          • {typingUsers.length} typing...
-                        </span>
-                      )}
-                    </p>
-                    <Badge variant="outline" className="text-[10px] sm:text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20 px-1 sm:px-2 h-5 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span className="hidden xs:inline">Auto-delete: 24h</span>
-                    </Badge>
+        <div className="p-4 border-b bg-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {!showSidebar && (
+                <Button size="sm" variant="ghost" onClick={() => setShowSidebar(true)}>
+                  <PanelRightOpen className="w-5 h-5" />
+                </Button>
+              )}
+              {activeChannel ? (
+                <>
+                  <Lock className="w-5 h-5" />
+                  <div>
+                    <h2 className="font-semibold">{activeChannel.name}</h2>
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <p className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                        {activeChannel.members.length} members
+                        {typingUsers.length > 0 && (
+                          <span className="hidden sm:inline ml-2">
+                            • {typingUsers.length} typing...
+                          </span>
+                        )}
+                      </p>
+                      <Badge variant="outline" className="text-[10px] sm:text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20 px-1 sm:px-2 h-5 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span className="hidden xs:inline">Auto-delete: 24h</span>
+                      </Badge>
+                    </div>
                   </div>
-                </div>
+                </>
+              ) : (
+                <>
+                  <Shield className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <h2 className="font-semibold">Communication Hub</h2>
+                    <p className="text-xs text-muted-foreground">Select a channel to begin communicating</p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setShowSearch(!showSearch)} className="h-8 w-8 p-0" title="Search Messages">
+                <Search className="w-4 h-4" />
+              </Button>
+
+              <div className="hidden sm:flex items-center gap-1">
+                <Button size="sm" variant="ghost" onClick={() => setShowNewChannelModal(true)} className="h-8 w-8 p-0" title="New Channel">
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowAddRecipientsModal(true)} className="h-8 w-8 p-0" title="Add Recipient">
+                  <UserPlus className="w-4 h-4" />
+                </Button>
               </div>
 
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Button size="sm" variant="ghost" onClick={() => setShowSearch(!showSearch)} className="h-8 w-8 p-0">
-                  <Search className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant={activeVideoCallId ? "secondary" : "ghost"}
-                  onClick={() => setShowVideoCall(true)}
-                  className={cn("h-8 w-8 p-0", activeVideoCallId && "animate-pulse")}
-                >
-                  <Video className={`w-4 h-4 ${activeVideoCallId ? 'text-green-600' : ''}`} />
-                  {activeVideoCallId && <span className="ml-1 text-[10px] hidden sm:inline">Live</span>}
-                </Button>
-
-                <div className="hidden sm:flex items-center gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => setShowNewChannelModal(true)} className="h-8 w-8 p-0">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setShowAddRecipientsModal(true)} className="h-8 w-8 p-0">
-                    <UserPlus className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="sm:hidden">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setShowNewChannelModal(true)}>
-                        <Plus className="w-4 h-4 mr-2" /> New Channel
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowAddRecipientsModal(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" /> Add Recipient
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+              <div className="sm:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowNewChannelModal(true)}>
+                      <Plus className="w-4 h-4 mr-2" /> New Channel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowAddRecipientsModal(true)}>
+                      <UserPlus className="w-4 h-4 mr-2" /> Add Recipient
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Search Bar */}
         {showSearch && (
@@ -1835,18 +1841,32 @@ Generated on: ${new Date().toLocaleString()}`;
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-2 sm:p-4">
           <div className="space-y-2">
-            {useMemo(() =>
-              messages
-                .filter(message =>
-                  !searchQuery ||
-                  message.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  (users.find(u => u.id === message.senderId)?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map(message => (
+            {activeChannel ? (
+              <>
+                {filteredMessages.map(message => (
                   <MessageComponent key={message.id} message={message} />
-                )), [messages, searchQuery, users]
+                ))}
+                <div ref={messagesEndRef} />
+              </>
+            ) : (
+              <div className="h-[500px] flex flex-col items-center justify-center p-8 text-center">
+                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
+                  <MessageSquare className="w-8 h-8 text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Welcome to your Chat Hub</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mb-6">
+                  Select a channel from the sidebar or start a new conversation to begin.
+                </p>
+                <div className="flex gap-3">
+                  <Button variant="outline" size="sm" onClick={() => setShowNewChannelModal(true)} className="gap-2">
+                    <Plus className="w-4 h-4" /> New Channel
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowAddRecipientsModal(true)} className="gap-2">
+                    <UserPlus className="w-4 h-4" /> Start DM
+                  </Button>
+                </div>
+              </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
 
@@ -2346,7 +2366,7 @@ Generated on: ${new Date().toLocaleString()}`;
                   // Helper function to get user display info from member ID
                   const getMemberInfo = (id: string) => {
                     // Map of common recipient IDs to their display names
-                    const recipientMap: { [key: string]: { fullName: string; role: string } } = {
+                    const recipientMap: { [key: string]: { fullName: string; role: string } } = user?.role === 'demo-work' ? {
                       // Leadership
                       'principal-dr.-robert-principal': { fullName: 'Dr. Robert Principal', role: 'Principal' },
                       'registrar-prof.-sarah-registrar': { fullName: 'Prof. Sarah Registrar', role: 'Registrar' },
@@ -2386,7 +2406,7 @@ Generated on: ${new Date().toLocaleString()}`;
                       'program-department-head-prof.-cso-head-cso': { fullName: 'Prof. CSO Head', role: 'Program Head CSO' },
                       'program-department-head-prof.-csd-head-csd': { fullName: 'Prof. CSD Head', role: 'Program Head CSD' },
                       'program-department-head-prof.-csc-head-csc': { fullName: 'Prof. CSC Head', role: 'Program Head CSC' }
-                    };
+                    } : {};
 
                     // Check if we have a mapping
                     if (recipientMap[id]) {
@@ -2548,80 +2568,7 @@ Generated on: ${new Date().toLocaleString()}`;
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Video Call Modal */}
-      <VideoCallModal
-        isOpen={showVideoCall}
-        onClose={() => {
-          setShowVideoCall(false);
-          setActiveVideoCallId(null);
-        }}
-        channelName={activeChannel?.name || 'Unknown Channel'}
-        channelMembers={activeChannel?.members.filter(id => id !== user?.id).map(id => {
-          const member = users.find(u => u.id === id);
-          return member?.fullName || id;
-        }) || []}
-        onCallStart={(meetingId) => {
-          setActiveVideoCallId(meetingId);
-          // Add video call start message to chat
-          if (activeChannel && user) {
-            const callStartMessage: ChatMessage = {
-              id: `call-start-${Date.now()}`,
-              channelId: activeChannel.id,
-              senderId: 'system',
-              content: `Video Call Started — Click To Join`,
-              type: 'system',
-              timestamp: new Date(),
-              status: 'delivered',
-              reactions: [],
-              mentions: [],
-              attachments: [],
-              readBy: [],
-              metadata: {
-                meetingId,
-                callType: 'video-start',
-                initiatedBy: user.name
-              }
-            };
-            setMessages(prev => [...prev, callStartMessage]);
-          }
-        }}
-        onCallEnd={(meetingId, duration) => {
-          // Mark the start message as ended and add end message
-          if (activeChannel && user) {
-            setMessages(prev => prev.map(msg =>
-              msg.metadata?.meetingId === meetingId && msg.metadata?.callType === 'video-start'
-                ? { ...msg, metadata: { ...msg.metadata, callEnded: true } }
-                : msg
-            ));
 
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
-            const endTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            const callEndMessage: ChatMessage = {
-              id: `call-end-${Date.now()}`,
-              channelId: activeChannel.id,
-              senderId: 'system',
-              content: `Video Call Ended At ${endTime} • Duration: ${minutes}m ${seconds}s`,
-              type: 'system',
-              timestamp: new Date(),
-              status: 'delivered',
-              reactions: [],
-              mentions: [],
-              attachments: [],
-              readBy: [],
-              metadata: {
-                meetingId,
-                callType: 'video-end',
-                duration,
-                endedBy: user.name
-              }
-            };
-            setMessages(prev => [...prev, callEndMessage]);
-          }
-          setActiveVideoCallId(null);
-        }}
-      />
 
       {/* Private Reply Modal */}
       <Dialog open={showPrivateReplyModal} onOpenChange={setShowPrivateReplyModal}>

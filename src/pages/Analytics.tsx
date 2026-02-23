@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, TrendingUp, Users, FileText, Clock, CheckCircle2, XCircle, Calendar } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealTimeDocuments } from "@/hooks/useRealTimeDocuments";
+import MockDataService from "@/services/MockDataService";
 import { useState, useEffect } from "react";
 
 export default function Analytics() {
@@ -36,11 +37,11 @@ export default function Analytics() {
       approved,
       rejected,
       pending,
-      avgProcessingTime: 2.2,
+      avgProcessingTime: user?.role === 'demo-work' ? 2.2 : 0,
       todayDocuments: todayDocs,
       activeSessions: allDocs.filter(d => d.status === 'pending').length
     });
-  }, [trackDocuments, approvalCards]);
+  }, [trackDocuments, approvalCards, user]);
 
 
   useEffect(() => {
@@ -74,20 +75,10 @@ export default function Analytics() {
 
   if (!user) return null;
 
-  const departmentStats = (user.role === 'principal' || user.role === 'demo-work') ? [
-    { name: "Computer Science", submitted: 45, approved: 38, rejected: 7, pending: 0 },
-    { name: "Electrical Engineering", submitted: 32, approved: 28, rejected: 2, pending: 2 },
-    { name: "Mechanical Engineering", submitted: 28, approved: 24, rejected: 3, pending: 1 },
-    { name: "Electronics & Communication", submitted: 35, approved: 30, rejected: 4, pending: 1 },
-    { name: "Civil Engineering", submitted: 22, approved: 20, rejected: 1, pending: 1 }
-  ] : [];
-
-  const monthlyTrends = (user.role === 'principal' || user.role === 'demo-work') ? [
-    { month: "Oct", documents: 120, approved: 98, rejected: 15, avgTime: 2.3 },
-    { month: "Nov", documents: 135, approved: 115, rejected: 12, avgTime: 2.1 },
-    { month: "Dec", documents: 98, approved: 85, rejected: 8, avgTime: 1.9 },
-    { month: "Jan", documents: metrics.totalDocuments || 162, approved: metrics.approved || 140, rejected: metrics.rejected || 17, avgTime: metrics.avgProcessingTime || 2.2 }
-  ] : [];
+  const departmentStats = MockDataService.getAnalyticsData(user?.role || '')?.departmentStats || [];
+  const monthlyTrends = (MockDataService.getAnalyticsData(user?.role || '')?.monthlyTrends || []).map(month => 
+    month.month === "Jan" ? { ...month, documents: metrics.totalDocuments || month.documents, approved: metrics.approved || month.approved, rejected: metrics.rejected || month.rejected, avgTime: metrics.avgProcessingTime || month.avgTime } : month
+  );
 
   return (
     <ResponsiveLayout>
@@ -97,7 +88,7 @@ export default function Analytics() {
           <p className="text-sm sm:text-base text-muted-foreground">Comprehensive insights into document workflow performance</p>
         </div>
 
-        {(user.role === 'principal' || user.role === 'demo-work') && (
+        {user.role === 'demo-work' && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <Card className="shadow-sm border-muted/20">
               <CardContent className="p-3 sm:p-6">
@@ -225,27 +216,27 @@ export default function Analytics() {
                       <span className="text-sm">Approved</span>
                       <div className="flex items-center gap-2 flex-1 justify-end">
                         <div className="w-16 xs:w-24 sm:w-32 bg-muted rounded-full h-2 overflow-hidden">
-                          <div className="bg-success h-2 rounded-full" style={{ width: "86.4%" }}></div>
+                          <div className="bg-success h-2 rounded-full" style={{ width: `${metrics.totalDocuments > 0 ? (metrics.approved / metrics.totalDocuments * 100) : 0}%` }}></div>
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap">86.4%</span>
+                        <span className="text-sm font-medium whitespace-nowrap">{metrics.totalDocuments > 0 ? (metrics.approved / metrics.totalDocuments * 100).toFixed(1) : "0"}%</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm">Rejected</span>
                       <div className="flex items-center gap-2 flex-1 justify-end">
                         <div className="w-16 xs:w-24 sm:w-32 bg-muted rounded-full h-2 overflow-hidden">
-                          <div className="bg-destructive h-2 rounded-full" style={{ width: "10.5%" }}></div>
+                          <div className="bg-destructive h-2 rounded-full" style={{ width: `${metrics.totalDocuments > 0 ? (metrics.rejected / metrics.totalDocuments * 100) : 0}%` }}></div>
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap">10.5%</span>
+                        <span className="text-sm font-medium whitespace-nowrap">{metrics.totalDocuments > 0 ? (metrics.rejected / metrics.totalDocuments * 100).toFixed(1) : "0"}%</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-sm">Pending</span>
                       <div className="flex items-center gap-2 flex-1 justify-end">
                         <div className="w-16 xs:w-24 sm:w-32 bg-muted rounded-full h-2 overflow-hidden">
-                          <div className="bg-warning h-2 rounded-full" style={{ width: "3.1%" }}></div>
+                          <div className="bg-warning h-2 rounded-full" style={{ width: `${metrics.totalDocuments > 0 ? (metrics.pending / metrics.totalDocuments * 100) : 0}%` }}></div>
                         </div>
-                        <span className="text-sm font-medium whitespace-nowrap">3.1%</span>
+                        <span className="text-sm font-medium whitespace-nowrap">{metrics.totalDocuments > 0 ? (metrics.pending / metrics.totalDocuments * 100).toFixed(1) : "0"}%</span>
                       </div>
                     </div>
                   </div>
@@ -358,7 +349,7 @@ export default function Analytics() {
                       <h4 className="text-xs sm:text-sm font-medium text-muted-foreground">Completed Tasks</h4>
                       <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
                     </div>
-                    <p className="text-xl sm:text-2xl font-bold">15</p>
+                    <p className="text-xl sm:text-2xl font-bold">{user.role === 'demo-work' ? '15' : '0'}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Tasks finished today</p>
                   </div>
                   <div className="p-3 sm:p-4 border rounded-lg shadow-sm">
@@ -366,7 +357,7 @@ export default function Analytics() {
                       <h4 className="text-xs sm:text-sm font-medium text-muted-foreground">System Uptime</h4>
                       <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
                     </div>
-                    <p className="text-xl sm:text-2xl font-bold">99.8%</p>
+                    <p className="text-xl sm:text-2xl font-bold">{user.role === 'demo-work' ? '99.8%' : '100%'}</p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">Operational status</p>
                   </div>
                 </div>
@@ -387,42 +378,50 @@ export default function Analytics() {
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Documents Processed</h4>
-                      <Badge variant="secondary" className="text-green-600 bg-green-50">
-                        ↑ 15%
-                      </Badge>
+                      {user.role === 'demo-work' && (
+                        <Badge variant="secondary" className="text-green-600 bg-green-50">
+                          ↑ 15%
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-2xl font-bold">47</p>
-                    <p className="text-xs text-muted-foreground">vs 41 last week</p>
+                    <p className="text-2xl font-bold">{user.role === 'demo-work' ? '47' : '0'}</p>
+                    {user.role === 'demo-work' && <p className="text-xs text-muted-foreground">vs 41 last week</p>}
                   </div>
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Meetings Scheduled</h4>
-                      <Badge variant="secondary" className="text-green-600 bg-green-50">
-                        ↑ 8%
-                      </Badge>
+                      {user.role === 'demo-work' && (
+                        <Badge variant="secondary" className="text-green-600 bg-green-50">
+                          ↑ 8%
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-2xl font-bold">23</p>
-                    <p className="text-xs text-muted-foreground">vs 21 last week</p>
+                    <p className="text-2xl font-bold">{user.role === 'demo-work' ? '23' : '0'}</p>
+                    {user.role === 'demo-work' && <p className="text-xs text-muted-foreground">vs 21 last week</p>}
                   </div>
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Signatures Completed</h4>
-                      <Badge variant="secondary" className="text-red-600 bg-red-50">
-                        ↓ 5%
-                      </Badge>
+                      {user.role === 'demo-work' && (
+                        <Badge variant="secondary" className="text-red-600 bg-red-50">
+                          ↓ 5%
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-2xl font-bold">12</p>
-                    <p className="text-xs text-muted-foreground">vs 13 last week</p>
+                    <p className="text-2xl font-bold">{user.role === 'demo-work' ? '12' : '0'}</p>
+                    {user.role === 'demo-work' && <p className="text-xs text-muted-foreground">vs 13 last week</p>}
                   </div>
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">Active Users</h4>
-                      <Badge variant="secondary" className="text-green-600 bg-green-50">
-                        ↑ 12%
-                      </Badge>
+                      {user.role === 'demo-work' && (
+                        <Badge variant="secondary" className="text-green-600 bg-green-50">
+                          ↑ 12%
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-2xl font-bold">156</p>
-                    <p className="text-xs text-muted-foreground">vs 139 last week</p>
+                    <p className="text-2xl font-bold">{user.role === 'demo-work' ? '156' : '0'}</p>
+                    {user.role === 'demo-work' && <p className="text-xs text-muted-foreground">vs 139 last week</p>}
                   </div>
                 </div>
               </CardContent>
@@ -456,7 +455,7 @@ export default function Analytics() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Avg. Processing</p>
-                          <p className="font-medium">{user.role === 'demo-work' ? month.avgTime : 0} days</p>
+                          <span className="text-sm font-medium whitespace-nowrap">{user.role === 'demo-work' ? month.avgTime : 0} days</span>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Success Rate</p>
@@ -487,11 +486,11 @@ export default function Analytics() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Fastest Approval</span>
-                        <span className="font-medium">4 hours</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "4 hours" : "0 hours"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Longest Processing</span>
-                        <span className="font-medium">7 days</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "7 days" : "0 days"}</span>
                       </div>
                     </div>
                   </div>
@@ -500,15 +499,15 @@ export default function Analytics() {
                     <div className="space-y-3">
                       <div className="flex justify-between">
                         <span className="text-sm">First-time Approval Rate</span>
-                        <span className="font-medium">78.5%</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "78.5%" : "0%"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Resubmission Rate</span>
-                        <span className="font-medium">12.3%</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "12.3%" : "0%"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">User Satisfaction</span>
-                        <span className="font-medium">4.6/5.0</span>
+                        <span className="font-medium">{user.role === 'demo-work' ? "4.6/5.0" : "0/5.0"}</span>
                       </div>
                     </div>
                   </div>

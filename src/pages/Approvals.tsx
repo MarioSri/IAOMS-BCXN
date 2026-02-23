@@ -19,6 +19,7 @@ import { isUserInRecipients, findUserStepInWorkflow } from "@/utils/recipientMat
 import { useRealTimeDocuments } from "@/hooks/useRealTimeDocuments";
 import isJpg from 'is-jpg';
 import { recordAction } from '@/lib/auditLogger';
+import MockDataService from '@/services/MockDataService';
 
 
 const Approvals = () => {
@@ -1513,53 +1514,8 @@ const Approvals = () => {
     }
   };
 
-  // Show static mock cards for Principal, Demo Work and Employee roles
-  const staticPendingDocs = (user.role === 'principal' || user.role === 'demo-work' || user.role === 'employee') ? [
-    {
-      id: 'faculty-meeting',
-      title: 'Faculty Meeting Minutes – Q4 2024',
-      type: 'Circular',
-      submitter: 'Dr. Sarah Johnson',
-      submittedDate: '2024-01-15',
-      priority: 'high',
-      description: 'Add a risk-mitigation section to highlight potential delays or issues.',
-      recipients: ['Employee', 'Principal', 'HOD', 'Registrar'], // Ensure employees can see this
-      recipientIds: ['employee', 'principal', 'hod', 'registrar']
-    },
-    {
-      id: 'budget-request',
-      title: 'Budget Request – Lab Equipment',
-      type: 'Letter',
-      submitter: 'Prof. David Brown',
-      submittedDate: '2024-01-13',
-      priority: 'medium',
-      description: 'Consider revising the scope to focus on priority items within this quarter\'s budget.',
-      recipients: ['Employee', 'Principal', 'HOD'], // Ensure employees can see this
-      recipientIds: ['employee', 'principal', 'hod']
-    },
-    {
-      id: 'student-event',
-      title: 'Student Event Proposal – Tech Fest 2024',
-      type: 'Circular',
-      submitter: 'Dr. Emily Davis',
-      submittedDate: '2024-01-14',
-      priority: 'medium',
-      description: 'Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.',
-      recipients: ['Employee', 'Principal', 'Registrar'], // Ensure employees can see this
-      recipientIds: ['employee', 'principal', 'registrar']
-    },
-    {
-      id: 'research-methodology',
-      title: 'Research Methodology Guidelines – Academic Review',
-      type: 'Report',
-      submitter: 'Prof. Jessica Chen',
-      submittedDate: '2024-01-20',
-      priority: 'normal',
-      description: 'Comprehensive guidelines for research methodology standards and academic review processes.',
-      recipients: ['Employee', 'Principal', 'HOD', 'Registrar'], // Ensure employees can see this
-      recipientIds: ['employee', 'principal', 'hod', 'registrar']
-    }
-  ] : [];
+  // Get mock data from service (only for demo-work role)
+  const staticPendingDocs = MockDataService.getApprovals(user?.role || '');
 
   // Test function to verify recipient matching
   const testRecipientMatching = () => {
@@ -1969,75 +1925,8 @@ const Approvals = () => {
     setDocumensoDocument(null);
   };
 
-  // Show static approval history for Principal and Employee roles  
-  const recentApprovals = (user.role === 'principal' || user.role === 'demo-work' || user.role === 'employee') ? [
-    {
-      id: 10,
-      title: "Academic Standards Review Report",
-      type: "Letter",
-      submitter: "Prof. Jessica Chen",
-      submittedDate: "2024-01-18",
-      status: "approved",
-      priority: "normal",
-      approvedBy: "Principal",
-      approvedDate: "2024-01-19",
-      description: "Comprehensive review of academic standards and quality assurance measures across all departments",
-      comment: "Academic standards review approved. Implementation timeline is realistic and quality metrics are well-defined."
-    },
-    {
-      id: 9,
-      title: "Infrastructure Upgrade Request",
-      type: "Proposal",
-      submitter: "IT Department",
-      submittedDate: "2024-01-16",
-      status: "approved",
-      priority: "high",
-      approvedBy: "Principal",
-      approvedDate: "2024-01-17",
-      description: "Request for upgrading campus network infrastructure and server capacity to support increased digital learning initiatives",
-      comment: "Critical infrastructure upgrade approved. The proposed timeline and phased implementation approach will minimize disruption to ongoing activities. Budget allocation confirmed from IT modernization fund."
-    },
-    {
-      id: 6,
-      title: "Research Grant Application",
-      type: "Report",
-      submitter: "Dr. Michael Anderson",
-      submittedDate: "2024-01-10",
-      status: "approved",
-      priority: "high",
-      approvedBy: "Principal",
-      approvedDate: "2024-01-12",
-      description: "Application for NSF research funding for AI in education project",
-      comment: "Excellent proposal with clear objectives and realistic timeline. The budget allocation is well-justified and the expected outcomes align with institutional goals."
-    },
-    {
-      id: 7,
-      title: "Event Permission Request",
-      type: "Letter",
-      submitter: "Prof. Lisa Thompson",
-      submittedDate: "2024-01-09",
-      status: "rejected",
-      rejectedBy: "HOD - CSE",
-      rejectedDate: "2024-01-11",
-      priority: "medium",
-      reason: "Insufficient documentation",
-      description: "Permission request for annual tech symposium with external speakers",
-      comment: "Please provide detailed speaker profiles, venue safety certificates, and revised budget breakdown before resubmission."
-    },
-    {
-      id: 8,
-      title: "Course Curriculum Update",
-      type: "Circular",
-      submitter: "Dr. Emily Chen",
-      submittedDate: "2024-01-08",
-      status: "approved",
-      priority: "normal",
-      approvedBy: "Academic Committee",
-      approvedDate: "2024-01-10",
-      description: "Proposal to update computer science curriculum with modern AI and machine learning modules",
-      comment: "Well-structured curriculum update that addresses current industry needs. Implementation timeline is reasonable and faculty training plan is comprehensive."
-    }
-  ] : [];
+  // Get approval history from service (only for demo-work role)
+  const recentApprovals = MockDataService.getApprovalHistory(user?.role || '');
 
   return (
     <ResponsiveLayout>
@@ -2057,7 +1946,7 @@ const Approvals = () => {
                   <Clock className="h-6 w-6 text-warning" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{realTimePendingApprovals.length + 4}</p>
+                  <p className="text-2xl font-bold">{user.role === 'demo-work' ? realTimePendingApprovals.length + 4 : '0'}</p>
                   <p className="text-sm text-muted-foreground">Pending Approvals</p>
                 </div>
               </div>
@@ -2071,7 +1960,7 @@ const Approvals = () => {
                   <CheckCircle2 className="h-6 w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">24</p>
+                  <p className="text-2xl font-bold">{user.role === 'demo-work' ? '24' : '0'}</p>
                   <p className="text-sm text-muted-foreground">Approved This Week</p>
                 </div>
               </div>
@@ -2085,7 +1974,7 @@ const Approvals = () => {
                   <XCircle className="h-6 w-6 text-destructive" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">3</p>
+                  <p className="text-2xl font-bold">{user.role === 'demo-work' ? '3' : '0'}</p>
                   <p className="text-sm text-muted-foreground">Rejected This Week</p>
                 </div>
               </div>
@@ -2480,968 +2369,973 @@ const Approvals = () => {
                       </Card>
                     ))}
 
-                  {/* Faculty Meeting Minutes Card */}
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 space-y-4">
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                            <div className="w-full sm:w-auto">
-                              <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                Faculty Meeting Minutes – Q4 2024
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-4 w-4" />
-                                  Circular
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="h-4 w-4" />
-                                  Dr. Sarah Johnson
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  2024-01-15
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <Badge variant="warning">Pending</Badge>
-                              <Badge variant="outline" className="text-orange-600 font-semibold">High Priority</Badge>
-                            </div>
-                          </div>
-
-                          {/* Description */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="text-sm font-medium">Description</span>
-                            </div>
-                            <div className="bg-muted p-3 rounded text-sm">
-                              <p>Add a risk-mitigation section to highlight potential delays or issues.</p>
-                            </div>
-                          </div>
-
-                          {/* Shared Comments from Previous Approvers */}
-                          {sharedComments['faculty-meeting']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['faculty-meeting'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
-                                    <p className="text-blue-800">{shared.comment}</p>
-                                    <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Your Shared Comments (above input field) */}
-                          {sharedComments['faculty-meeting']?.filter(s => s.sharedBy === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['faculty-meeting'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p className="text-blue-800">{shared.comment}</p>
+                  {/* Demo Cards - Visible only to demo-work role */}
+                  {user.role === 'demo-work' && (
+                    <>
+                      {/* Faculty Meeting Minutes Card */}
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col lg:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                    Faculty Meeting Minutes – Q4 2024
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <FileText className="h-4 w-4" />
+                                      Circular
                                     </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleEditSharedComment('faculty-meeting', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleUndoSharedComment('faculty-meeting', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-4 w-4" />
+                                      Dr. Sarah Johnson
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      2024-01-15
                                     </div>
                                   </div>
-                                ))}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <Badge variant="warning">Pending</Badge>
+                                  <Badge variant="outline" className="text-orange-600 font-semibold">High Priority</Badge>
+                                </div>
                               </div>
-                            </div>
-                          )}
 
-                          {/* Your Comments */}
-                          {comments['faculty-meeting']?.filter(c => c.author === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="text-sm font-medium">Your Comments</span>
-                              </div>
+                              {/* Description */}
                               <div className="space-y-2">
-                                {comments['faculty-meeting'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p>{commentObj.message}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
-                                    </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleEditComment('faculty-meeting', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleUndoComment('faculty-meeting', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Description</span>
+                                </div>
+                                <div className="bg-muted p-3 rounded text-sm">
+                                  <p>Add a risk-mitigation section to highlight potential delays or issues.</p>
+                                </div>
                               </div>
-                            </div>
-                          )}
 
-                          {/* Your Comments Header - only when no comments exist */}
-                          {!comments['faculty-meeting']?.length && (
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
-                              <span className="text-sm font-medium">Your Comments</span>
-                            </div>
-                          )}
+                              {/* Shared Comments from Previous Approvers */}
+                              {sharedComments['faculty-meeting']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['faculty-meeting'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
+                                      <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
+                                        <p className="text-blue-800">{shared.comment}</p>
+                                        <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
 
-                          {/* Input Field */}
-                          <div className="space-y-2">
-                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
-                              <textarea
-                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
-                                placeholder="Add your comment..."
-                                rows={1}
-                                style={{ resize: 'none' }}
-                                value={commentInputs['faculty-meeting'] || ''}
-                                onChange={(e) => {
-                                  const newInputs = { ...commentInputs, 'faculty-meeting': e.target.value };
-                                  setCommentInputs(newInputs);
-                                  localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
-                                }}
-                                onInput={(e) => {
-                                  const target = e.target as HTMLTextAreaElement;
-                                  target.style.height = 'auto';
-                                  target.style.height = target.scrollHeight + 'px';
-                                }}
-                              />
-                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
-                                <button
-                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
-                                  title="Send comment"
-                                  onClick={() => handleAddComment('faculty-meeting')}
-                                >
-                                  <ChevronRight className="h-4 w-4 text-gray-600" />
-                                </button>
-                                {!isLastRecipient({ id: 'faculty-meeting', workflow: null, recipientIds: null }) && (
-                                  <button
-                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
-                                    title="Share comment with next recipient(s)"
-                                    onClick={() => handleShareComment('faculty-meeting')}
-                                  >
+                              {/* Your Shared Comments (above input field) */}
+                              {sharedComments['faculty-meeting']?.filter(s => s.sharedBy === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
                                     <Share2 className="h-4 w-4 text-blue-600" />
-                                  </button>
-                                )}
+                                    <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['faculty-meeting'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
+                                      <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p className="text-blue-800">{shared.comment}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleEditSharedComment('faculty-meeting', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['faculty-meeting'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleUndoSharedComment('faculty-meeting', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments */}
+                              {comments['faculty-meeting']?.filter(c => c.author === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {comments['faculty-meeting'].filter(c => c.author === user?.name).map((commentObj, index) => (
+                                      <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p>{commentObj.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleEditComment('faculty-meeting', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['faculty-meeting'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleUndoComment('faculty-meeting', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments Header - only when no comments exist */}
+                              {!comments['faculty-meeting']?.length && (
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Your Comments</span>
+                                </div>
+                              )}
+
+                              {/* Input Field */}
+                              <div className="space-y-2">
+                                <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
+                                  <textarea
+                                    className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
+                                    placeholder="Add your comment..."
+                                    rows={1}
+                                    style={{ resize: 'none' }}
+                                    value={commentInputs['faculty-meeting'] || ''}
+                                    onChange={(e) => {
+                                      const newInputs = { ...commentInputs, 'faculty-meeting': e.target.value };
+                                      setCommentInputs(newInputs);
+                                      localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = target.scrollHeight + 'px';
+                                    }}
+                                  />
+                                  <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
+                                    <button
+                                      className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
+                                      title="Send comment"
+                                      onClick={() => handleAddComment('faculty-meeting')}
+                                    >
+                                      <ChevronRight className="h-4 w-4 text-gray-600" />
+                                    </button>
+                                    {!isLastRecipient({ id: 'faculty-meeting', workflow: null, recipientIds: null }) && (
+                                      <button
+                                        className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
+                                        title="Share comment with next recipient(s)"
+                                        onClick={() => handleShareComment('faculty-meeting')}
+                                      >
+                                        <Share2 className="h-4 w-4 text-blue-600" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                          <Button variant="outline" size="sm" onClick={() => handleViewDocument({
-                            id: 'faculty-meeting',
-                            title: 'Faculty Meeting Minutes – Q4 2024',
-                            type: 'Circular',
-                            submitter: 'Dr. Sarah Johnson',
-                            submittedDate: '2024-01-15',
-                            submittedBy: 'Dr. Sarah Johnson',
-                            date: '2024-01-15',
-                            status: 'pending',
-                            description: 'Add a risk-mitigation section to highlight potential delays or issues.'
-                          })}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                            onClick={() => {
-                              setSelectedDocument({ id: 'faculty-meeting', type: 'circular', title: 'Faculty Meeting Minutes – Q4 2024' });
-                              setShowLiveMeetingModal(true);
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="relative w-4 h-4">
-                                <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
-                                <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                              </div>
-                              LiveMeet+
-                            </div>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDocumensoDocument({
+                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocument({
                                 id: 'faculty-meeting',
                                 title: 'Faculty Meeting Minutes – Q4 2024',
-                                content: 'Add a risk-mitigation section to highlight potential delays or issues.',
-                                type: 'Circular'
-                              });
-                              setShowDocumenso(true);
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Approve & Sign
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectDocument('faculty-meeting')}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Budget Request Card */}
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 space-y-4">
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                            <div className="w-full sm:w-auto">
-                              <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                Budget Request – Lab Equipment
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-4 w-4" />
-                                  Letter
+                                type: 'Circular',
+                                submitter: 'Dr. Sarah Johnson',
+                                submittedDate: '2024-01-15',
+                                submittedBy: 'Dr. Sarah Johnson',
+                                date: '2024-01-15',
+                                status: 'pending',
+                                description: 'Add a risk-mitigation section to highlight potential delays or issues.'
+                              })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onClick={() => {
+                                  setSelectedDocument({ id: 'faculty-meeting', type: 'circular', title: 'Faculty Meeting Minutes – Q4 2024' });
+                                  setShowLiveMeetingModal(true);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
+                                    <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                  LiveMeet+
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="h-4 w-4" />
-                                  Prof. David Brown
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  2024-01-13
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <Badge variant="warning">Pending</Badge>
-                              <Badge variant="outline" className="text-yellow-600">Medium Priority</Badge>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setDocumensoDocument({
+                                    id: 'faculty-meeting',
+                                    title: 'Faculty Meeting Minutes – Q4 2024',
+                                    content: 'Add a risk-mitigation section to highlight potential delays or issues.',
+                                    type: 'Circular'
+                                  });
+                                  setShowDocumenso(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Approve & Sign
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectDocument('faculty-meeting')}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
                             </div>
                           </div>
+                        </CardContent>
+                      </Card>
 
-                          {/* Description */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="text-sm font-medium">Description</span>
-                            </div>
-                            <div className="bg-muted p-3 rounded text-sm">
-                              <p>Consider revising the scope to focus on priority items within this quarter's budget.</p>
-                            </div>
-                          </div>
-
-                          {/* Shared Comments from Previous Approvers */}
-                          {sharedComments['budget-request']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['budget-request'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
-                                    <p className="text-blue-800">{shared.comment}</p>
-                                    <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Your Shared Comments (above input field) */}
-                          {sharedComments['budget-request']?.filter(s => s.sharedBy === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-4 w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['budget-request'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p className="text-blue-800">{shared.comment}</p>
+                      {/* Budget Request Card */}
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col lg:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                    Budget Request – Lab Equipment
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <FileText className="h-4 w-4" />
+                                      Letter
                                     </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleEditSharedComment('budget-request', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleUndoSharedComment('budget-request', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-4 w-4" />
+                                      Prof. David Brown
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      2024-01-13
                                     </div>
                                   </div>
-                                ))}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <Badge variant="warning">Pending</Badge>
+                                  <Badge variant="outline" className="text-yellow-600">Medium Priority</Badge>
+                                </div>
                               </div>
-                            </div>
-                          )}
 
-                          {/* Your Comments */}
-                          {comments['budget-request']?.filter(c => c.author === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="text-sm font-medium">Your Comments</span>
-                              </div>
+                              {/* Description */}
                               <div className="space-y-2">
-                                {comments['budget-request'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p>{commentObj.message}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
-                                    </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleEditComment('budget-request', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleUndoComment('budget-request', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Description</span>
+                                </div>
+                                <div className="bg-muted p-3 rounded text-sm">
+                                  <p>Consider revising the scope to focus on priority items within this quarter's budget.</p>
+                                </div>
                               </div>
-                            </div>
-                          )}
 
-                          {/* Your Comments Header - only when no comments exist */}
-                          {!comments['budget-request']?.length && (
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
-                              <span className="text-sm font-medium">Your Comments</span>
-                            </div>
-                          )}
-
-                          {/* Input Field */}
-                          <div className="space-y-2">
-                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
-                              <textarea
-                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
-                                placeholder="Add your comment..."
-                                rows={1}
-                                style={{ resize: 'none' }}
-                                value={commentInputs['budget-request'] || ''}
-                                onChange={(e) => {
-                                  const newInputs = { ...commentInputs, 'budget-request': e.target.value };
-                                  setCommentInputs(newInputs);
-                                  localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
-                                }}
-                                onInput={(e) => {
-                                  const target = e.target as HTMLTextAreaElement;
-                                  target.style.height = 'auto';
-                                  target.style.height = target.scrollHeight + 'px';
-                                }}
-                              />
-                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
-                                <button
-                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
-                                  title="Send comment"
-                                  onClick={() => handleAddComment('budget-request')}
-                                >
-                                  <ChevronRight className="h-4 w-4 text-gray-600" />
-                                </button>
-                                {!isLastRecipient({ id: 'budget-request', workflow: null, recipientIds: null }) && (
-                                  <button
-                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
-                                    title="Share comment with next recipient(s)"
-                                    onClick={() => handleShareComment('budget-request')}
-                                  >
+                              {/* Shared Comments from Previous Approvers */}
+                              {sharedComments['budget-request']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
                                     <Share2 className="h-4 w-4 text-blue-600" />
-                                  </button>
-                                )}
+                                    <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['budget-request'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
+                                      <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm">
+                                        <p className="text-blue-800">{shared.comment}</p>
+                                        <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Shared Comments (above input field) */}
+                              {sharedComments['budget-request']?.filter(s => s.sharedBy === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-4 w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['budget-request'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
+                                      <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p className="text-blue-800">{shared.comment}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleEditSharedComment('budget-request', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['budget-request'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleUndoSharedComment('budget-request', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments */}
+                              {comments['budget-request']?.filter(c => c.author === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {comments['budget-request'].filter(c => c.author === user?.name).map((commentObj, index) => (
+                                      <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p>{commentObj.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleEditComment('budget-request', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['budget-request'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleUndoComment('budget-request', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments Header - only when no comments exist */}
+                              {!comments['budget-request']?.length && (
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Your Comments</span>
+                                </div>
+                              )}
+
+                              {/* Input Field */}
+                              <div className="space-y-2">
+                                <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
+                                  <textarea
+                                    className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
+                                    placeholder="Add your comment..."
+                                    rows={1}
+                                    style={{ resize: 'none' }}
+                                    value={commentInputs['budget-request'] || ''}
+                                    onChange={(e) => {
+                                      const newInputs = { ...commentInputs, 'budget-request': e.target.value };
+                                      setCommentInputs(newInputs);
+                                      localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = target.scrollHeight + 'px';
+                                    }}
+                                  />
+                                  <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
+                                    <button
+                                      className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
+                                      title="Send comment"
+                                      onClick={() => handleAddComment('budget-request')}
+                                    >
+                                      <ChevronRight className="h-4 w-4 text-gray-600" />
+                                    </button>
+                                    {!isLastRecipient({ id: 'budget-request', workflow: null, recipientIds: null }) && (
+                                      <button
+                                        className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
+                                        title="Share comment with next recipient(s)"
+                                        onClick={() => handleShareComment('budget-request')}
+                                      >
+                                        <Share2 className="h-4 w-4 text-blue-600" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                          <Button variant="outline" size="sm" onClick={() => handleViewDocument({
-                            id: 'budget-request',
-                            title: 'Budget Request – Lab Equipment',
-                            type: 'Letter',
-                            submitter: 'Prof. David Brown',
-                            submittedDate: '2024-01-13',
-                            submittedBy: 'Prof. David Brown',
-                            date: '2024-01-13',
-                            status: 'pending',
-                            description: 'Consider revising the scope to focus on priority items within this quarter\'s budget.'
-                          })}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                            onClick={() => {
-                              setSelectedDocument({ id: 'budget-request', type: 'letter', title: 'Budget Request – Lab Equipment' });
-                              setShowLiveMeetingModal(true);
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="relative w-4 h-4">
-                                <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
-                                <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                              </div>
-                              LiveMeet+
-                            </div>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDocumensoDocument({
+                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocument({
                                 id: 'budget-request',
                                 title: 'Budget Request – Lab Equipment',
-                                content: 'Consider revising the scope to focus on priority items within this quarter\'s budget.',
-                                type: 'Letter'
-                              });
-                              setShowDocumenso(true);
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Approve & Sign
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectDocument('budget-request')}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                                type: 'Letter',
+                                submitter: 'Prof. David Brown',
+                                submittedDate: '2024-01-13',
+                                submittedBy: 'Prof. David Brown',
+                                date: '2024-01-13',
+                                status: 'pending',
+                                description: 'Consider revising the scope to focus on priority items within this quarter\'s budget.'
+                              })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onClick={() => {
+                                  setSelectedDocument({ id: 'budget-request', type: 'letter', title: 'Budget Request – Lab Equipment' });
+                                  setShowLiveMeetingModal(true);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
+                                    <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                  LiveMeet+
+                                </div>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setDocumensoDocument({
+                                    id: 'budget-request',
+                                    title: 'Budget Request – Lab Equipment',
+                                    content: 'Consider revising the scope to focus on priority items within this quarter\'s budget.',
+                                    type: 'Letter'
+                                  });
+                                  setShowDocumenso(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Approve & Sign
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectDocument('budget-request')}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                  {/* Student Event Proposal Card */}
-                  <Card className="hover:shadow-md transition-shadow border-destructive bg-red-50 animate-pulse">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 space-y-4">
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                            <div className="w-full sm:w-auto">
-                              <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                Student Event Proposal – Tech Fest 2024
+                      {/* Student Event Proposal Card */}
+                      <Card className="hover:shadow-md transition-shadow border-destructive bg-red-50 animate-pulse">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col lg:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                    Student Event Proposal – Tech Fest 2024
+                                    <Badge variant="destructive" className="text-xs">
+                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                      EMERGENCY
+                                    </Badge>
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <FileText className="h-4 w-4" />
+                                      Circular
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-4 w-4" />
+                                      Dr. Emily Davis
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      2024-01-14
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <Badge variant="warning">Pending</Badge>
+                                  <Badge variant="outline" className="text-yellow-600">Medium Priority</Badge>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Description</span>
+                                </div>
+                                <div className="bg-muted p-3 rounded text-sm">
+                                  <p>Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.</p>
+                                </div>
+                              </div>
+
+                              {/* Action Required Indicator */}
+                              <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
+                                <Zap className="w-4 h-4 text-warning" />
+                                <span className="text-sm font-medium text-warning">
+                                  Action Required
+                                </span>
                                 <Badge variant="destructive" className="text-xs">
-                                  <AlertTriangle className="w-3 h-3 mr-1" />
-                                  EMERGENCY
+                                  Escalated 2x
                                 </Badge>
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-4 w-4" />
-                                  Circular
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="h-4 w-4" />
-                                  Dr. Emily Davis
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  2024-01-14
-                                </div>
                               </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <Badge variant="warning">Pending</Badge>
-                              <Badge variant="outline" className="text-yellow-600">Medium Priority</Badge>
-                            </div>
-                          </div>
 
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="text-sm font-medium">Description</span>
-                            </div>
-                            <div className="bg-muted p-3 rounded text-sm">
-                              <p>Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.</p>
-                            </div>
-                          </div>
-
-                          {/* Action Required Indicator */}
-                          <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
-                            <Zap className="w-4 h-4 text-warning" />
-                            <span className="text-sm font-medium text-warning">
-                              Action Required
-                            </span>
-                            <Badge variant="destructive" className="text-xs">
-                              Escalated 2x
-                            </Badge>
-                          </div>
-
-                          {comments['student-event']?.filter(c => c.author === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="text-sm font-medium">Your Comments</span>
-                              </div>
-                              <div className="space-y-2">
-                                {comments['student-event'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p>{commentObj.message}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
-                                    </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['student-event'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleEditComment('student-event', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-4 w-4 text-gray-600" />
-                                      </button>
-                                      <button
-                                        className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['student-event'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleUndoComment('student-event', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-4 w-4 text-gray-600" />
-                                      </button>
-                                    </div>
+                              {comments['student-event']?.filter(c => c.author === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {!comments['student-event']?.length && (
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
-                              <span className="text-sm font-medium">Your Comments</span>
-                            </div>
-                          )}
-
-                          <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
-                            <textarea
-                              className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
-                              placeholder="Add your comment..."
-                              rows={1}
-                              style={{ resize: 'none' }}
-                              value={commentInputs['student-event'] || ''}
-                              onChange={(e) => {
-                                const newInputs = { ...commentInputs, 'student-event': e.target.value };
-                                setCommentInputs(newInputs);
-                                localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
-                              }}
-                              onInput={(e) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                target.style.height = 'auto';
-                                target.style.height = target.scrollHeight + 'px';
-                              }}
-                            />
-                            <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
-                              <button
-                                className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
-                                title="Send comment"
-                                onClick={() => handleAddComment('student-event')}
-                              >
-                                <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                              </button>
-                              <button
-                                className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
-                                title="Share comment with next recipient(s)"
-                                onClick={() => handleShareComment('student-event')}
-                              >
-                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                          <Button variant="outline" size="sm" onClick={() => handleViewDocument({
-                            id: 'student-event',
-                            title: 'Student Event Proposal – Tech Fest 2024',
-                            type: 'Circular',
-                            submitter: 'Dr. Emily Davis',
-                            submittedDate: '2024-01-14',
-                            submittedBy: 'Dr. Emily Davis',
-                            date: '2024-01-14',
-                            status: 'pending',
-                            description: 'Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.'
-                          })}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                            onClick={() => {
-                              setSelectedDocument({ id: 'student-event', type: 'circular', title: 'Student Event Proposal – Tech Fest 2024' });
-                              setShowLiveMeetingModal(true);
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="relative w-4 h-4">
-                                <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
-                                <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
-                              </div>
-                              LiveMeet+
-                            </div>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDocumensoDocument({
-                                id: 'student-event',
-                                title: 'Student Event Proposal – Tech Fest 2024',
-                                content: 'Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.',
-                                type: 'Circular'
-                              });
-                              setShowDocumenso(true);
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Approve & Sign
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectDocument('student-event')}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Demo Card - Pending Approvals */}
-                  <Card className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row gap-6">
-                        <div className="flex-1 space-y-4">
-                          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                            <div className="w-full sm:w-auto">
-                              <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
-                                Research Methodology Guidelines – Academic Review
-                              </h3>
-                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <FileText className="h-4 w-4" />
-                                  Report
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <User className="h-4 w-4" />
-                                  Prof. Jessica Chen
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  2024-01-20
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <Badge variant="warning">Pending</Badge>
-                              <Badge variant="outline" className="text-blue-600">Normal Priority</Badge>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="text-sm font-medium">Description</span>
-                            </div>
-                            <div className="bg-muted p-3 rounded text-sm">
-                              <p>Comprehensive guidelines for research methodology standards and academic review processes.</p>
-                            </div>
-                          </div>
-
-                          {/* Shared Comments from Previous Approvers */}
-                          {sharedComments['research-methodology']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['research-methodology'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
-                                  <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <p className="text-blue-800">{shared.comment}</p>
-                                    <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
+                                  <div className="space-y-2">
+                                    {comments['student-event'].filter(c => c.author === user?.name).map((commentObj, index) => (
+                                      <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p>{commentObj.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['student-event'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleEditComment('student-event', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-4 w-4 text-gray-600" />
+                                          </button>
+                                          <button
+                                            className="px-4 py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['student-event'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleUndoComment('student-event', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-4 w-4 text-gray-600" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              )}
 
-                          {/* Your Shared Comments (above input field) */}
-                          {sharedComments['research-methodology']?.filter(s => s.sharedBy === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                                <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
-                              </div>
-                              <div className="space-y-2">
-                                {sharedComments['research-methodology'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
-                                  <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex justify-between items-start">
-                                    <div className="flex-1">
-                                      <p className="text-blue-800">{shared.comment}</p>
-                                    </div>
-                                    <div className="flex gap-1 ml-2">
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleEditSharedComment('research-methodology', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
-                                          handleUndoSharedComment('research-methodology', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                              {!comments['student-event']?.length && (
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span className="text-sm font-medium">Your Comments</span>
+                                </div>
+                              )}
 
-                          {/* Your Comments */}
-                          {comments['research-methodology']?.filter(c => c.author === user?.name).length > 0 && (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                <span className="text-sm font-medium">Your Comments</span>
-                              </div>
-                              <div className="space-y-2">
-                                {comments['research-methodology'].filter(c => c.author === user?.name).map((commentObj, index) => (
-                                  <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
-                                    <div className="flex-1">
-                                      <p>{commentObj.message}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
-                                    </div>
-                                    <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleEditComment('research-methodology', originalIndex);
-                                        }}
-                                        title="Edit"
-                                      >
-                                        <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                      <button
-                                        className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                                        onClick={() => {
-                                          const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
-                                          handleUndoComment('research-methodology', originalIndex);
-                                        }}
-                                        title="Undo"
-                                      >
-                                        <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Your Comments Header - only when no comments exist */}
-                          {!comments['research-methodology']?.length && (
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              <span className="text-sm font-medium">Your Comments</span>
-                            </div>
-                          )}
-
-                          {/* Input Field */}
-                          <div className="space-y-2">
-                            <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
-                              <textarea
-                                className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
-                                placeholder="Add your comment..."
-                                rows={1}
-                                style={{ resize: 'none' }}
-                                value={commentInputs['research-methodology'] || ''}
-                                onChange={(e) => {
-                                  const newInputs = { ...commentInputs, 'research-methodology': e.target.value };
-                                  setCommentInputs(newInputs);
-                                  localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
-                                }}
-                                onInput={(e) => {
-                                  const target = e.target as HTMLTextAreaElement;
-                                  target.style.height = 'auto';
-                                  target.style.height = target.scrollHeight + 'px';
-                                }}
-                              />
-                              <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
-                                <button
-                                  className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
-                                  title="Send comment"
-                                  onClick={() => handleAddComment('research-methodology')}
-                                >
-                                  <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
-                                </button>
-                                {!isLastRecipient({ id: 'research-methodology', workflow: null, recipientIds: null }) && (
+                              <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
+                                <textarea
+                                  className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
+                                  placeholder="Add your comment..."
+                                  rows={1}
+                                  style={{ resize: 'none' }}
+                                  value={commentInputs['student-event'] || ''}
+                                  onChange={(e) => {
+                                    const newInputs = { ...commentInputs, 'student-event': e.target.value };
+                                    setCommentInputs(newInputs);
+                                    localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
+                                  }}
+                                  onInput={(e) => {
+                                    const target = e.target as HTMLTextAreaElement;
+                                    target.style.height = 'auto';
+                                    target.style.height = target.scrollHeight + 'px';
+                                  }}
+                                />
+                                <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
+                                  <button
+                                    className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
+                                    title="Send comment"
+                                    onClick={() => handleAddComment('student-event')}
+                                  >
+                                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                  </button>
                                   <button
                                     className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
                                     title="Share comment with next recipient(s)"
-                                    onClick={() => handleShareComment('research-methodology')}
+                                    onClick={() => handleShareComment('student-event')}
                                   >
                                     <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
                                   </button>
-                                )}
+                                </div>
                               </div>
+                            </div>
+                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocument({
+                                id: 'student-event',
+                                title: 'Student Event Proposal – Tech Fest 2024',
+                                type: 'Circular',
+                                submitter: 'Dr. Emily Davis',
+                                submittedDate: '2024-01-14',
+                                submittedBy: 'Dr. Emily Davis',
+                                date: '2024-01-14',
+                                status: 'pending',
+                                description: 'Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.'
+                              })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onClick={() => {
+                                  setSelectedDocument({ id: 'student-event', type: 'circular', title: 'Student Event Proposal – Tech Fest 2024' });
+                                  setShowLiveMeetingModal(true);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
+                                    <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                  LiveMeet+
+                                </div>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setDocumensoDocument({
+                                    id: 'student-event',
+                                    title: 'Student Event Proposal – Tech Fest 2024',
+                                    content: 'Annual technology festival proposal including budget allocation, venue requirements, and guest speaker arrangements.',
+                                    type: 'Circular'
+                                  });
+                                  setShowDocumenso(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Approve & Sign
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectDocument('student-event')}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
-                          <Button variant="outline" size="sm" onClick={() => handleViewDocument({
-                            id: 'research-methodology',
-                            title: 'Research Methodology Guidelines – Academic Review',
-                            type: 'Report',
-                            submitter: 'Prof. Jessica Chen',
-                            submittedDate: '2024-01-20',
-                            submittedBy: 'Prof. Jessica Chen',
-                            date: '2024-01-20',
-                            status: 'pending',
-                            description: 'Comprehensive guidelines for research methodology standards and academic review processes.'
-                          })}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                            onClick={() => {
-                              setSelectedDocument({ id: 'research-methodology', type: 'report', title: 'Research Methodology Guidelines – Academic Review' });
-                              setShowLiveMeetingModal(true);
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="relative w-4 h-4">
-                                <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
-                                <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Demo Card - Pending Approvals */}
+                      <Card className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-6">
+                          <div className="flex flex-col lg:flex-row gap-6">
+                            <div className="flex-1 space-y-4">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                <div className="w-full sm:w-auto">
+                                  <h3 className="font-semibold text-lg flex items-center gap-2 flex-wrap">
+                                    Research Methodology Guidelines – Academic Review
+                                  </h3>
+                                  <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <FileText className="h-4 w-4" />
+                                      Report
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-4 w-4" />
+                                      Prof. Jessica Chen
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-4 w-4" />
+                                      2024-01-20
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                                  <Clock className="h-4 w-4 text-yellow-600" />
+                                  <Badge variant="warning">Pending</Badge>
+                                  <Badge variant="outline" className="text-blue-600">Normal Priority</Badge>
+                                </div>
                               </div>
-                              LiveMeet+
+
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Description</span>
+                                </div>
+                                <div className="bg-muted p-3 rounded text-sm">
+                                  <p>Comprehensive guidelines for research methodology standards and academic review processes.</p>
+                                </div>
+                              </div>
+
+                              {/* Shared Comments from Previous Approvers */}
+                              {sharedComments['research-methodology']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Comment Shared by Previous Recipient</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['research-methodology'].filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).map((shared, index) => (
+                                      <div key={index} className={`bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <p className="text-blue-800">{shared.comment}</p>
+                                        <p className="text-xs text-blue-600 mt-1">— {shared.sharedBy}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Shared Comments (above input field) */}
+                              {sharedComments['research-methodology']?.filter(s => s.sharedBy === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                    <span className="text-sm font-medium text-blue-700">Share Comment with Next Recipient(s)</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {sharedComments['research-methodology'].filter(s => s.sharedBy === user?.name).map((shared, index) => (
+                                      <div key={index} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded text-sm flex justify-between items-start">
+                                        <div className="flex-1">
+                                          <p className="text-blue-800">{shared.comment}</p>
+                                        </div>
+                                        <div className="flex gap-1 ml-2">
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleEditSharedComment('research-methodology', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = sharedComments['research-methodology'].findIndex(s => s.comment === shared.comment && s.timestamp === shared.timestamp);
+                                              handleUndoSharedComment('research-methodology', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-700" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments */}
+                              {comments['research-methodology']?.filter(c => c.author === user?.name).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <span className="text-sm font-medium">Your Comments</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {comments['research-methodology'].filter(c => c.author === user?.name).map((commentObj, index) => (
+                                      <div key={index} className={`bg-muted p-3 rounded-lg text-sm flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-start'}`}>
+                                        <div className="flex-1">
+                                          <p>{commentObj.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{commentObj.date}</p>
+                                        </div>
+                                        <div className={`flex gap-1 ${isMobile ? 'self-end ml-0' : 'ml-2'}`}>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleEditComment('research-methodology', originalIndex);
+                                            }}
+                                            title="Edit"
+                                          >
+                                            <SquarePen className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                          <button
+                                            className="px-2 py-1 sm:px-4 sm:py-2 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
+                                            onClick={() => {
+                                              const originalIndex = comments['research-methodology'].findIndex(c => c.message === commentObj.message && c.date === commentObj.date);
+                                              handleUndoComment('research-methodology', originalIndex);
+                                            }}
+                                            title="Undo"
+                                          >
+                                            <Undo2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Your Comments Header - only when no comments exist */}
+                              {!comments['research-methodology']?.length && (
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                  <span className="text-sm font-medium">Your Comments</span>
+                                </div>
+                              )}
+
+                              {/* Input Field */}
+                              <div className="space-y-2">
+                                <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
+                                  <textarea
+                                    className={`flex-1 min-h-[40px] p-3 border-0 resize-none text-sm focus:outline-none bg-white ${isMobile ? '' : 'rounded-l-lg'}`}
+                                    placeholder="Add your comment..."
+                                    rows={1}
+                                    style={{ resize: 'none' }}
+                                    value={commentInputs['research-methodology'] || ''}
+                                    onChange={(e) => {
+                                      const newInputs = { ...commentInputs, 'research-methodology': e.target.value };
+                                      setCommentInputs(newInputs);
+                                      localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
+                                    }}
+                                    onInput={(e) => {
+                                      const target = e.target as HTMLTextAreaElement;
+                                      target.style.height = 'auto';
+                                      target.style.height = target.scrollHeight + 'px';
+                                    }}
+                                  />
+                                  <div className={`flex gap-1 m-2 ${isMobile ? 'self-end' : ''}`}>
+                                    <button
+                                      className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors`}
+                                      title="Send comment"
+                                      onClick={() => handleAddComment('research-methodology')}
+                                    >
+                                      <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600" />
+                                    </button>
+                                    {!isLastRecipient({ id: 'research-methodology', workflow: null, recipientIds: null }) && (
+                                      <button
+                                        className={`${isMobile ? "px-1 py-1" : "px-3 py-2"} bg-blue-100 rounded-full flex items-center justify-center hover:bg-blue-200 transition-colors`}
+                                        title="Share comment with next recipient(s)"
+                                        onClick={() => handleShareComment('research-methodology')}
+                                      >
+                                        <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDocumensoDocument({
+                            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-[150px]">
+                              <Button variant="outline" size="sm" onClick={() => handleViewDocument({
                                 id: 'research-methodology',
                                 title: 'Research Methodology Guidelines – Academic Review',
-                                content: 'Comprehensive guidelines for research methodology standards and academic review processes.',
-                                type: 'Report'
-                              });
-                              setShowDocumenso(true);
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Approve & Sign
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRejectDocument('research-methodology')}
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                                type: 'Report',
+                                submitter: 'Prof. Jessica Chen',
+                                submittedDate: '2024-01-20',
+                                submittedBy: 'Prof. Jessica Chen',
+                                date: '2024-01-20',
+                                status: 'pending',
+                                description: 'Comprehensive guidelines for research methodology standards and academic review processes.'
+                              })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                onClick={() => {
+                                  setSelectedDocument({ id: 'research-methodology', type: 'report', title: 'Research Methodology Guidelines – Academic Review' });
+                                  setShowLiveMeetingModal(true);
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-4 h-4">
+                                    <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full"></div>
+                                    <div className="absolute inset-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                                  </div>
+                                  LiveMeet+
+                                </div>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setDocumensoDocument({
+                                    id: 'research-methodology',
+                                    title: 'Research Methodology Guidelines – Academic Review',
+                                    content: 'Comprehensive guidelines for research methodology standards and academic review processes.',
+                                    type: 'Report'
+                                  });
+                                  setShowDocumenso(true);
+                                }}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Approve & Sign
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRejectDocument('research-methodology')}
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
 
                 </div>
               </CardContent>

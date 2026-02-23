@@ -7,13 +7,12 @@ import { ChatInterface } from "@/components/chat/ChatInterface";
 import { LiveMeetingRequestManager } from "@/components/meetings/LiveMeetingRequestManager";
 import { DecentralizedChatService } from "@/services/DecentralizedChatService";
 import { useAuth } from "@/contexts/AuthContext";
+import MockDataService from "@/services/MockDataService";
 import {
   Users,
   BarChart3,
   Zap,
-  MessageSquare,
-  Lock,
-  Video
+  Lock
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useResponsive } from "@/hooks/useResponsive";
@@ -32,73 +31,31 @@ export default function Messages() {
   const [isInitialized, setIsInitialized] = useState(false);
 
 
-  const isDemoRole = user?.role === 'demo-work';
-
-  const [stats, setStats] = useState({
-    unreadMessages: isDemoRole ? 26 : 0,
-    pendingSignatures: isDemoRole ? 2 : 0,
-    activePolls: isDemoRole ? 1 : 0,
-    onlineUsers: isDemoRole ? 23 : 0,
-    totalChannels: isDemoRole ? 5 : 0,
-    notifications: isDemoRole ? 4 : 0,
-    liveMeetingRequests: isDemoRole ? 3 : 0
-  });
-
-  const [channelMessageCounts, setChannelMessageCounts] = useState<{ [key: string]: number }>(
-    isDemoRole ? {
-      'Administrative Council': 9,
-      'Faculty Board': 5,
-      'General': 12
-    } : {
-      'Administrative Council': 0,
-      'Faculty Board': 0,
-      'General': 0
-    }
-  );
+  const [stats, setStats] = useState(MockDataService.getMessageStats(user?.role || ''));
+  const [channelMessageCounts, setChannelMessageCounts] = useState<{ [key: string]: number }>(MockDataService.getChannelCounts(user?.role || ''));
 
   const [liveMeetRequests, setLiveMeetRequests] = useState<LiveMeetingRequest[]>([]);
 
 
-  const messagesData = useMemo(() => ({
-    meetings: [
-      { id: 'team-standup', title: 'Daily Team Standup', description: 'Daily sync at 9:00 AM' },
-      { id: 'client-review', title: 'Client Quarterly Review Meeting', description: 'Quarterly business review' },
-      { id: 'product-planning', title: 'Product Roadmap Planning Session', description: 'Roadmap discussion' },
-      { id: 'all-hands', title: 'Monthly All Hands Meeting', description: 'Company updates' }
-    ],
-    reminders: [
-      { id: 'project-deadline', title: 'Project Milestone Deadline', description: 'Due tomorrow' },
-      { id: 'client-followup', title: 'Client Follow-up Call Reminder', description: 'Schedule for next week' },
-      { id: 'performance-review', title: 'Annual Performance Review Due', description: 'Submit by Friday' },
-      { id: 'contract-renewal', title: 'Contract Renewal Reminder', description: 'Review terms' }
-    ],
-    stickyNotes: [
-      { id: 'contract-review', title: 'Review Legal Contract Terms', description: 'Legal feedback needed' },
-      { id: 'timeline-update', title: 'Update Project Timeline', description: 'Adjust milestones' },
-      { id: 'presentation-prep', title: 'Prepare Board Presentation', description: 'Board meeting prep' },
-      { id: 'budget-analysis', title: 'Complete Budget Analysis', description: 'Financial review' }
-    ],
-    channels: [
-      { id: 'engineering', name: 'Engineering Team', description: '24 members online' },
-      { id: 'marketing', name: 'Marketing Department', description: '18 members online' },
-      { id: 'general', name: 'General Discussion', description: '45 members online' },
-      { id: 'product', name: 'Product Updates', description: '32 members online' },
-      { id: 'hr', name: 'HR Announcements', description: '67 members online' }
-    ]
-  }), []);
+  const messagesData = useMemo(() => MockDataService.getMessagesData(user?.role || '') || {
+    meetings: [],
+    reminders: [],
+    stickyNotes: [],
+    channels: []
+  }, [user?.role]);
 
 
   const updateMessageCounts = useCallback(() => {
-    if (!isDemoRole) return;
+    if (user?.role !== 'demo-work') return;
     setChannelMessageCounts(prev => {
       const channels = Object.keys(prev);
+      if (channels.length === 0) return prev;
       const randomChannel = channels[Math.floor(Math.random() * channels.length)];
       const newCounts = { ...prev };
       newCounts[randomChannel] = prev[randomChannel] + 1;
-
       return newCounts;
     });
-  }, [isDemoRole]);
+  }, [user?.role]);
 
 
   useEffect(() => {
@@ -149,16 +106,18 @@ export default function Messages() {
   useEffect(() => {
     if (!user) return;
 
-    try {
-      Object.entries(messagesData).forEach(([key, data]) => {
-        try {
-          localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-          console.error(`[Messages] Error saving ${key} to localStorage:`, error);
-        }
-      });
-    } catch (error) {
-      console.error('[Messages] Error initializing localStorage:', error);
+    if (user.role === 'demo-work') {
+      try {
+        Object.entries(messagesData).forEach(([key, data]) => {
+          try {
+            localStorage.setItem(key, JSON.stringify(data));
+          } catch (error) {
+            console.error(`[Messages] Error saving ${key} to localStorage:`, error);
+          }
+        });
+      } catch (error) {
+        console.error('[Messages] Error initializing localStorage:', error);
+      }
     }
 
     loadLiveMeetRequests();
@@ -237,19 +196,7 @@ export default function Messages() {
           </TabsContent>
 
           <TabsContent value="chat" className="space-y-6">
-            <div className="hidden md:grid grid-cols-6 gap-3 sm:gap-4 mb-6">
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Messages</p>
-                      <p className="text-lg sm:text-2xl font-bold">{stats.unreadMessages}</p>
-                    </div>
-                    <MessageSquare className="w-5 h-5 sm:w-8 sm:h-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
+            <div className="hidden md:grid grid-cols-4 gap-3 sm:gap-4 mb-6">
               <Card>
                 <CardContent className="p-3 sm:p-4">
                   <div className="flex items-center justify-between">
@@ -270,18 +217,6 @@ export default function Messages() {
                       <p className="text-lg sm:text-2xl font-bold">{stats.totalChannels}</p>
                     </div>
                     <Lock className="w-5 h-5 sm:w-8 sm:h-8 text-indigo-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm text-muted-foreground">Video Call</p>
-                      <p className="text-lg sm:text-2xl font-bold">{stats.pendingSignatures}</p>
-                    </div>
-                    <Video className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500" />
                   </div>
                 </CardContent>
               </Card>

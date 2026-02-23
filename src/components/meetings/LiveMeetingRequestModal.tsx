@@ -500,9 +500,9 @@ export const LiveMeetingRequestModal: React.FC<LiveMeetingRequestModalProps> = (
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Time</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
                       <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">From:</label>
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12 sm:w-auto">From:</label>
                         <input
                           type="time"
                           value={startTime}
@@ -511,7 +511,7 @@ export const LiveMeetingRequestModal: React.FC<LiveMeetingRequestModalProps> = (
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">To:</label>
+                        <label className="text-sm font-medium text-gray-700 whitespace-nowrap w-12 sm:w-auto">To:</label>
                         <input
                           type="time"
                           value={endTime}
@@ -648,7 +648,7 @@ export const LiveMeetingRequestModal: React.FC<LiveMeetingRequestModalProps> = (
                   Cancel
                 </button>
                 <button
-                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2 disabled:opacity-50"
+                  className="px-6 py-2.5 sm:px-8 sm:py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-semibold text-sm sm:text-base hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center space-x-2 disabled:opacity-50"
                   onClick={handleSubmitRequest}
                   disabled={loading || selectedParticipants.length === 0}
                 >

@@ -176,7 +176,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
   const [isDragging, setIsDragging] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [notes, setNotes] = useState<Note[]>([
+  const [notes, setNotes] = useState<Note[]>(userRole === 'demo-work' ? [
     {
       id: 1,
       title: "Faculty Meeting Follow-up",
@@ -207,9 +207,9 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
       category: "academic",
       pinned: false
     }
-  ]);
+  ] : []);
 
-  const [reminders, setReminders] = useState<Reminder[]>([
+  const [reminders, setReminders] = useState<Reminder[]>(userRole === 'demo-work' ? [
     {
       id: 1,
       title: "Submit Monthly Report",
@@ -240,7 +240,7 @@ export function NotesReminders({ userRole, isMessagesPage = false }: NotesRemind
       completed: false,
       category: "research"
     }
-  ]);
+  ] : []);
 
   const [newNote, setNewNote] = useState({
     title: "",
