@@ -55,7 +55,7 @@ export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
     { role: "Principal", name: "Dr. Rajesh Kumar", phone: "+91-9876543210", available: true },
     { role: "Registrar", name: "Prof. Anita Sharma", phone: "+91-9876543211", available: true },
     { role: "Security Head", name: "Mr. Ramesh Singh", phone: "+91-9876543212", available: true },
-    { role: "Medical Officer", name: "Dr. Priya Patel", phone: "+91-9876543213", available: false },
+    { role: "Medical Officer", name: "Dr. Priya Patel", phone: "+91-9876543213", available: true },
   ];
 
   const emergencyTypes = [

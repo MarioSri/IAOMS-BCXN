@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
+import { recipientService } from '@/services/RecipientService';
 import {
   Search,
   ChevronDown,
@@ -154,31 +155,79 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
   const [useHierarchicalOrder, setUseHierarchicalOrder] = useState(true);
   const [allRecipients, setAllRecipients] = useState<Recipient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<'mock' | 'real' | 'empty'>('empty');
 
   useEffect(() => {
     const loadRecipients = async () => {
-      try {
-        const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
-        // Filter out Demo Work Role recipient only from this selector UI as requested
-        const filteredRecipients = MOCK_RECIPIENTS.filter(r => r.email !== 'demo.work@university.edu');
+      setLoading(true);
+      setError(null);
 
-        setAllRecipients(filteredRecipients.map(r => ({
-          id: r.user_id,
-          name: r.name,
-          email: r.email,
-          role: r.role,
-          department: r.department,
-          branch: r.branch,
-          year: (r as any).year
-        })));
-      } catch (error) {
-        console.error('Failed to load recipients:', error);
-      } finally {
-        setLoading(false);
+      // Normalize userRole for comparison
+      const normalizedRole = userRole.toLowerCase().replace(/\s+/g, '-');
+      const isDemoWorkRole = normalizedRole === 'demo-work';
+
+      console.log('🔍 [RecipientSelector] Loading recipients for role:', { userRole, normalizedRole, isDemoWorkRole });
+
+      if (isDemoWorkRole) {
+        // Demo Work Role: Load mock data
+        try {
+          const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
+          const filteredRecipients = MOCK_RECIPIENTS.filter(r => r.email !== 'demo.work@university.edu');
+
+          setAllRecipients(filteredRecipients.map(r => ({
+            id: r.user_id,
+            name: r.name,
+            email: r.email,
+            role: r.role,
+            department: r.department,
+            branch: r.branch,
+            year: (r as any).year
+          })));
+          setDataSource('mock');
+          console.log('✅ [RecipientSelector] Loaded mock recipients for Demo Work role:', filteredRecipients.length);
+        } catch (error) {
+          console.error('❌ [RecipientSelector] Failed to load mock recipients:', error);
+          setError('Failed to load demo recipients');
+          setAllRecipients([]);
+          setDataSource('empty');
+        }
+      } else {
+        // Real Roles: Fetch from Supabase
+        console.log('⚠️ [RecipientSelector] Real role detected - fetching from Supabase');
+
+        try {
+          const realRecipients = await recipientService.fetchRecipients();
+
+          if (realRecipients.length > 0) {
+            setAllRecipients(realRecipients.map(r => ({
+              id: r.id,
+              name: r.name,
+              email: r.email,
+              role: r.role,
+              department: r.department,
+              branch: r.branch
+            })));
+            setDataSource('real');
+            console.log('✅ [RecipientSelector] Loaded real recipients from Supabase:', realRecipients.length);
+          } else {
+            setAllRecipients([]);
+            setDataSource('empty');
+            console.log('ℹ️ [RecipientSelector] No recipients found in database');
+          }
+        } catch (error) {
+          console.error('❌ [RecipientSelector] Failed to fetch real recipients:', error);
+          setError('Failed to load recipients from database. Please check your connection.');
+          setAllRecipients([]);
+          setDataSource('empty');
+        }
       }
+
+      setLoading(false);
     };
+
     loadRecipients();
-  }, []);
+  }, [userRole]);
 
   const recipientGroups = useMemo(() => groupRecipients(allRecipients), [allRecipients]);
 
@@ -392,7 +441,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
             <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
             <span className="font-semibold text-primary/80">Registrar</span>
             <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-            <span className="font-semibold text-primary/80">Principal / Demo Work</span>
+            <span className="font-semibold text-primary/80">Principal</span>
           </div>
         </div>
 
@@ -401,7 +450,42 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
         {/* Recipient Groups */}
         <ScrollArea className="h-96">
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading recipients...</div>
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50 animate-pulse" />
+              <p className="font-medium">Loading recipients...</p>
+              <p className="text-xs mt-1">Fetching data from database</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-destructive">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium">Failed to Load Recipients</p>
+              <p className="text-sm mt-2">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : dataSource === 'empty' && allRecipients.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium text-lg">No Recipients Available</p>
+              <p className="text-sm mt-2 max-w-md mx-auto">
+                No Users Have Been Configured In The System Yet.
+              </p>
+              <p className="text-sm mt-4 max-w-md mx-auto">
+                Please Contact Your System Administrator To Add Users.
+              </p>
+            </div>
+          ) : filteredGroups.length === 0 && !searchTerm ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium">No Recipients Available</p>
+              <p className="text-sm mt-2">No recipients match the current criteria</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {filteredGroups.map((group) => {
@@ -560,6 +644,15 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
             </div>
           )}
         </ScrollArea>
+
+        {/* Data Source Indicator */}
+        {dataSource === 'mock' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p className="text-xs text-amber-800">
+              <strong>Demo Mode:</strong> Showing mock recipients for demonstration purposes.
+            </p>
+          </div>
+        )}
 
         {maxSelections && selectedRecipients.length >= maxSelections && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { roleScopedStorage, STORAGE_KEYS } from '@/utils/RoleScopedStorage';
 
 export interface User {
   id: string;
@@ -170,23 +171,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: authenticatedUser.role
       });
 
-      // Clean up document data from localStorage for non-demo roles
-      if (role !== 'demo-work') {
-        const documentKeys = [
-          'pending-approvals',
-          'submitted-documents',
-          'approval-history-new',
-          'livemeet-requests',
-          'approval-comments',
-          'shared-comments',
-          'document-comments',
-          'meetings',
-          'reminders',
-          'channels',
-          'stickyNotes'
-        ];
-        documentKeys.forEach(key => localStorage.removeItem(key));
-        console.log('🧹 [AuthContext] Cleaned document data from localStorage');
+      // Phase 5: Role-scoped storage cleanup
+      const isDemoWork = role === 'demo-work';
+      
+      if (!isDemoWork) {
+        // Real role: Clear any old unscoped keys (migration)
+        const oldKeys = Object.values(STORAGE_KEYS);
+        if (roleScopedStorage.hasOldUnscopedKeys(oldKeys)) {
+          console.log('🔄 [AuthContext] Migrating old unscoped keys to real: scope');
+          roleScopedStorage.migrateOldKeys(role, oldKeys);
+        }
+        
+        // Clear demo-work storage to prevent contamination
+        roleScopedStorage.clearRoleStorage('demo-work');
+        console.log('🧹 [AuthContext] Cleared demo-work storage for real role');
+      } else {
+        // Demo Work role: Keep demo storage, don't touch real storage
+        console.log('ℹ️ [AuthContext] Demo Work role - using demo-work: scoped storage');
       }
 
       setUser(authenticatedUser);
@@ -210,21 +211,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   function logout(): void {
-    // Clean up all document data on logout
-    const documentKeys = [
-      'pending-approvals',
-      'submitted-documents',
-      'approval-history-new',
-      'livemeet-requests',
-      'approval-comments',
-      'shared-comments',
-      'document-comments',
-      'meetings',
-      'reminders',
-      'channels',
-      'stickyNotes'
-    ];
-    documentKeys.forEach(key => localStorage.removeItem(key));
+    // Phase 5: Clear role-scoped storage on logout
+    if (user) {
+      roleScopedStorage.clearRoleStorage(user.role);
+      console.log(`🧹 [AuthContext] Cleared ${user.role} storage on logout`);
+    }
 
     setUser(null);
     setIsLoading(false);
