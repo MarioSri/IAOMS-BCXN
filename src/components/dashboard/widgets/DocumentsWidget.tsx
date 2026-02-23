@@ -89,8 +89,10 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
     ];
 
     // Add specific role mappings
-    if (currentUserRole.toLowerCase() === 'principal' || currentUserRole.toLowerCase() === 'demo-work') {
-      roleVariations.push('Dr. Principal', 'Principal', 'Dr. Robert Principal', 'Demo Work Role');
+    if (currentUserRole.toLowerCase() === 'demo-work') {
+      roleVariations.push('Demo Work Role');
+    } else if (currentUserRole.toLowerCase() === 'principal') {
+      roleVariations.push('Dr. Principal', 'Principal', 'Dr. Robert Principal');
     } else if (currentUserRole.toLowerCase() === 'registrar') {
       roleVariations.push('Prof. Registrar', 'Registrar', 'Prof. Sarah Registrar');
     } else if (currentUserRole.toLowerCase() === 'hod') {
@@ -171,8 +173,8 @@ export const DocumentsWidget: React.FC<DocumentsWidgetProps> = ({
           approvalCard: approval  // Store original approval card
         }));
 
-        // Only show static mock data for Principal role
-        const staticPendingDocs = (userRole === 'principal' || userRole === 'demo-work') ? [
+        // Only show static mock data for demo-work role
+        const staticPendingDocs = (userRole === 'demo-work') ? [
           {
             id: 'faculty-meeting',
             title: 'Faculty Meeting Minutes – Q4 2024',

@@ -111,19 +111,19 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
+      <CardContent className="space-y-3 p-4 sm:p-6 pt-0 sm:pt-0">
         {/* Meeting Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-sm">
               <Settings className="h-4 w-4 text-gray-500" />
-              <span className="font-medium min-w-[120px] sm:min-w-[60px]">Purpose:</span>
+              <span className="font-medium min-w-[60px]">Purpose:</span>
               <span>❓Need Clarification</span>
             </div>
 
             <div className="flex items-center gap-2 text-sm">
               <MapPin className="h-4 w-4 text-gray-500" />
-              <span className="font-medium min-w-[120px] sm:min-w-[60px]">Format:</span>
+              <span className="font-medium min-w-[60px]">Format:</span>
               <span>
                 {request.meetingFormat === 'online' ? '💻 Online' :
                   request.meetingFormat === 'in_person' ? '🏢 In-Person' :
@@ -135,7 +135,7 @@ export const LiveMeetingRequestCard: React.FC<LiveMeetingRequestCardProps> = ({
               <Clock className="h-4 w-4 text-gray-500" />
               <span className="font-medium">Preferred Date & Time:</span>
             </div>
-            <div className="ml-6 text-sm space-y-1">
+            <div className="ml-6 text-sm space-y-0.5">
               <div><span className="font-medium">Date:</span> 09/26/2025</div>
               <div><span className="font-medium">Time:</span> 10:56 AM</div>
             </div>

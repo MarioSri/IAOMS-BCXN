@@ -73,8 +73,8 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
     // Simulate API call to fetch active workflows
     const fetchWorkflows = async () => {
       setLoading(true);
-      
-      const mockWorkflows: ActiveWorkflow[] = [
+
+      const mockWorkflows: ActiveWorkflow[] = (userRole === 'demo-work') ? [
         {
           id: 'WF-001',
           documentId: 'DOC-2024-001',
@@ -134,7 +134,7 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
           escalationLevel: 1,
           autoEscalation: true
         }
-      ];
+      ] : [];
 
       // Filter workflows based on role
       const filteredWorkflows = mockWorkflows.filter(workflow => {
@@ -142,14 +142,14 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
           return workflow.steps.some(step => step.assignee === user?.name);
         }
         if (userRole === 'hod') {
-          return workflow.steps.some(step => 
-            step.assignee.includes(`HOD-${user?.branch}`) || 
+          return workflow.steps.some(step =>
+            step.assignee.includes(`HOD-${user?.branch}`) ||
             step.assignee === user?.name
           );
         }
         if (userRole === 'program-head') {
-          return workflow.steps.some(step => 
-            step.assignee.includes('Program Head') || 
+          return workflow.steps.some(step =>
+            step.assignee.includes('Program Head') ||
             step.assignee === user?.name
           );
         }
@@ -252,7 +252,7 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
               )}
             </div>
           </CardTitle>
-          
+
           <div className="flex items-center gap-2">
             <div className="flex gap-1">
               {(['all', 'pending', 'escalated'] as const).map(filterType => (
@@ -267,9 +267,9 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
                 </Button>
               ))}
             </div>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => navigate("/approvals")}
               className={cn(isMobile && "text-xs")}
@@ -280,7 +280,7 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <ScrollArea className={cn(isMobile ? "h-48" : "h-64")}>
           <div className="space-y-3">
@@ -310,11 +310,11 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
                       {workflow.documentId} • {workflow.type.charAt(0).toUpperCase() + workflow.type.slice(1)} Workflow
                     </p>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
-                    <Badge 
-                      variant={workflow.type === 'emergency' ? 'destructive' : 
-                              workflow.type === 'escalated' ? 'warning' : 'default'}
+                    <Badge
+                      variant={workflow.type === 'emergency' ? 'destructive' :
+                        workflow.type === 'escalated' ? 'warning' : 'default'}
                       className={cn(
                         "text-xs",
                         workflow.type === 'emergency' && "animate-pulse"
@@ -407,7 +407,7 @@ export const WorkflowWidget: React.FC<WorkflowWidgetProps> = ({
                 )}
               </div>
             ))}
-            
+
             {filteredWorkflows.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />

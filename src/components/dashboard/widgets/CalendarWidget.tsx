@@ -104,7 +104,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({
       const { MOCK_RECIPIENTS: recipients } = await import('@/contexts/AuthContext');
 
       // Create mock meetings with real recipients
-      const mockMeetings = recipients.length > 0 && userRole === 'principal' ? [
+      const mockMeetings = recipients.length > 0 && userRole === 'demo-work' ? [
         {
           id: '1',
           title: 'Faculty Recruitment Review',

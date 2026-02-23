@@ -251,8 +251,8 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
           ))}
         </div>
 
-        {/* Role-specific quick stats */}
-        {(userRole === 'principal' || userRole === 'demo-work' || userRole === 'registrar') && (
+        {/* Role-specific quick stats (demo-work only) */}
+        {userRole === 'demo-work' && (
           <div className="mt-4 pt-4 border-t">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="p-2 bg-muted/30 rounded">
@@ -260,7 +260,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-primary",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {(userRole === 'principal' || userRole === 'demo-work') ? '8' : '5'}
+                  {userRole === 'demo-work' ? '8' : '0'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",
@@ -274,7 +274,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-warning",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {(userRole === 'principal' || userRole === 'demo-work') ? '23' : '12'}
+                  {userRole === 'demo-work' ? '23' : '0'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",
@@ -288,7 +288,7 @@ export const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({
                   "font-bold text-success",
                   isMobile ? "text-lg" : "text-xl"
                 )}>
-                  {(userRole === 'principal' || userRole === 'demo-work') ? '156' : '89'}
+                  {userRole === 'demo-work' ? '156' : '0'}
                 </p>
                 <p className={cn(
                   "text-muted-foreground",

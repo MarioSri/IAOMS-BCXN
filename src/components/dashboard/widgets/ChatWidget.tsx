@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 }) => {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
+  const navigate = useNavigate();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -68,8 +70,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     // Simulate API call to fetch chat rooms based on role
     const fetchChatRooms = async () => {
       setLoading(true);
-      
-      const mockRooms: ChatRoom[] = [
+
+      const mockRooms: ChatRoom[] = (userRole === 'demo-work') ? [
         {
           id: 'emergency-alerts',
           name: 'Emergency Alerts',
@@ -142,28 +144,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           unreadCount: 0,
           isActive: true
         }
-      ];
+      ] : [];
 
-      // Filter rooms based on user role
-      const filteredRooms = mockRooms.filter(room => {
-        if (userRole === 'employee') {
-          return room.participants.includes(user?.department || '') ||
-                 room.participants.includes('All Employees');
-        }
-        if (userRole === 'hod') {
-          return room.participants.includes(`HOD-${user?.branch}`) ||
-                 room.participants.includes('All HODs') ||
-                 room.name.includes(user?.branch || '');
-        }
-        if (userRole === 'program-head') {
-          return room.participants.includes('Program Heads') ||
-                 room.name.includes(user?.branch || '');
-        }
-        return true; // Principal and Registrar see all
-      });
-
+      // Mock data is only populated for demo-work role; all other roles get no rooms
       setTimeout(() => {
-        setChatRooms(filteredRooms);
+        setChatRooms(mockRooms);
         setLoading(false);
       }, 600);
     };
@@ -234,7 +219,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             isMobile ? "text-lg" : "text-xl"
           )}>
             <MessageSquare className="w-5 h-5 text-primary" />
-            Real-Time Communication
+            Department Communication Hub
             <div className="flex gap-1">
               {totalUnread > 0 && (
                 <Badge variant="destructive" className="animate-pulse">
@@ -248,9 +233,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               )}
             </div>
           </CardTitle>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => navigate("/messages")}
             className={cn(isMobile && "text-xs")}
@@ -260,7 +245,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           </Button>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <ScrollArea className={cn(isMobile ? "h-48" : "h-64")}>
           <div className="space-y-2">
@@ -279,7 +264,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   <div className="flex-shrink-0 mt-1">
                     {getRoomIcon(room.type)}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h5 className={cn(
@@ -300,7 +285,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                         )}
                       </div>
                     </div>
-                    
+
                     <p className={cn(
                       "text-muted-foreground line-clamp-2",
                       isMobile ? "text-xs" : "text-sm"
@@ -308,7 +293,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                       <span className="font-medium">{room.lastMessage.sender}:</span>{' '}
                       {room.lastMessage.message}
                     </p>
-                    
+
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-muted-foreground">
                         {getTimeAgo(room.lastMessage.timestamp)}
@@ -334,7 +319,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 )}
               </div>
             ))}
-            
+
             {chatRooms.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -361,8 +346,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 }
               }}
             />
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               disabled={!newMessage.trim()}
               className={cn(isMobile && "h-10 w-10 p-0")}
             >

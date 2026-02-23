@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isUserInvolvedInDocument } from "@/utils/recipientMatching";
 import { useRealTimeDocuments } from "@/hooks/useRealTimeDocuments";
 import isJpg from 'is-jpg';
+import { useNavigate } from 'react-router-dom';
 
 interface DocumentTrackerProps {
   userRole: string;
@@ -271,7 +272,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
             currentStep: 'Initial Review',
             progress: doc.status === 'approved' ? 100 : 0,
             steps: doc.recipients ? doc.recipients.map((r: string, i: number) => ({
-              name: `Review ${i + 1}`,
+              name: `Review ${i + 1} `,
               assignee: r,
               status: doc.status === 'approved' ? 'completed' : (i === 0 ? 'current' : 'pending')
             })) : []
@@ -334,14 +335,15 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
 
     // Save track documents to localStorage for search
     const saveTrackDocuments = () => {
-      const trackDocuments = [...submittedDocuments, ...mockDocuments].map(doc => ({
+      const allDocsForSearch = [...submittedDocuments, ...(userRole === 'demo-work' ? mockDocuments : [])];
+      const trackDocsMetadata = allDocsForSearch.map(doc => ({
         id: doc.id,
         title: doc.title,
         description: doc.description || '',
         type: doc.type,
         status: doc.status
       }));
-      localStorage.setItem('trackDocuments', JSON.stringify(trackDocuments));
+      localStorage.setItem('trackDocuments', JSON.stringify(trackDocsMetadata));
     };
 
     const loadUserProfile = () => {
@@ -540,8 +542,8 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
     }
   };
 
-  // Combine mock documents with submitted documents
-  const allDocuments = [...submittedDocuments, ...mockDocuments];
+  // Combine mock documents with submitted documents only for demo-work role
+  const allDocuments = [...submittedDocuments, ...(userRole === 'demo-work' ? mockDocuments : [])];
 
   const filteredDocuments = allDocuments.filter(doc => {
     const notRemoved = !removedDocuments.includes(doc.id);
@@ -572,7 +574,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
 
     // Debug logging for submitted documents
     if (!isMockDocument) {
-      console.log(`${shouldShow ? '✅' : '❌'} [Track Documents] "${doc.title}":`, {
+      console.log(`${shouldShow ? '✅' : '❌'} [Track Documents] "${doc.title}": `, {
         submittedBy: doc.submittedBy,
         submittedByRole: (doc as any).submittedByRole,
         currentUserName: currentUserProfile.name,
@@ -645,7 +647,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
 
     toast({
       title: "Document Removed",
-      description: `Document ${docId} has been removed. Click 'Undo Remove' to restore it.`,
+      description: `Document ${docId} has been removed.Click 'Undo Remove' to restore it.`,
       variant: "destructive"
     });
   };
@@ -654,80 +656,80 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
   const createDocumentFile = (document: Document): File => {
     // Create HTML content for the document
     const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${document.title}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.6;
-      color: #333;
+  < !DOCTYPE html >
+    <html>
+      <head>
+        <meta charset="UTF-8">
+          <title>${document.title}</title>
+          <style>
+            body {
+              font - family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
     }
-    h1 {
-      color: #2563eb;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 10px;
+            h1 {
+              color: #2563eb;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
     }
-    h2 {
-      color: #374151;
-      margin-top: 30px;
+            h2 {
+              color: #374151;
+            margin-top: 30px;
     }
-    p {
-      margin: 10px 0;
+            p {
+              margin: 10px 0;
     }
-    .info {
-      background: #f3f4f6;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 20px 0;
+            .info {
+              background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
     }
-    .status {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: bold;
+            .status {
+              display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
     }
-    .approved { background: #dcfce7; color: #166534; }
-    .pending { background: #fef3c7; color: #92400e; }
-    .rejected { background: #fee2e2; color: #991b1b; }
-    .in-review { background: #dbeafe; color: #1e40af; }
-  </style>
-</head>
-<body>
-  <h1>${document.title}</h1>
-  <div class="info">
-    <p><strong>Type:</strong> ${document.type}</p>
-    <p><strong>Submitted by:</strong> ${document.submittedBy}</p>
-    <p><strong>Date:</strong> ${document.submittedDate}</p>
-    <p><strong>Status:</strong> <span class="status ${document.status}">${document.status.toUpperCase()}</span></p>
-    <p><strong>Priority:</strong> ${document.priority}</p>
-  </div>
-  <h2>Workflow Progress</h2>
-  <p><strong>Current Step:</strong> ${document.workflow.currentStep}</p>
-  <p><strong>Progress:</strong> ${document.workflow.progress}%</p>
-  ${(document as any).description ? `<h2>Description</h2><p>${(document as any).description}</p>` : ''}
-  <h2>Workflow Steps</h2>
-  <ul>
-    ${document.workflow.steps.map(step => `
+            .approved {background: #dcfce7; color: #166534; }
+            .pending {background: #fef3c7; color: #92400e; }
+            .rejected {background: #fee2e2; color: #991b1b; }
+            .in-review {background: #dbeafe; color: #1e40af; }
+          </style>
+      </head>
+      <body>
+        <h1>${document.title}</h1>
+        <div class="info">
+          <p><strong>Type:</strong> ${document.type}</p>
+          <p><strong>Submitted by:</strong> ${document.submittedBy}</p>
+          <p><strong>Date:</strong> ${document.submittedDate}</p>
+          <p><strong>Status:</strong> <span class="status ${document.status}">${document.status.toUpperCase()}</span></p>
+          <p><strong>Priority:</strong> ${document.priority}</p>
+        </div>
+        <h2>Workflow Progress</h2>
+        <p><strong>Current Step:</strong> ${document.workflow.currentStep}</p>
+        <p><strong>Progress:</strong> ${document.workflow.progress}%</p>
+        ${(document as any).description ? `<h2>Description</h2><p>${(document as any).description}</p>` : ''}
+        <h2>Workflow Steps</h2>
+        <ul>
+          ${document.workflow.steps.map(step => `
       <li>
         <strong>${step.name}</strong> - ${step.assignee} 
         ${step.status === 'completed' ? '✓' : step.status === 'current' ? '⏳' : '⏸'}
       </li>
     `).join('')}
-  </ul>
-  ${document.requiresSignature ? `
+        </ul>
+        ${document.requiresSignature ? `
     <h2>Digital Signatures</h2>
     <p>${document.signedBy && document.signedBy.length > 0 ? `Signed by: ${document.signedBy.join(', ')}` : 'Pending signature'}</p>
   ` : ''}
-</body>
-</html>
-    `;
+      </body>
+    </html>
+`;
 
     // Create a Blob from the HTML content
     const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -843,8 +845,8 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
           const emergencyFeatures = (document as any).emergencyFeatures;
 
           return (
-            <Card key={document.id} className={`hover:shadow-md transition-shadow ${isEmergency ? 'border-destructive bg-red-50 animate-pulse' : ''
-              }`}>
+            <Card key={document.id} className={`hover: shadow - md transition - shadow ${isEmergency ? 'border-destructive bg-red-50 animate-pulse' : ''
+              } `}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* Document Info */}
@@ -925,7 +927,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
                           {step.status === 'current' && <Clock className="h-4 w-4 text-blue-600" />}
                           {step.status === 'pending' && <div className="h-4 w-4 rounded-full border border-gray-300" />}
                           <div className="flex-1">
-                            <div className={`${step.status === 'current' ? 'font-semibold' : ''}`}>
+                            <div className={`${step.status === 'current' ? 'font-semibold' : ''} `}>
                               {String(step.name || '')}
                             </div>
                             <div className="flex items-center gap-2">
@@ -987,10 +989,10 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
                               <>
                                 <span className="flex items-center gap-1">
                                   <CheckCircle className="h-4 w-4 text-green-600" />
-                                  {`Signed by ${currentSignedCount} Recipient${currentSignedCount !== 1 ? 's' : ''}`}
+                                  {`Signed by ${currentSignedCount} Recipient${currentSignedCount !== 1 ? 's' : ''} `}
                                 </span>
                                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                                  {`${currentSignedCount} Signature${currentSignedCount !== 1 ? 's' : ''}`}
+                                  {`${currentSignedCount} Signature${currentSignedCount !== 1 ? 's' : ''} `}
                                 </Badge>
                               </>
                             );
@@ -1034,7 +1036,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
                         </div>
                         {/* Original comments */}
                         {document.comments && document.comments.map((comment, index) => (
-                          <div key={`original-${index}`} className="bg-muted p-3 rounded text-sm">
+                          <div key={`original - ${index} `} className="bg-muted p-3 rounded text-sm">
                             <div className="flex justify-between items-center mb-1">
                               <span className="font-medium">{comment.author}</span>
                               <span className="text-muted-foreground">{comment.date}</span>
@@ -1044,7 +1046,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
                         ))}
                         {/* Approval comments from Approval Center (Send Comment only, not shared comments) */}
                         {approvalComments[document.id] && approvalComments[document.id].map((comment, index) => (
-                          <div key={`approval-${index}`} className="bg-muted p-3 rounded text-sm">
+                          <div key={`approval - ${index} `} className="bg-muted p-3 rounded text-sm">
                             <div className="flex justify-between items-center mb-1">
                               <span className="font-medium">{comment.author}</span>
                               <span className="text-muted-foreground">{comment.date}</span>
@@ -1143,7 +1145,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
                                 console.error('❌ [Track Documents] Failed to reconstruct file:', fileName, err);
                                 toast({
                                   title: "File Error",
-                                  description: `Failed to load ${fileName}`,
+                                  description: `Failed to load ${fileName} `,
                                   variant: "destructive"
                                 });
                               }
@@ -1457,7 +1459,7 @@ export const DocumentTracker: React.FC<DocumentTrackerProps> = ({ userRole, user
 
                                   toast({
                                     title: "Document Updated",
-                                    description: `✅ ${files.length} file(s) uploaded. Click Resend to send to rejected recipients.`,
+                                    description: `✅ ${files.length} file(s) uploaded.Click Resend to send to rejected recipients.`,
                                     duration: 4000,
                                   });
                                 }

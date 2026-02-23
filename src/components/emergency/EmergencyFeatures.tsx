@@ -30,7 +30,7 @@ interface EmergencyFeaturesProps {
 
 export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
   const [emergencyMode, setEmergencyMode] = useState(false);
-  const [emergencyHistory, setEmergencyHistory] = useState([
+  const [emergencyHistory, setEmergencyHistory] = useState(userRole === 'demo-work' ? [
     {
       id: 1,
       title: "Infrastructure Damage Report",
@@ -49,7 +49,7 @@ export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
       status: "active",
       description: "Updated emergency response procedures for medical incidents"
     }
-  ]);
+  ] : []);
 
   const emergencyContacts = [
     { role: "Principal", name: "Dr. Rajesh Kumar", phone: "+91-9876543210", available: true },
@@ -155,7 +155,7 @@ export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Active Emergencies</p>
                 <p className="text-2xl font-bold text-destructive">
-                  {emergencyHistory.filter(e => e.status === 'active').length}
+                  {userRole === 'demo-work' ? emergencyHistory.filter(e => e.status === 'active').length : 0}
                 </p>
               </div>
               <div className="p-3 bg-red-100 rounded-full">
@@ -172,7 +172,7 @@ export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
                 <p className="text-sm text-muted-foreground">Response Time</p>
                 <p className="text-2xl font-bold text-warning">
                   <Clock className="w-5 h-5 inline mr-1" />
-                  &lt; 5 min
+                  {userRole === 'demo-work' ? "< 5 min" : "0 min"}
                 </p>
               </div>
               <div className="p-3 bg-yellow-100 rounded-full">
@@ -188,7 +188,7 @@ export function EmergencyFeatures({ userRole }: EmergencyFeaturesProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Resolved This Month</p>
                 <p className="text-2xl font-bold text-success">
-                  {emergencyHistory.filter(e => e.status === 'resolved').length}
+                  {userRole === 'demo-work' ? emergencyHistory.filter(e => e.status === 'resolved').length : 0}
                 </p>
               </div>
               <div className="p-3 bg-green-100 rounded-full">

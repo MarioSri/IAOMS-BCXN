@@ -43,8 +43,8 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
     const fetchStats = async () => {
       setLoading(true);
 
-      // Only show mock data for Principal role
-      const mockStats: DocumentStats = (userRole === 'principal' || userRole === 'demo-work') ? {
+      // Only show mock data for demo-work role
+      const mockStats: DocumentStats = (userRole === 'demo-work') ? {
         total: 247,
         pending: 18,
         approved: 198,
@@ -108,43 +108,43 @@ export const StatsWidget: React.FC<StatsWidgetProps> = ({
       {
         title: "Total Documents",
         value: stats.total.toString(),
-        change: "+12%",
+        change: userRole === 'demo-work' ? "+12%" : "0%",
         icon: FileText,
         color: "text-blue-500",
         bgColor: "bg-blue-50",
-        trend: "up"
+        trend: userRole === 'demo-work' ? "up" : "stable"
       },
       {
         title: "Pending Reviews",
         value: stats.pending.toString(),
-        change: "-3",
+        change: userRole === 'demo-work' ? "-3" : "0",
         icon: Clock,
         color: "text-warning",
         bgColor: "bg-yellow-50",
-        trend: "down"
+        trend: userRole === 'demo-work' ? "down" : "stable"
       },
       {
         title: "Approved",
         value: stats.approved.toString(),
-        change: "+8",
+        change: userRole === 'demo-work' ? "+8" : "0",
         icon: CheckCircle,
         color: "text-success",
         bgColor: "bg-green-50",
-        trend: "up"
+        trend: userRole === 'demo-work' ? "up" : "stable"
       },
       {
         title: "Rejected",
         value: stats.rejected.toString(),
-        change: "+1",
+        change: userRole === 'demo-work' ? "+1" : "0",
         icon: XCircle,
         color: "text-destructive",
         bgColor: "bg-red-50",
-        trend: "up"
+        trend: userRole === 'demo-work' ? "up" : "stable"
       }
     ];
 
     // Add role-specific stats
-    if (userRole === 'principal' || userRole === 'demo-work') {
+    if (userRole === 'demo-work') {
       baseStats.push({
         title: "Emergency Docs",
         value: stats.emergency.toString(),

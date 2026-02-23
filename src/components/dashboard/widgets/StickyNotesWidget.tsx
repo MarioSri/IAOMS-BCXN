@@ -95,8 +95,8 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
     if (savedNotes) {
       setNotes(JSON.parse(savedNotes));
     } else {
-      // Default notes for demonstration
-      const defaultNotes: StickyNoteData[] = [
+      // Default notes for demonstration - only for demo-work role
+      const defaultNotes: StickyNoteData[] = (userRole === 'demo-work') ? [
         {
           id: '1',
           title: 'Faculty Meeting Follow-up',
@@ -132,7 +132,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
           category: 'tasks',
           pinned: false
         }
-      ];
+      ] : [];
       setNotes(defaultNotes);
     }
   }, [user]);
@@ -148,14 +148,14 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
     const note: StickyNoteData = {
       id: Date.now().toString(),
       ...newNote,
-      position: { 
-        x: Math.random() * 200, 
-        y: Math.random() * 100 + 50 
+      position: {
+        x: Math.random() * 200,
+        y: Math.random() * 100 + 50
       },
       createdAt: new Date().toISOString().split('T')[0],
       pinned: false
     };
-    
+
     saveNotes([...notes, note]);
     setNewNote({ title: '', content: '', color: 'bg-yellow-200', category: 'general' });
   };
@@ -167,36 +167,36 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
   // Drag functionality
   const handleMouseDown = (e: React.MouseEvent, noteId: string) => {
     if (isLocked) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       setDragOffset({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
       });
     }
-    
+
     setDraggedNote(noteId);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!draggedNote || isLocked) return;
-    
+
     e.preventDefault();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       const noteWidth = isMobile ? 144 : 160; // w-36 = 144px, w-40 = 160px
       const noteHeight = 120;
-      
+
       const newX = Math.max(0, Math.min(
         containerRect.width - noteWidth,
         e.clientX - containerRect.left - dragOffset.x
@@ -206,8 +206,8 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
         e.clientY - containerRect.top - dragOffset.y
       ));
 
-      setNotes(prev => prev.map(note => 
-        note.id === draggedNote 
+      setNotes(prev => prev.map(note =>
+        note.id === draggedNote
           ? { ...note, position: { x: newX, y: newY } }
           : note
       ));
@@ -224,38 +224,38 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
 
   const handleTouchStart = (e: React.TouchEvent, noteId: string) => {
     if (isLocked) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const note = notes.find(n => n.id === noteId);
     if (!note) return;
 
     const touch = e.touches[0];
     const rect = e.currentTarget.getBoundingClientRect();
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       setDragOffset({
         x: touch.clientX - rect.left,
         y: touch.clientY - rect.top
       });
     }
-    
+
     setDraggedNote(noteId);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!draggedNote || isLocked) return;
-    
+
     e.preventDefault();
     const touch = e.touches[0];
     const containerRect = containerRef.current?.getBoundingClientRect();
-    
+
     if (containerRect) {
       const noteWidth = isMobile ? 144 : 160; // w-36 = 144px, w-40 = 160px  
       const noteHeight = 120;
-      
+
       const newX = Math.max(0, Math.min(
         containerRect.width - noteWidth,
         touch.clientX - containerRect.left - dragOffset.x
@@ -265,8 +265,8 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
         touch.clientY - containerRect.top - dragOffset.y
       ));
 
-      setNotes(prev => prev.map(note => 
-        note.id === draggedNote 
+      setNotes(prev => prev.map(note =>
+        note.id === draggedNote
           ? { ...note, position: { x: newX, y: newY } }
           : note
       ));
@@ -285,20 +285,20 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
   };
 
   const togglePin = (id: string) => {
-    saveNotes(notes.map(note => 
+    saveNotes(notes.map(note =>
       note.id === id ? { ...note, pinned: !note.pinned } : note
     ));
   };
 
   const updateNote = (id: string, updates: Partial<StickyNoteData>) => {
-    saveNotes(notes.map(note => 
+    saveNotes(notes.map(note =>
       note.id === id ? { ...note, ...updates } : note
     ));
   };
 
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchTerm.toLowerCase());
+      note.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || note.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -339,7 +339,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
               )}
             </div>
           </CardTitle>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -353,7 +353,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
             >
               {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
             </Button>
-            
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -361,82 +361,82 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
                   Add
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Sticky Note</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input
-                    placeholder="Note title"
-                    value={newNote.title}
-                    onChange={(e) => setNewNote({...newNote, title: e.target.value})}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Content</label>
-                  <Textarea
-                    placeholder="Note content"
-                    value={newNote.content}
-                    onChange={(e) => setNewNote({...newNote, content: e.target.value})}
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create New Sticky Note</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Color</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {noteColors.map(color => (
-                        <button
-                          key={color.class}
-                          title={`Select ${color.name} color`}
-                          className={cn(
-                            "w-8 h-8 rounded-full border-2 transition-all",
-                            color.class,
-                            newNote.color === color.class ? 'border-primary scale-110' : 'border-border'
-                          )}
-                          onClick={() => setNewNote({...newNote, color: color.class})}
-                        />
-                      ))}
+                    <label className="text-sm font-medium">Title</label>
+                    <Input
+                      placeholder="Note title"
+                      value={newNote.title}
+                      onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Content</label>
+                    <Textarea
+                      placeholder="Note content"
+                      value={newNote.content}
+                      onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Color</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {noteColors.map(color => (
+                          <button
+                            key={color.class}
+                            title={`Select ${color.name} color`}
+                            className={cn(
+                              "w-8 h-8 rounded-full border-2 transition-all",
+                              color.class,
+                              newNote.color === color.class ? 'border-primary scale-110' : 'border-border'
+                            )}
+                            onClick={() => setNewNote({ ...newNote, color: color.class })}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Category</label>
+                      <select
+                        value={newNote.category}
+                        onChange={(e) => setNewNote({ ...newNote, category: e.target.value })}
+                        className="w-full p-2 border rounded text-sm"
+                        aria-label="Note category"
+                      >
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>
+                            {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Category</label>
-                    <select
-                      value={newNote.category}
-                      onChange={(e) => setNewNote({...newNote, category: e.target.value})}
-                      className="w-full p-2 border rounded text-sm"
-                      aria-label="Note category"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <DialogTrigger asChild>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogTrigger>
+                    <Button onClick={addNote}>
+                      <Save className="w-4 h-4 mr-2" />
+                      Create Note
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogTrigger>
-                  <Button onClick={addNote}>
-                    <Save className="w-4 h-4 mr-2" />
-                    Create Note
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Search and Filter */}
         <div className="flex gap-2">
@@ -465,7 +465,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
         </div>
 
         {/* Notes Display */}
-        <div 
+        <div
           ref={containerRef}
           className={cn(
             "relative rounded-lg p-3 overflow-hidden select-none",
@@ -486,7 +486,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
               </Badge>
             </div>
           )}
-          
+
           {!isLocked && !isMobile && (
             <div className="absolute top-2 left-2 z-20">
               <Badge variant="outline" className="text-xs bg-white/80">
@@ -495,7 +495,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
               </Badge>
             </div>
           )}
-          
+
           {sortedNotes.slice(0, isMobile ? 4 : 6).map((note, index) => (
             <div
               key={note.id}
@@ -547,23 +547,23 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
                   </button>
                 </div>
               </div>
-              
+
               <p className="text-gray-700 mb-3 line-clamp-3 leading-relaxed">{note.content}</p>
-              
+
               <div className="flex items-center justify-between mt-auto">
                 <Badge variant="outline" className="text-xs">
                   {note.category}
                 </Badge>
                 <span className="text-xs text-gray-600">{note.createdAt}</span>
               </div>
-              
+
               {note.reminder?.enabled && (
                 <div className="flex items-center gap-1 mt-2 p-2 bg-white/50 rounded text-xs">
                   <Clock className="w-3 h-3 text-warning" />
                   <span>{note.reminder.date} {note.reminder.time}</span>
                 </div>
               )}
-              
+
               {note.pinned && (
                 <div className="absolute -top-2 -right-2">
                   <Pin className="w-4 h-4 text-primary" />
@@ -571,7 +571,7 @@ export const StickyNotesWidget: React.FC<StickyNotesWidgetProps> = ({
               )}
             </div>
           ))}
-          
+
           {sortedNotes.length === 0 && (
             <div className="flex items-center justify-center h-full text-muted-foreground min-h-[200px]">
               <div className="text-center">

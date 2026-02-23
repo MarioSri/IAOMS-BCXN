@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  History,
   Upload,
   X,
   File,
@@ -209,7 +208,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
   const [pendingSubmissionData, setPendingSubmissionData] = useState<any>(null);
   const [finalSelectedRecipients, setFinalSelectedRecipients] = useState<string[]>([]);
   const [useSmartDelivery, setUseSmartDelivery] = useState(false);
-  const [emergencyHistory, setEmergencyHistory] = useState<EmergencySubmission[]>([
+  const [emergencyHistory, setEmergencyHistory] = useState<EmergencySubmission[]>(userRole === 'demo-work' ? [
     {
       id: '1',
       title: 'Infrastructure Damage - Block A',
@@ -236,7 +235,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
       responseTime: 12,
       escalationLevel: 1
     }
-  ]);
+  ] : []);
 
   const { toast } = useToast();
 
@@ -924,20 +923,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      submitted: { variant: "destructive" as const, text: "Submitted", icon: Siren },
-      acknowledged: { variant: "warning" as const, text: "Acknowledged", icon: Eye },
-      resolved: { variant: "success" as const, text: "Resolved", icon: CheckCircle2 }
-    };
-    return variants[status as keyof typeof variants] || { variant: "default" as const, text: status, icon: AlertTriangle };
-  };
 
-  const getResponseTimeColor = (responseTime: number) => {
-    if (responseTime <= 15) return 'text-success';
-    if (responseTime <= 60) return 'text-warning';
-    return 'text-destructive';
-  };
 
   // Handle document rejection - stops escalation
   const handleDocumentRejection = async (documentId: string, rejectedBy: string) => {
@@ -1014,7 +1000,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Active Emergencies</p>
                   <p className="text-lg sm:text-2xl font-bold text-destructive">
-                    {emergencyHistory.filter(e => e.status === 'submitted').length}
+                    {userRole === 'demo-work' ? emergencyHistory.filter(e => e.status === 'submitted').length : 0}
                   </p>
                 </div>
                 <div className="p-1.5 sm:p-2 bg-red-100 rounded-lg">
@@ -1066,7 +1052,9 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">Response Rate</p>
-                  <p className="text-lg sm:text-2xl font-bold text-primary">98.5%</p>
+                  <p className="text-lg sm:text-2xl font-bold text-primary">
+                    {userRole === 'demo-work' ? "98.5%" : "0%"}
+                  </p>
                 </div>
                 <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg">
                   <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
@@ -1076,6 +1064,8 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
           </Card>
         </div>
       )}
+
+
 
       {/* Emergency Submission Form */}
       {isEmergencyMode && (
