@@ -33,7 +33,8 @@ import {
   Smartphone,
   MessageCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  AlarmClock
 } from "lucide-react";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
@@ -1324,15 +1325,11 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
             <div className="space-y-4 p-4 border-2 border-red-200 rounded-lg bg-red-50">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <Bell className="w-5 h-5 text-destructive" />
-                Emergency Notification Settings
+                Emergency Notification Behavior Settings.
               </h3>
 
               {/* Notification Behavior Options */}
               <div className="space-y-3">
-                <h4 className="font-semibold text-base flex items-center gap-2">
-                  <Bell className="w-4 h-4 text-destructive" />
-                  Notification Behavior Options
-                </h4>
 
                 {/* Use Profile Defaults */}
                 <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
@@ -1340,7 +1337,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                     <Settings className="w-7 h-7 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
                     <div>
                       <p className="font-medium">Receive Notifications Based on Selected Recipients' Profile Settings</p>
-                      <p className="text-sm text-muted-foreground">Each selected recipient receives one-time notifications through all channels (Email, SMS, Push, WhatsApp) - no recurring notifications</p>
+                      <p className="text-sm text-muted-foreground">Each selected recipient receives one-time notifications through all channels (Email and Push) - no recurring notifications</p>
                     </div>
                   </div>
                   <Switch
@@ -1376,7 +1373,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                 <div className="space-y-4 p-4 bg-white rounded-lg border">
                   {/* ⏱️ Scheduling Options */}
                   <div className="space-y-3 pt-4 border-t">
-                    <h4 className="text-base font-semibold">⏱️ Scheduling Options</h4>
+                    <h4 className="text-base font-semibold flex items-center gap-2"><AlarmClock className="w-5 h-5" /> Scheduling Options</h4>
                     <p className="text-sm text-muted-foreground">Support customizable scheduling intervals for emergency notifications</p>
                   </div>
 
@@ -1384,8 +1381,8 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                   <div className="space-y-3 pt-4 border-t">
                     <Label className="text-base font-medium">Override Configuration</Label>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center space-x-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors gap-3 sm:gap-0">
+                        <div className="flex items-center space-x-3 w-full">
                           <input
                             type="radio"
                             id="logic-recipient"
@@ -1404,7 +1401,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                             variant="outline"
                             size="sm"
                             onClick={() => setShowCustomizeModal(true)}
-                            className="ml-2 w-full sm:w-auto mt-2 sm:mt-0"
+                            className="w-full sm:w-auto"
                           >
                             <Users className="w-4 h-4 mr-2" />
                             Customize Recipients
@@ -1480,50 +1477,6 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                         )}
                       </div>
 
-                      {/* SMS Alerts */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-3">
-                            <Phone className="w-5 h-5 text-muted-foreground" />
-                            <div>
-                              <p className="font-medium">SMS Alerts</p>
-                              <p className="text-sm text-muted-foreground">Critical updates via SMS</p>
-                            </div>
-                          </div>
-                          <Switch
-                            checked={notificationSettings.smsAlerts}
-                            onCheckedChange={(checked) => setNotificationSettings({ ...notificationSettings, smsAlerts: checked })}
-                          />
-                        </div>
-                        {notificationSettings.smsAlerts && (
-                          <div className="grid grid-cols-2 gap-3 ml-8">
-                            <Input
-                              type="number"
-                              value={notificationSettings.smsInterval}
-                              onChange={(e) => setNotificationSettings({ ...notificationSettings, smsInterval: e.target.value })}
-                              min={1}
-                              placeholder="Interval"
-                              className="mt-1 text-base sm:text-sm"
-                            />
-                            <Select
-                              value={notificationSettings.smsUnit}
-                              onValueChange={(value: any) => setNotificationSettings({ ...notificationSettings, smsUnit: value })}
-                            >
-                              <SelectTrigger className="text-base sm:text-sm">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="seconds">Seconds</SelectItem>
-                                <SelectItem value="minutes">Minutes</SelectItem>
-                                <SelectItem value="hours">Hours</SelectItem>
-                                <SelectItem value="days">Days</SelectItem>
-                                <SelectItem value="weeks">Weeks</SelectItem>
-                                <SelectItem value="months">Months</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
 
                       {/* Push Notifications */}
                       <div className="space-y-3">
@@ -1570,50 +1523,6 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                         )}
                       </div>
 
-                      {/* WhatsApp Notifications */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between py-2">
-                          <div className="flex items-center gap-3">
-                            <MessageCircle className="w-5 h-5 text-green-600" />
-                            <div>
-                              <p className="font-medium">WhatsApp Notifications</p>
-                              <p className="text-sm text-muted-foreground">Receive updates via WhatsApp</p>
-                            </div>
-                          </div>
-                          <Switch
-                            checked={notificationSettings.whatsappNotifications}
-                            onCheckedChange={(checked) => setNotificationSettings({ ...notificationSettings, whatsappNotifications: checked })}
-                          />
-                        </div>
-                        {notificationSettings.whatsappNotifications && (
-                          <div className="grid grid-cols-2 gap-3 ml-8">
-                            <Input
-                              type="number"
-                              value={notificationSettings.whatsappInterval}
-                              onChange={(e) => setNotificationSettings({ ...notificationSettings, whatsappInterval: e.target.value })}
-                              min={1}
-                              placeholder="Interval"
-                              className="mt-1 text-base sm:text-sm"
-                            />
-                            <Select
-                              value={notificationSettings.whatsappUnit}
-                              onValueChange={(value: any) => setNotificationSettings({ ...notificationSettings, whatsappUnit: value })}
-                            >
-                              <SelectTrigger className="text-base sm:text-sm">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="seconds">Seconds</SelectItem>
-                                <SelectItem value="minutes">Minutes</SelectItem>
-                                <SelectItem value="hours">Hours</SelectItem>
-                                <SelectItem value="days">Days</SelectItem>
-                                <SelectItem value="weeks">Weeks</SelectItem>
-                                <SelectItem value="months">Months</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
                     </>
                   )}
 
@@ -1631,7 +1540,7 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
                     <CheckCircle2 className="w-7 h-7 sm:w-4 sm:h-4 shrink-0" />
                     <div>
                       <p className="font-medium">One-Time Notification Mode Active</p>
-                      <p className="text-xs">Recipients will receive notifications only once through all available channels (Email, SMS, Push, WhatsApp)</p>
+                      <p className="text-xs">Recipients will receive notifications only once through all available channels (Email and Push)</p>
                     </div>
                   </div>
                 )}
@@ -1767,11 +1676,11 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
 
       {/* Customize Recipients Modal */}
       <Dialog open={showCustomizeModal} onOpenChange={setShowCustomizeModal}>
-        <DialogContent className="max-w-5xl w-[95vw] sm:w-auto max-h-[90vh] overflow-hidden p-0">
-          <div className="p-6 overflow-y-auto max-h-[90vh]">
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl sm:rounded-lg p-0">
+          <div className="p-4 sm:p-6 overflow-y-auto max-h-[90vh]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
+                <Users className="w-5 h-5 text-blue-600" />
                 Customize Notifications per Recipient
               </DialogTitle>
               <DialogDescription>
@@ -1813,9 +1722,27 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCustomizeModal(false)}>Cancel</Button>
-            <Button onClick={() => { setShowCustomizeModal(false); toast({ title: "Settings Saved", description: "Recipient notification preferences saved successfully." }); }}><CheckCircle2 className="w-4 h-4 mr-2" />Save Settings</Button>
+          <DialogFooter className="p-4 sm:p-6 border-t bg-muted/20 flex flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowCustomizeModal(false)}
+              className="flex-1 sm:flex-none"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowCustomizeModal(false);
+                toast({
+                  title: "Settings Saved",
+                  description: "Recipient notification preferences saved successfully."
+                });
+              }}
+              className="flex-1 sm:flex-none"
+            >
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Save Settings
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1909,18 +1836,25 @@ export const EmergencyWorkflowInterface: React.FC<EmergencyWorkflowInterfaceProp
             ))}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAssignmentModal(false)}>
+          <DialogFooter className="gap-2 sm:gap-0 pt-6 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowAssignmentModal(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button onClick={() => {
-              setShowAssignmentModal(false);
-              toast({
-                title: "Assignment Saved",
-                description: "Document assignments have been saved successfully.",
-                variant: "default"
-              });
-            }}>
+            <Button
+              onClick={() => {
+                setShowAssignmentModal(false);
+                toast({
+                  title: "Assignment Saved",
+                  description: "Document assignments have been saved successfully.",
+                  variant: "default"
+                });
+              }}
+              className="w-full sm:w-auto"
+            >
               Save
             </Button>
           </DialogFooter>

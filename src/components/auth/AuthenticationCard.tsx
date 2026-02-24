@@ -38,11 +38,11 @@ export function AuthenticationCard({ onLogin }: AuthenticationCardProps) {
 
   const roles = [
     { value: "principal", label: "Principal", icon: Building2 },
-    { value: "demo-work", label: "Demo Work Role", icon: Building2 },
     { value: "registrar", label: "Registrar", icon: Shield },
     { value: "hod", label: "HOD", icon: Users },
     { value: "program-head", label: "Program Department Head", icon: Users },
     { value: "employee", label: "Employee", icon: FileText },
+    { value: "demo-work", label: "Demo Work Role", icon: Building2 },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -179,7 +179,11 @@ export function AuthenticationCard({ onLogin }: AuthenticationCardProps) {
                     </SelectTrigger>
                     <SelectContent>
                       {roles.map((role) => (
-                        <SelectItem key={role.value} value={role.value}>
+                        <SelectItem
+                          key={role.value}
+                          value={role.value}
+                          className={role.value === "demo-work" ? "hover:bg-orange-100 hover:text-orange-900 focus:bg-orange-100 focus:text-orange-900 data-[state=checked]:bg-orange-100 data-[state=checked]:text-orange-900" : ""}
+                        >
                           <div className="flex items-center gap-2">
                             <role.icon className="w-4 h-4" />
                             {role.label}
@@ -249,7 +253,7 @@ export function AuthenticationCard({ onLogin }: AuthenticationCardProps) {
 
               <div className="text-center text-sm text-muted-foreground">
                 <p>Institutional Activity Oversight and Management System</p>
-                <p className="text-xs mt-1">© 2025 HITAM. All rights reserved.</p>
+                <p className="text-xs mt-1">© 2026 HITAM. All rights reserved.</p>
               </div>
             </CardContent>
           </div>

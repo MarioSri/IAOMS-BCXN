@@ -484,25 +484,43 @@ export function MeetingScheduler({ userRole, className }: MeetingSchedulerProps)
   useEffect(() => {
     const loadAttendees = async () => {
       try {
-        const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
-        const recipients = MOCK_RECIPIENTS;
-        const attendees: MeetingAttendee[] = recipients.map(r => ({
-          id: r.user_id,
-          name: r.name,
-          email: r.email,
-          role: r.role,
-          department: r.department,
-          status: "invited",
-          isRequired: true,
-          canEdit: false
-        }));
-        setAvailableAttendees(attendees);
+        if (isDemoRole) {
+          // Demo Work: use mock data
+          const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
+          const attendees: MeetingAttendee[] = MOCK_RECIPIENTS.map(r => ({
+            id: r.user_id,
+            name: r.name,
+            email: r.email,
+            role: r.role,
+            department: r.department,
+            status: "invited",
+            isRequired: true,
+            canEdit: false
+          }));
+          setAvailableAttendees(attendees);
+        } else {
+          // Real roles: fetch from Supabase
+          const { recipientService } = await import('@/services/RecipientService');
+          const recipients = await recipientService.fetchRecipients();
+          const attendees: MeetingAttendee[] = recipients.map(r => ({
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            role: r.role,
+            department: r.department || '',
+            status: "invited",
+            isRequired: true,
+            canEdit: false
+          }));
+          setAvailableAttendees(attendees);
+        }
       } catch (error) {
         console.error('Failed to load attendees:', error);
       }
     };
     loadAttendees();
-  }, []);
+  }, [isDemoRole]);
+
 
   const meetingPlatforms: { value: MeetingPlatform; label: string; icon: React.ReactNode }[] = [
     { value: "google-meet", label: "Google Meet", icon: <Video className="w-4 h-4" /> },

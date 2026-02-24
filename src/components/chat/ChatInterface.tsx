@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -72,6 +73,7 @@ import {
   CheckSquare,
   Clock
 } from 'lucide-react';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 interface ChatInterfaceProps {
   className?: string;
@@ -113,7 +115,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [showMembers, setShowMembers] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(!isMobile);
+
+  useEffect(() => {
+    if (isMobile) {
+      setShowSidebar(false);
+    }
+  }, [isMobile]);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [showPollModal, setShowPollModal] = useState(false);
@@ -1724,7 +1732,7 @@ Generated on: ${new Date().toLocaleString()}`;
   );
 
   return (
-    <div className={cn("flex h-full bg-background relative overflow-hidden", className)}>
+    <div className={cn("flex h-[88vh] sm:h-full bg-background relative overflow-hidden", className)}>
       <ChannelSidebar />
 
       <div className="flex-1 flex flex-col">
@@ -1751,7 +1759,7 @@ Generated on: ${new Date().toLocaleString()}`;
           </div>
         )}
         {/* Channel Header */}
-        <div className="p-4 border-b bg-background">
+        <div className="p-3 sm:p-4 border-b bg-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {!showSidebar && (
@@ -1840,7 +1848,7 @@ Generated on: ${new Date().toLocaleString()}`;
 
         {/* Messages Area */}
         <ScrollArea className="flex-1 p-2 sm:p-4">
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {activeChannel ? (
               <>
                 {filteredMessages.map(message => (
@@ -1849,7 +1857,7 @@ Generated on: ${new Date().toLocaleString()}`;
                 <div ref={messagesEndRef} />
               </>
             ) : (
-              <div className="h-[500px] flex flex-col items-center justify-center p-8 text-center">
+              <div className="h-[65vh] sm:h-[500px] flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 text-blue-500" />
                 </div>
@@ -1895,21 +1903,24 @@ Generated on: ${new Date().toLocaleString()}`;
               aria-label="Upload file"
             />
 
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-9 w-9 p-0"
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
-
+            {/* Actions: Desktop View */}
             <div className="hidden sm:flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-9 w-9 p-0"
+                title="Attach file"
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowPollModal(true)}
                 className="h-9 w-9 p-0"
+                title="Create poll"
               >
                 <BarChart3 className="w-4 h-4" />
               </Button>
@@ -1919,24 +1930,29 @@ Generated on: ${new Date().toLocaleString()}`;
                 variant="ghost"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                 className="h-9 w-9 p-0"
+                title="Emojis"
               >
                 <Smile className="w-4 h-4" />
               </Button>
             </div>
 
+            {/* Actions: Mobile View (Consolidated into Paperclip) */}
             <div className="sm:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="h-9 w-9 p-0">
-                    <Plus className="w-4 h-4" />
+                    <Paperclip className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" align="start">
+                <DropdownMenuContent side="top" align="start" className="w-48">
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <Paperclip className="w-4 h-4 mr-2" /> Upload File
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowPollModal(true)}>
                     <BarChart3 className="w-4 h-4 mr-2" /> Create Poll
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-                    <Smile className="w-4 h-4 mr-2" /> Emoji
+                    <Smile className="w-4 h-4 mr-2" /> Emojis
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1964,20 +1980,45 @@ Generated on: ${new Date().toLocaleString()}`;
                 {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
               {showEmojiPicker && (
-                <div ref={emojiPickerRef} className="absolute bottom-full left-0 mb-2 p-3 bg-background border rounded-lg shadow-lg z-10">
-                  <div className="grid grid-cols-8 gap-1 w-64">
-                    {['👍', '👎', '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'].map(emoji => (
-                      <button
-                        key={emoji}
-                        onClick={() => {
-                          setMessageInput(prev => prev + emoji);
-                          setShowEmojiPicker(false);
-                        }}
-                        className="p-1 hover:bg-muted rounded text-lg"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                <div
+                  ref={emojiPickerRef}
+                  className="fixed bottom-[80px] left-[4vw] right-[4vw] z-[100] sm:absolute sm:bottom-full sm:left-0 sm:right-auto sm:mb-4 sm:translate-x-0 w-auto sm:w-[350px] shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+                >
+                  <style>{`
+                    .EmojiPickerReact.epr-main {
+                      border: none !important;
+                      --epr-search-input-padding-left: 40px;
+                    }
+                    .EmojiPickerReact .epr-search-container {
+                      padding: 12px !important;
+                    }
+                    .EmojiPickerReact .epr-category-nav {
+                      padding: 10px 0 !important;
+                      margin-bottom: 0 !important;
+                    }
+                    @media (max-width: 640px) {
+                      .EmojiPickerReact .epr-body {
+                        padding-top: 0 !important;
+                      }
+                    }
+                  `}</style>
+                  <div className="bg-background rounded-2xl border-2 border-muted overflow-hidden shadow-2xl">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setMessageInput(prev => prev + emojiData.emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      autoFocusSearch={false}
+                      theme={document.documentElement.classList.contains('dark') ? Theme.DARK : Theme.LIGHT}
+                      searchPlaceholder="Search emojis..."
+                      width="100%"
+                      height={isMobile ? 380 : 400}
+                      lazyLoadEmojis={true}
+                      skinTonesDisabled={true}
+                      previewConfig={{
+                        showPreview: false
+                      }}
+                    />
                   </div>
                 </div>
               )}
@@ -1995,329 +2036,328 @@ Generated on: ${new Date().toLocaleString()}`;
       </div>
 
       {/* New Channel Modal */}
-      <AlertDialog open={showNewChannelModal} onOpenChange={setShowNewChannelModal}>
-        <AlertDialogContent className="max-w-2xl">
-          <button
-            onClick={() => setShowNewChannelModal(false)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-yellow-500" />
-              Create New Channel
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Create a new chat channel and add recipients.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Channel Name</label>
-              <Input
-                placeholder="Enter channel name"
-                value={newChannelName}
-                onChange={(e) => setNewChannelName(e.target.value)}
-                className="px-3 py-2 text-base sm:text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Add Recipients</label>
-              <ScrollArea className="h-64 border rounded-md p-2">
-                {availableRecipients.map((person) => (
-                  <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback className="text-xs">
-                          {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{person.fullName || person.username}</p>
-                        <p className="text-xs text-muted-foreground">{person.role}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (newChannelRecipients.includes(person.id)) {
-                          setNewChannelRecipients(newChannelRecipients.filter(id => id !== person.id));
-                        } else {
-                          setNewChannelRecipients([...newChannelRecipients, person.id]);
-                        }
-                      }}
-                    >
-                      {newChannelRecipients.includes(person.id) ? 'Remove' : 'Add'}
-                    </Button>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-            {newChannelRecipients.length > 0 && (
+      <Dialog open={showNewChannelModal} onOpenChange={setShowNewChannelModal}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-0">
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-yellow-500" />
+                Create New Channel
+              </DialogTitle>
+              <DialogDescription>
+                Create a new chat channel and add recipients.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Selected Recipients ({newChannelRecipients.length})</label>
-                <div className="flex flex-wrap gap-2">
-                  {newChannelRecipients.map(id => (
-                    <div key={id} className="flex items-center gap-1 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full">
-                      <UserRoundPlus className="w-4 h-4" />
-                      <span className="text-sm font-medium">{id.toUpperCase()}</span>
+                <Label className="text-sm font-medium mb-2 block">Channel Name</Label>
+                <Input
+                  placeholder="Enter channel name"
+                  value={newChannelName}
+                  onChange={(e) => setNewChannelName(e.target.value)}
+                  className="px-3 py-2 text-base sm:text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Add Recipients</Label>
+                <ScrollArea className="h-64 border rounded-md p-2">
+                  {availableRecipients.map((person) => (
+                    <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="text-xs">
+                            {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{person.fullName || person.username}</p>
+                          <p className="text-xs text-muted-foreground">{person.role}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (newChannelRecipients.includes(person.id)) {
+                            setNewChannelRecipients(newChannelRecipients.filter(id => id !== person.id));
+                          } else {
+                            setNewChannelRecipients([...newChannelRecipients, person.id]);
+                          }
+                        }}
+                      >
+                        {newChannelRecipients.includes(person.id) ? 'Remove' : 'Add'}
+                      </Button>
                     </div>
                   ))}
-                </div>
+                </ScrollArea>
               </div>
-            )}
+              {newChannelRecipients.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Selected Recipients ({newChannelRecipients.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {newChannelRecipients.map(id => (
+                      <div key={id} className="flex items-center gap-1 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full">
+                        <UserRoundPlus className="w-4 h-4" />
+                        <span className="text-sm font-medium">{id.toUpperCase()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="mt-6 gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => {
+                setShowNewChannelModal(false);
+                setNewChannelName('');
+                setNewChannelRecipients([]);
+                setIsPrivateChannel(false);
+              }} className="w-full sm:w-auto">Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (newChannelName.trim() && newChannelRecipients.length > 0 && user) {
+                    const newChannel: ChatChannel = {
+                      id: `channel-${Date.now()}`,
+                      name: newChannelName.trim(),
+                      description: '',
+                      type: 'general',
+                      members: [user.id, ...newChannelRecipients],
+                      admins: [user.id],
+                      isPrivate: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                      createdBy: user.id,
+                      pinnedMessages: [],
+                      settings: {
+                        allowFileUploads: true,
+                        allowPolls: true,
+                        allowSignatureRequests: true,
+                        requireModeration: false,
+                        autoArchive: false,
+                        notificationLevel: 'all'
+                      }
+                    };
+
+                    setChannels(prev => [newChannel, ...prev]);
+                    setActiveChannel(newChannel);
+
+                    toast({
+                      title: 'Channel Created',
+                      description: `${newChannelName} has been created successfully`,
+                      variant: 'default'
+                    });
+
+                    setNewChannelName('');
+                    setNewChannelRecipients([]);
+                    setIsPrivateChannel(false);
+                    setShowNewChannelModal(false);
+                  }
+                }}
+                disabled={!newChannelName.trim() || newChannelRecipients.length === 0}
+                className="w-full sm:w-auto"
+              >
+                Create Channel
+              </Button>
+            </DialogFooter>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setNewChannelName('');
-              setNewChannelRecipients([]);
-              setIsPrivateChannel(false);
-            }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (newChannelName.trim() && newChannelRecipients.length > 0 && user) {
-                  const newChannel: ChatChannel = {
-                    id: `channel-${Date.now()}`,
-                    name: newChannelName.trim(),
-                    description: '',
-                    type: 'general',
-                    members: [user.id, ...newChannelRecipients],
-                    admins: [user.id],
-                    isPrivate: true,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    createdBy: user.id,
-                    pinnedMessages: [],
-                    settings: {
-                      allowFileUploads: true,
-                      allowPolls: true,
-                      allowSignatureRequests: true,
-                      requireModeration: false,
-                      autoArchive: false,
-                      notificationLevel: 'all'
-                    }
-                  };
-
-                  setChannels(prev => [newChannel, ...prev]);
-                  setActiveChannel(newChannel);
-
-                  toast({
-                    title: 'Channel Created',
-                    description: `${newChannelName} has been created successfully`,
-                    variant: 'default'
-                  });
-
-                  setNewChannelName('');
-                  setNewChannelRecipients([]);
-                  setIsPrivateChannel(false);
-                  setShowNewChannelModal(false);
-                }
-              }}
-              disabled={!newChannelName.trim() || newChannelRecipients.length === 0}
-            >
-              Create Channel
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Recipients Modal */}
-      <AlertDialog open={showAddRecipientsModal} onOpenChange={setShowAddRecipientsModal}>
-        <AlertDialogContent className="max-w-2xl">
-          <button
-            onClick={() => setShowAddRecipientsModal(false)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-blue-500" />
-              Add Recipients
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Select recipients to start a direct chat.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Available Staff</label>
-              <ScrollArea className="h-64 border rounded-md p-2">
-                {availableRecipients.map((person) => (
-                  <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarFallback className="text-xs">
-                          {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{person.fullName || person.username}</p>
-                        <p className="text-xs text-muted-foreground">{person.role}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (selectedRecipients.includes(person.id)) {
-                          setSelectedRecipients(selectedRecipients.filter(id => id !== person.id));
-                        } else {
-                          setSelectedRecipients([...selectedRecipients, person.id]);
-                        }
-                      }}
-                    >
-                      {selectedRecipients.includes(person.id) ? 'Remove' : 'Add'}
-                    </Button>
-                  </div>
-                ))}
-              </ScrollArea>
-            </div>
-            {selectedRecipients.length > 0 && (
+      <Dialog open={showAddRecipientsModal} onOpenChange={setShowAddRecipientsModal}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-0">
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-500" />
+                Add Recipients
+              </DialogTitle>
+              <DialogDescription>
+                Select recipients to start a direct chat.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Selected Recipients ({selectedRecipients.length})</label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedRecipients.map(id => (
-                    <div key={id} className="flex items-center gap-1 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full">
-                      <UserRoundPlus className="w-4 h-4" />
-                      <span className="text-sm font-medium">{id.toUpperCase()}</span>
+                <Label className="text-sm font-medium mb-2 block">Available Staff</Label>
+                <ScrollArea className="h-64 border rounded-md p-2">
+                  {availableRecipients.map((person) => (
+                    <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback className="text-xs">
+                            {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{person.fullName || person.username}</p>
+                          <p className="text-xs text-muted-foreground">{person.role}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (selectedRecipients.includes(person.id)) {
+                            setSelectedRecipients(selectedRecipients.filter(id => id !== person.id));
+                          } else {
+                            setSelectedRecipients([...selectedRecipients, person.id]);
+                          }
+                        }}
+                      >
+                        {selectedRecipients.includes(person.id) ? 'Remove' : 'Add'}
+                      </Button>
+                    </div>
+                  ))}
+                </ScrollArea>
+              </div>
+              {selectedRecipients.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">Selected Recipients ({selectedRecipients.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRecipients.map(id => (
+                      <div key={id} className="flex items-center gap-1 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full">
+                        <UserRoundPlus className="w-4 h-4" />
+                        <span className="text-sm font-medium">{id.toUpperCase()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter className="mt-6 gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => {
+                setShowAddRecipientsModal(false);
+                setSelectedRecipients([]);
+              }} className="w-full sm:w-auto">Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (selectedRecipients.length > 0 && user) {
+                    const newChannel: ChatChannel = {
+                      id: `dm-${Date.now()}`,
+                      name: selectedRecipients.map(id => id.toUpperCase()).join(', '),
+                      description: 'Direct Message Group',
+                      type: 'private',
+                      members: [user.id, ...selectedRecipients],
+                      admins: [user.id],
+                      isPrivate: true,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                      createdBy: user.id,
+                      pinnedMessages: [],
+                      settings: {
+                        allowFileUploads: true,
+                        allowPolls: false,
+                        allowSignatureRequests: true,
+                        requireModeration: false,
+                        autoArchive: false,
+                        notificationLevel: 'all'
+                      }
+                    };
+                    setChannels(prev => [newChannel, ...prev]);
+                    setActiveChannel(newChannel);
+                    toast({
+                      title: 'Chat Started',
+                      description: `Started chat with ${selectedRecipients.length} recipient(s)`,
+                      variant: 'default'
+                    });
+                    setSelectedRecipients([]);
+                    setShowAddRecipientsModal(false);
+                  }
+                }}
+                disabled={selectedRecipients.length === 0}
+                className="w-full sm:w-auto"
+              >
+                Start Chat
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Poll Creation Modal */}
+      <Dialog open={showPollModal} onOpenChange={setShowPollModal}>
+        <DialogContent className="w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-lg p-0">
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-green-600" />
+                Create Poll
+              </DialogTitle>
+              <DialogDescription>
+                Create a poll for the channel members to vote on.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Poll Question</Label>
+                <Input
+                  placeholder="What's your question?"
+                  value={pollTitle}
+                  onChange={(e) => setPollTitle(e.target.value)}
+                  className="px-3 py-2 text-base sm:text-sm"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Options</Label>
+                <div className="space-y-3">
+                  {pollOptions.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...pollOptions];
+                          newOptions[index] = e.target.value;
+                          setPollOptions(newOptions);
+                        }}
+                        className="text-base sm:text-sm"
+                      />
+                      {pollOptions.length > 2 && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setPollOptions([...pollOptions, ''])}
+                  className="mt-2 text-primary hover:text-primary/80"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Add Option
+                </Button>
               </div>
-            )}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setSelectedRecipients([]);
-            }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (selectedRecipients.length > 0 && user) {
-                  const newChannel: ChatChannel = {
-                    id: `dm-${Date.now()}`,
-                    name: selectedRecipients.map(id => id.toUpperCase()).join(', '),
-                    description: 'Direct Message Group',
-                    type: 'private',
-                    members: [user.id, ...selectedRecipients],
-                    admins: [user.id],
-                    isPrivate: true,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    createdBy: user.id,
-                    pinnedMessages: [],
-                    settings: {
-                      allowFileUploads: true,
-                      allowPolls: false,
-                      allowSignatureRequests: true,
-                      requireModeration: false,
-                      autoArchive: false,
-                      notificationLevel: 'all'
-                    }
-                  };
-                  setChannels(prev => [newChannel, ...prev]);
-                  setActiveChannel(newChannel);
-                  toast({
-                    title: 'Chat Started',
-                    description: `Started chat with ${selectedRecipients.length} recipient(s)`,
-                    variant: 'default'
-                  });
-                  setSelectedRecipients([]);
-                  setShowAddRecipientsModal(false);
-                }
-              }}
-              disabled={selectedRecipients.length === 0}
-            >
-              Start Chat
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Poll Creation Modal */}
-      <AlertDialog open={showPollModal} onOpenChange={setShowPollModal}>
-        <AlertDialogContent>
-          <button
-            onClick={() => setShowPollModal(false)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Create Poll</AlertDialogTitle>
-            <AlertDialogDescription>
-              Create a poll for the channel members to vote on.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Poll Question</label>
-              <Input
-                placeholder="What's your question?"
-                value={pollTitle}
-                onChange={(e) => setPollTitle(e.target.value)}
-                className="px-3 py-2 text-base sm:text-sm"
-              />
             </div>
-            <div>
-              <label className="text-sm font-medium">Options</label>
-              {pollOptions.map((option, index) => (
-                <div key={index} className="flex gap-2 mt-2">
-                  <Input
-                    placeholder={`Option ${index + 1}`}
-                    value={option}
-                    onChange={(e) => {
-                      const newOptions = [...pollOptions];
-                      newOptions[index] = e.target.value;
-                      setPollOptions(newOptions);
-                    }}
-                    className="text-base sm:text-sm"
-                  />
-                  {pollOptions.length > 2 && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setPollOptions(pollOptions.filter((_, i) => i !== index))}
-                    >
-                      ×
-                    </Button>
-                  )}
-                </div>
-              ))}
+            <DialogFooter className="mt-6 gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => {
+                setShowPollModal(false);
+                setPollTitle('');
+                setPollOptions(['', '']);
+              }} className="w-full sm:w-auto">Cancel</Button>
               <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setPollOptions([...pollOptions, ''])}
-                className="mt-2"
+                onClick={() => {
+                  const validOptions = pollOptions.filter(opt => opt.trim());
+                  if (pollTitle.trim() && validOptions.length >= 2) {
+                    handleCreatePoll(pollTitle.trim(), validOptions);
+                    setPollTitle('');
+                    setPollOptions(['', '']);
+                    setShowPollModal(false);
+                  }
+                }}
+                disabled={!pollTitle.trim() || pollOptions.filter(opt => opt.trim()).length < 2}
+                className="w-full sm:w-auto"
               >
-                + Add Option
+                Create Poll
               </Button>
-            </div>
+            </DialogFooter>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setPollTitle('');
-              setPollOptions(['', '']);
-            }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                const validOptions = pollOptions.filter(opt => opt.trim());
-                if (pollTitle.trim() && validOptions.length >= 2) {
-                  handleCreatePoll(pollTitle.trim(), validOptions);
-                  setPollTitle('');
-                  setPollOptions(['', '']);
-                  setShowPollModal(false);
-                }
-              }}
-              disabled={!pollTitle.trim() || pollOptions.filter(opt => opt.trim()).length < 2}
-            >
-              Create Poll
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Modal */}
       <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>

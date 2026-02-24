@@ -1579,7 +1579,7 @@ export const WatermarkFeature: React.FC<WatermarkFeatureProps> = ({
             {/* Mobile Sidebar Toggle Tab */}
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-black text-white shadow-lg flex items-center justify-center z-[60] border border-black hover:bg-gray-800 transition-all pointer-events-auto ${isSidebarOpen
+              className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-green-600 text-white shadow-lg flex items-center justify-center z-[60] border border-green-600 hover:bg-green-700 transition-all pointer-events-auto ${isSidebarOpen
                 ? 'right-0 rounded-l-xl border-r-0'
                 : '-right-10 rounded-r-xl border-l-0'
                 }`}

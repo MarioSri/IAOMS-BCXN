@@ -1971,7 +1971,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
               {/* Mobile Sidebar Toggle Tab */}
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-black text-white shadow-lg flex items-center justify-center z-[60] border border-black hover:bg-gray-800 transition-all pointer-events-auto ${isSidebarOpen
+                className={`lg:hidden absolute top-1/2 -translate-y-1/2 w-10 h-16 bg-green-600 text-white shadow-lg flex items-center justify-center z-[60] border border-green-600 hover:bg-green-700 transition-all pointer-events-auto ${isSidebarOpen
                   ? 'right-0 rounded-l-xl border-r-0'
                   : '-right-10 rounded-r-xl border-l-0'
                   }`}
@@ -2377,7 +2377,7 @@ export const DocumensoIntegration: React.FC<DocumensoIntegrationProps> = ({
               {/* Sidebar Toggle Tab */}
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden absolute top-1/2 -right-10 -translate-y-1/2 flex items-center justify-center bg-black text-white w-10 h-16 rounded-r-2xl shadow-xl border border-black border-l-0"
+                className="lg:hidden absolute top-1/2 -right-10 -translate-y-1/2 flex items-center justify-center bg-green-600 text-white w-10 h-16 rounded-r-2xl shadow-xl border border-green-600 hover:bg-green-700 transition-colors border-l-0"
                 style={{ paddingLeft: '2px' }}
               >
                 {isSidebarOpen ? <ChevronLeft className="w-5 h-5 text-white" /> : <ChevronRight className="w-5 h-5 text-white" />}

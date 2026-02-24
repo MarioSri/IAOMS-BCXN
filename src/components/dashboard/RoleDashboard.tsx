@@ -6,6 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useResponsive } from '@/hooks/useResponsive';
 import { getDashboardConfig } from '@/config/roleConfigs';
 import { cn } from '@/lib/utils';
+import { userProfileService } from '@/services/UserProfileService';
+import { isAllowedMockData, logDataSource, DataSource } from '@/utils/roleUtils';
+import { DemoIndicator, LiveDataIndicator } from '@/components/ui/DemoIndicator';
 import {
   Crown,
   Shield,
@@ -25,25 +28,79 @@ export const RoleDashboard: React.FC = () => {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [dataSource, setDataSource] = useState<DataSource>('empty');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load profile from MOCK_RECIPIENTS
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
 
+      setLoading(true);
+      setError(null);
+
       try {
-        const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
-        const recipient = MOCK_RECIPIENTS.find(r => r.user_id === (user.id || user.email));
-        if (recipient) {
-          setProfileData({
-            name: recipient.name,
-            department: recipient.department,
-            designation: recipient.role,
-            employeeId: recipient.user_id
-          });
+        const isDemoWork = isAllowedMockData(user.role);
+
+        if (isDemoWork) {
+          // Demo Work ONLY: Load from MOCK_RECIPIENTS
+          const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
+          const recipient = MOCK_RECIPIENTS.find(r => r.user_id === user.id);
+
+          if (recipient) {
+            setProfileData({
+              name: recipient.name,
+              department: recipient.department,
+              designation: recipient.role,
+              employeeId: recipient.user_id
+            });
+            setDataSource('mock');
+            logDataSource('RoleDashboard', 'mock', recipient.name);
+          }
+        } else {
+          // Real Roles (Principal, Registrar, HOD, Program Head, Employee):
+          // Fetch EXCLUSIVELY from Supabase role_recipients table.
+          // NO mock names are permitted here.
+          const emailKey = user.email;
+          const profile = emailKey
+            ? await userProfileService.fetchProfileByEmail(emailKey)
+            : await userProfileService.fetchProfile(user.id);
+
+          if (profile) {
+            setProfileData({
+              name: profile.name,
+              department: profile.department,
+              designation: profile.designation || profile.role,
+              employeeId: profile.employee_id || profile.id
+            });
+            setDataSource('real');
+            logDataSource('RoleDashboard', 'real', profile.name);
+          } else {
+            // No profile found in Supabase — show empty state.
+            // Do NOT fall back to mock names.
+            setProfileData({
+              name: '',
+              department: '',
+              designation: '',
+              employeeId: ''
+            });
+            setDataSource('empty');
+            logDataSource('RoleDashboard', 'empty', 'Profile not yet configured in Supabase');
+          }
         }
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error('❌ [RoleDashboard] Error loading profile:', error);
+        setError('Failed to load profile data');
+        // Error state: show empty rather than mock names for real roles
+        setProfileData({
+          name: '',
+          department: '',
+          designation: '',
+          employeeId: ''
+        });
+        setDataSource('empty');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -93,6 +150,11 @@ export const RoleDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Data Source Alert for Demo Mode */}
+      {dataSource === 'mock' && (
+        <DemoIndicator variant="alert" location="dashboard" />
+      )}
+
       {/* Role Welcome Banner */}
       <Card className="shadow-elegant bg-gradient-primary text-primary-foreground border-0">
         <CardContent className={cn("p-6", isMobile && "p-4")}>
@@ -121,7 +183,12 @@ export const RoleDashboard: React.FC = () => {
                 "opacity-90 mt-1",
                 isMobile ? "text-sm" : "text-base"
               )}>
-                Logged in as <span className="font-semibold">{profileData?.name || user.name}</span>
+                {profileData?.name
+                  ? <>Logged in as <span className="font-semibold">{profileData.name}</span></>
+                  : dataSource === 'empty'
+                    ? <span className="opacity-70 italic">Profile Not Yet Configured — Please Contact Your Admin.</span>
+                    : <span className="opacity-70">Loading profile...</span>
+                }
               </p>
               <div className={cn(
                 "flex flex-wrap gap-2 mt-3",
@@ -130,9 +197,14 @@ export const RoleDashboard: React.FC = () => {
                 <Badge className="bg-white/20 text-white border-white/30 font-medium">
                   Role: {dashboardConfig.displayName}
                 </Badge>
-                {(profileData?.department || user.department) && (
+                {profileData?.department && (
                   <Badge className="bg-white/20 text-white border-white/30">
-                    {profileData?.department || user.department}
+                    {profileData.department}
+                  </Badge>
+                )}
+                {dataSource === 'mock' && (
+                  <Badge className="bg-amber-500/90 text-white border-white/30 font-medium">
+                    Demo Mode
                   </Badge>
                 )}
               </div>

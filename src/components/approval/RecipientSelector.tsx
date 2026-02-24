@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
 import { recipientService } from '@/services/RecipientService';
+import { isAllowedMockData, logDataSource } from '@/utils/roleUtils';
+import { DemoIndicator } from '@/components/ui/DemoIndicator';
 import {
   Search,
   ChevronDown,
@@ -163,11 +165,9 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
       setLoading(true);
       setError(null);
 
-      // Normalize userRole for comparison
-      const normalizedRole = userRole.toLowerCase().replace(/\s+/g, '-');
-      const isDemoWorkRole = normalizedRole === 'demo-work';
+      const isDemoWorkRole = isAllowedMockData(userRole);
 
-      console.log('🔍 [RecipientSelector] Loading recipients for role:', { userRole, normalizedRole, isDemoWorkRole });
+      console.log('🔍 [RecipientSelector] Loading recipients for role:', { userRole, isDemoWorkRole });
 
       if (isDemoWorkRole) {
         // Demo Work Role: Load mock data
@@ -185,7 +185,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
             year: (r as any).year
           })));
           setDataSource('mock');
-          console.log('✅ [RecipientSelector] Loaded mock recipients for Demo Work role:', filteredRecipients.length);
+          logDataSource('RecipientSelector', 'mock', `${filteredRecipients.length} recipients`);
         } catch (error) {
           console.error('❌ [RecipientSelector] Failed to load mock recipients:', error);
           setError('Failed to load demo recipients');
@@ -209,11 +209,11 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
               branch: r.branch
             })));
             setDataSource('real');
-            console.log('✅ [RecipientSelector] Loaded real recipients from Supabase:', realRecipients.length);
+            logDataSource('RecipientSelector', 'real', `${realRecipients.length} recipients`);
           } else {
             setAllRecipients([]);
             setDataSource('empty');
-            console.log('ℹ️ [RecipientSelector] No recipients found in database');
+            logDataSource('RecipientSelector', 'empty', 'No recipients in database');
           }
         } catch (error) {
           console.error('❌ [RecipientSelector] Failed to fetch real recipients:', error);
@@ -647,11 +647,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
 
         {/* Data Source Indicator */}
         {dataSource === 'mock' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-800">
-              <strong>Demo Mode:</strong> Showing mock recipients for demonstration purposes.
-            </p>
-          </div>
+          <DemoIndicator variant="alert" location="recipients" />
         )}
 
         {maxSelections && selectedRecipients.length >= maxSelections && (

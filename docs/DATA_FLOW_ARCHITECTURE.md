@@ -303,3 +303,236 @@ This architecture ensures:
 - ✅ Transparent error handling
 - ✅ Easy to debug and maintain
 - ✅ Ready for production use
+
+
+---
+
+## Phase 1 Implementation: Foundation (COMPLETED)
+
+### New Utilities Created
+
+```
+src/utils/roleUtils.ts
+├─ isAllowedMockData(role: string): boolean
+│  └─ Single source of truth for mock data access
+├─ normalizeRole(role: string): string
+│  └─ Consistent role comparison
+├─ logDataSource(component, source, details)
+│  └─ Standardized logging
+└─ DataSource type: 'mock' | 'real' | 'empty'
+   └─ Explicit data origin tracking
+```
+
+### New Services Created
+
+```
+src/services/UserProfileService.ts
+├─ fetchProfile(userId): Promise<UserProfile | null>
+│  └─ Fetch individual user profile from Supabase
+└─ fetchProfileByEmail(email): Promise<UserProfile | null>
+   └─ Fetch profile by email (for Google OAuth)
+```
+
+### New Components Created
+
+```
+src/components/ui/DemoIndicator.tsx
+├─ DemoIndicator (variant: 'badge' | 'alert' | 'inline')
+│  └─ Consistent demo mode visual indicator
+└─ LiveDataIndicator
+   └─ Shows when displaying real Supabase data
+```
+
+### Updated Components
+
+```
+Profile.tsx
+├─ Added dataSource state tracking
+├─ Fetches from Supabase for real roles
+├─ Uses MOCK_RECIPIENTS only for demo-work
+├─ Shows DemoIndicator when in demo mode
+├─ Removed localStorage for identity data
+└─ Only uses localStorage for preferences
+
+RoleDashboard.tsx
+├─ Added dataSource state tracking
+├─ Fetches from Supabase for real roles
+├─ Uses MOCK_RECIPIENTS only for demo-work
+├─ Shows demo badge in welcome section
+└─ Displays DemoIndicator alert at top
+
+RecipientSelector.tsx
+├─ Uses isAllowedMockData() utility
+├─ Uses DemoIndicator component
+└─ Consistent with other components
+
+AuthContext.tsx
+├─ Uses isAllowedMockData() utility
+├─ Added documentation about MOCK_RECIPIENTS
+└─ Logs isDemoWork status
+```
+
+---
+
+## localStorage Rules (NEW)
+
+### Identity Data (NEVER in localStorage)
+```
+❌ name
+❌ email
+❌ role
+❌ department
+❌ employee_id
+❌ designation
+❌ branch
+```
+
+### Preference Data (ALLOWED in localStorage)
+```
+✅ user-preferences-${userId}
+✅ notification-settings-${userId}
+✅ dashboard-layout-${userId}
+✅ demo-work:ui-state
+✅ real:notification-settings
+```
+
+See: `docs/LOCALSTORAGE_RULES.md` for complete documentation
+
+---
+
+## Data Source Tracking Pattern
+
+Every component displaying user/recipient data now follows this pattern:
+
+```typescript
+// 1. State
+const [dataSource, setDataSource] = useState<DataSource>('empty')
+
+// 2. Load Data
+if (isAllowedMockData(user.role)) {
+  // Load mock
+  setDataSource('mock')
+  logDataSource('ComponentName', 'mock', details)
+} else {
+  // Fetch from Supabase
+  const data = await service.fetch()
+  setDataSource(data ? 'real' : 'empty')
+  logDataSource('ComponentName', data ? 'real' : 'empty', details)
+}
+
+// 3. Display Indicator
+{dataSource === 'mock' && <DemoIndicator />}
+{dataSource === 'real' && <LiveDataIndicator />}
+```
+
+---
+
+## Next Steps: Phase 2 (Supabase Integration)
+
+### Required Actions
+
+1. **Install Supabase Client**
+   ```bash
+   npm install @supabase/supabase-js
+   ```
+
+2. **Create Supabase Project**
+   - Go to supabase.com
+   - Create new project
+   - Copy URL and anon key
+
+3. **Configure Environment**
+   ```env
+   VITE_SUPABASE_URL=your_project_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+4. **Create Database Schema**
+   ```sql
+   CREATE TABLE users (
+     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     name TEXT NOT NULL,
+     email TEXT UNIQUE NOT NULL,
+     role TEXT NOT NULL,
+     department TEXT,
+     branch TEXT,
+     phone TEXT,
+     employee_id TEXT,
+     designation TEXT,
+     bio TEXT,
+     avatar TEXT,
+     is_active BOOLEAN DEFAULT true,
+     created_at TIMESTAMP DEFAULT NOW(),
+     updated_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   CREATE INDEX idx_users_email ON users(email);
+   CREATE INDEX idx_users_role ON users(role);
+   CREATE INDEX idx_users_active ON users(is_active);
+   ```
+
+5. **Update Services**
+   - Uncomment Supabase queries in RecipientService.ts
+   - Uncomment Supabase queries in UserProfileService.ts
+   - Create Supabase client instance
+
+6. **Add Real Users**
+   - Insert actual users into Supabase users table
+   - Test with real roles (Principal, Registrar, HOD)
+
+---
+
+## Testing Checklist
+
+### Phase 1 (Foundation) - COMPLETED
+- [x] roleUtils.ts created with isAllowedMockData()
+- [x] UserProfileService.ts created
+- [x] DemoIndicator component created
+- [x] Profile.tsx updated with dataSource tracking
+- [x] RoleDashboard.tsx updated with dataSource tracking
+- [x] RecipientSelector.tsx uses centralized utilities
+- [x] AuthContext.tsx uses isAllowedMockData()
+- [x] LOCALSTORAGE_RULES.md documentation created
+
+### Phase 2 (Supabase Integration) - PENDING
+- [ ] Supabase client installed
+- [ ] Environment variables configured
+- [ ] Database schema created
+- [ ] Real users added to database
+- [ ] RecipientService queries implemented
+- [ ] UserProfileService queries implemented
+- [ ] Tested with real roles
+
+### Phase 3 (Validation) - PENDING
+- [ ] Demo Work role shows mock data everywhere
+- [ ] Principal role fetches from Supabase
+- [ ] Registrar role fetches from Supabase
+- [ ] HOD role fetches from Supabase
+- [ ] Error states display correctly
+- [ ] Demo indicators appear only for demo-work
+- [ ] No identity data in localStorage
+- [ ] Console logs show correct data sources
+
+---
+
+## Architecture Benefits
+
+### Debugging
+- Console logs clearly show data source for every component
+- `dataSource` state makes it obvious where data comes from
+- No guessing about mock vs real data
+
+### Maintainability
+- Single utility function controls mock data access
+- Easy to add new demo roles (just update MOCK_DATA_ROLES array)
+- Clear separation of concerns
+
+### User Experience
+- Visual indicators prevent confusion
+- Error messages are clear and actionable
+- No silent fallbacks that hide problems
+
+### Data Integrity
+- Identity data always from source of truth
+- localStorage only for preferences
+- No stale data issues

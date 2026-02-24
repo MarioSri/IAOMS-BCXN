@@ -19,12 +19,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { cn } from "@/lib/utils";
 import { PersonalInformationForm, PersonalInfoData } from "@/components/shared/PersonalInformationForm";
+import { userProfileService } from "@/services/UserProfileService";
+import { isAllowedMockData, logDataSource, DataSource } from "@/utils/roleUtils";
+import { DemoIndicator, LiveDataIndicator } from "@/components/ui/DemoIndicator";
 
 export default function Profile() {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<DataSource>('empty');
 
   const [profileData, setProfileData] = useState<PersonalInfoData>({
     name: "",
@@ -49,33 +54,83 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const loadProfileData = () => {
+    const loadProfileData = async () => {
       if (!user) return;
 
       setLoading(true);
+      setError(null);
+
       try {
-        const savedProfile = localStorage.getItem('user-profile');
-        if (savedProfile) {
-          setProfileData(JSON.parse(savedProfile));
+        const isDemoWork = isAllowedMockData(user.role);
+
+        if (isDemoWork) {
+          // Demo Work ONLY: Load from MOCK_RECIPIENTS
+          const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
+          const mockProfile = MOCK_RECIPIENTS.find(r => r.user_id === user.id);
+
+          if (mockProfile) {
+            setProfileData({
+              name: mockProfile.name,
+              email: mockProfile.email,
+              phone: "",
+              department: mockProfile.department,
+              employeeId: mockProfile.user_id,
+              designation: mockProfile.role,
+              bio: "",
+              avatar: mockProfile.avatar
+            });
+            setDataSource('mock');
+            logDataSource('Profile', 'mock', mockProfile.name);
+          }
         } else {
-          setProfileData({
-            name: user.name || "",
-            email: user.email || "",
-            phone: "",
-            department: user.department || "",
-            employeeId: user.id || "",
-            designation: user.role || "",
-            bio: "",
-            avatar: user.avatar || ""
-          });
+          // Real Roles (Principal, Registrar, HOD, Program Head, Employee):
+          // Fetch EXCLUSIVELY from Supabase role_recipients table.
+          // NO mock names are permitted here.
+          const emailKey = user.email;
+          const profile = emailKey
+            ? await userProfileService.fetchProfileByEmail(emailKey)
+            : await userProfileService.fetchProfile(user.id);
+
+          if (profile) {
+            setProfileData({
+              name: profile.name,
+              email: profile.email,
+              phone: profile.phone || "",
+              department: profile.department || "",
+              employeeId: profile.employee_id || profile.id,
+              designation: profile.designation || profile.role,
+              bio: profile.bio || "",
+              avatar: profile.avatar || ""
+            });
+            setDataSource('real');
+            logDataSource('Profile', 'real', profile.name);
+          } else {
+            // No profile found in Supabase — show empty state.
+            // Do NOT fall back to mock names.
+            setProfileData({
+              name: "",
+              email: "",
+              phone: "",
+              department: "",
+              employeeId: "",
+              designation: "",
+              bio: "",
+              avatar: ""
+            });
+            setDataSource('empty');
+            logDataSource('Profile', 'empty', 'Profile not yet configured in Supabase');
+          }
         }
 
+        // Load notification preferences (UI preferences only)
         const savedNotificationPrefs = localStorage.getItem(`user-preferences-${user.id}`);
         if (savedNotificationPrefs) {
           setNotificationPreferences(JSON.parse(savedNotificationPrefs));
         }
       } catch (error) {
-        console.error('Error loading profile data:', error);
+        console.error('❌ [Profile] Error loading profile data:', error);
+        setError('Failed to load profile data. Please try again.');
+        setDataSource('empty');
       } finally {
         setLoading(false);
       }
@@ -86,7 +141,14 @@ export default function Profile() {
 
   const handleSaveProfile = async (data: PersonalInfoData) => {
     try {
-      localStorage.setItem('user-profile', JSON.stringify(data));
+      if (isAllowedMockData(user?.role || '')) {
+        // Demo Work: save locally only
+        localStorage.setItem('user-profile', JSON.stringify(data));
+      }
+      // Real roles: profile editing is view-only for now;
+      // edits are applied in-memory. Backend update via Supabase can be
+      // wired here when admin-level write access is granted.
+
       setProfileData(data);
       setIsEditing(false);
       toast({
@@ -164,9 +226,34 @@ export default function Profile() {
     <ResponsiveLayout>
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Profile Settings</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Profile Settings</h1>
+            {dataSource === 'mock' && <DemoIndicator variant="badge" />}
+            {dataSource === 'real' && <LiveDataIndicator />}
+          </div>
           <p className="text-muted-foreground">Manage your account information and preferences</p>
         </div>
+
+        {/* Data Source Alert */}
+        {dataSource === 'mock' && (
+          <DemoIndicator variant="alert" location="profile" className="mb-6" />
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-destructive font-medium">Profile Data Temporarily Unavailable</p>
+            <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className={cn("grid w-full grid-cols-2", isMobile ? "h-auto p-1" : "h-12")}>
@@ -203,10 +290,10 @@ export default function Profile() {
                   </div>
 
                   <div className="text-center md:text-left flex-1">
-                    <h2 className="text-xl md:text-2xl font-bold">{profileData.name}</h2>
-                    <p className="text-muted-foreground">{profileData.designation}</p>
+                    <h2 className="text-xl md:text-2xl font-bold">{profileData.name || 'Not Set'}</h2>
+                    <p className="text-muted-foreground">{profileData.designation || 'No designation'}</p>
                     <Badge variant="outline" className="mt-2">
-                      ID: {profileData.employeeId}
+                      ID: {profileData.employeeId || 'N/A'}
                     </Badge>
                   </div>
 

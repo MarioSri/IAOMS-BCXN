@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { roleScopedStorage, STORAGE_KEYS } from '@/utils/RoleScopedStorage';
+import { isAllowedMockData } from '@/utils/roleUtils';
 
 export interface User {
   id: string;
@@ -91,14 +92,28 @@ function getUserPermissions(role: string): RolePermissions {
   return ROLE_PERMISSIONS[role as User['role']] ?? ROLE_PERMISSIONS.employee;
 }
 
-// Mock recipients data
+/**
+ * MOCK_RECIPIENTS: ONLY for 'demo-work' role.
+ * Real roles (Principal, Registrar, HOD, Program Head, Employee) MUST NOT appear here.
+ * Their names, profiles, and recipient lists are fetched exclusively from Supabase
+ * via UserProfileService and RecipientService (role_recipients table).
+ */
 export const MOCK_RECIPIENTS = [
-  { user_id: 'u1', name: 'Dr. John Doe', email: 'john.doe@university.edu', role: 'Principal', department: 'Administration', branch: 'Main', avatar: '' },
-  { user_id: 'u6', name: 'Demo Work Role', email: 'demo.work@university.edu', role: 'Demo Work Role', department: 'Administration', branch: 'Main', avatar: '' },
-  { user_id: 'u2', name: 'Dr. Jane Smith', email: 'jane.smith@university.edu', role: 'Registrar', department: 'Administration', branch: 'Main', avatar: '' },
-  { user_id: 'u3', name: 'Dr. Maria Garcia', email: 'maria.garcia@university.edu', role: 'HOD', department: 'Computer Science', branch: 'Main', avatar: '' },
-  { user_id: 'u4', name: 'Prof. Robert Brown', email: 'robert.brown@university.edu', role: 'Program Head', department: 'Computer Science', branch: 'Main', avatar: '' },
-  { user_id: 'u5', name: 'Alice Wilson', email: 'alice.wilson@university.edu', role: 'EMPLOYEE', department: 'Computer Science', branch: 'Main', avatar: '' },
+  {
+    user_id: 'demo-work-001',
+    name: 'Demo Work Role',
+    email: 'demo.work@university.edu',
+    role: 'Demo Work Role',
+    department: 'Administration',
+    branch: 'Main',
+    avatar: ''
+  },
+  // Additional mock recipients strictly for Demo Work demo data only
+  { user_id: 'demo-u1', name: 'Dr. John Doe', email: 'john.doe@demo.university.edu', role: 'Principal', department: 'Administration', branch: 'Main', avatar: '' },
+  { user_id: 'demo-u2', name: 'Dr. Jane Smith', email: 'jane.smith@demo.university.edu', role: 'Registrar', department: 'Administration', branch: 'Main', avatar: '' },
+  { user_id: 'demo-u3', name: 'Dr. Maria Garcia', email: 'maria.garcia@demo.university.edu', role: 'HOD', department: 'Computer Science', branch: 'Main', avatar: '' },
+  { user_id: 'demo-u4', name: 'Prof. Robert Brown', email: 'robert.brown@demo.university.edu', role: 'Program Department Head', department: 'Computer Science', branch: 'Main', avatar: '' },
+  { user_id: 'demo-u5', name: 'Alice Wilson', email: 'alice.wilson@demo.university.edu', role: 'Employee', department: 'Computer Science', branch: 'Main', avatar: '' },
 ];
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -134,46 +149,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
 
-      const roleTypeMap: Record<string, string> = {
-        'principal': 'Principal',
-        'demo-work': 'Demo Work Role',
-        'registrar': 'Registrar',
-        'hod': 'HOD',
-        'program-head': 'Program Head',
-        'employee': 'EMPLOYEE'
-      };
+      const isDemoWork = isAllowedMockData(role);
+      let authenticatedUser: User;
 
-      const roleType = roleTypeMap[role] || 'EMPLOYEE';
+      if (isDemoWork) {
+        // Demo Work: load identity from MOCK_RECIPIENTS
+        const recipient = MOCK_RECIPIENTS.find(r => r.role === 'Demo Work Role');
 
-      const recipient = MOCK_RECIPIENTS.find(r =>
-        r.role === roleType ||
-        (roleType === 'EMPLOYEE' && r.role === 'EMPLOYEE')
-      );
+        if (!recipient) {
+          throw new Error('Demo Work recipient not found in mock data');
+        }
 
-      if (!recipient) {
-        throw new Error(`No user found with role: ${role}`);
+        authenticatedUser = {
+          id: recipient.user_id,
+          name: recipient.name,
+          email: recipient.email,
+          role: role as User['role'],
+          department: recipient.department,
+          branch: recipient.branch,
+          avatar: recipient.avatar,
+          permissions: getUserPermissions(role)
+        };
+
+        console.log('✅ [AuthContext] Demo Work user authenticated (Mock):', {
+          id: authenticatedUser.id,
+          name: authenticatedUser.name,
+          role: authenticatedUser.role,
+        });
+      } else {
+        // Real Roles (Principal, Registrar, HOD, Program Head, Employee):
+        // Create a minimal placeholder identity. The actual name and profile
+        // are fetched in real-time from Supabase (role_recipients table) by:
+        //   - RoleDashboard.tsx via UserProfileService.fetchProfileByEmail
+        //   - Profile.tsx via UserProfileService.fetchProfileByEmail
+        //   - RecipientSelector.tsx via RecipientService.fetchRecipients
+        //
+        // NO mock names are used here.
+        const roleDisplayMap: Record<string, string> = {
+          'principal': 'Principal',
+          'registrar': 'Registrar',
+          'hod': 'HOD',
+          'program-head': 'Program Department Head',
+          'employee': 'Employee'
+        };
+
+        const sessionId = `${role}-${Date.now()}`;
+
+        authenticatedUser = {
+          id: sessionId,
+          name: '', // Will be populated from Supabase in profile/dashboard components
+          email: '',  // Will be populated from Supabase via Google OAuth email
+          role: role as User['role'],
+          department: '',
+          branch: '',
+          avatar: '',
+          permissions: getUserPermissions(role)
+        };
+
+        console.log(`✅ [AuthContext] Real role "${roleDisplayMap[role] || role}" authenticated — profile will load from Supabase`);
       }
 
-      const authenticatedUser: User = {
-        id: recipient.user_id,
-        name: recipient.name,
-        email: recipient.email,
-        role: role as User['role'],
-        department: recipient.department,
-        branch: recipient.branch,
-        avatar: recipient.avatar,
-        permissions: getUserPermissions(role)
-      };
-
-      console.log('✅ [AuthContext] User authenticated (Mock):', {
-        id: authenticatedUser.id,
-        name: authenticatedUser.name,
-        role: authenticatedUser.role
-      });
-
       // Phase 5: Role-scoped storage cleanup
-      const isDemoWork = role === 'demo-work';
-      
       if (!isDemoWork) {
         // Real role: Clear any old unscoped keys (migration)
         const oldKeys = Object.values(STORAGE_KEYS);
@@ -181,7 +217,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('🔄 [AuthContext] Migrating old unscoped keys to real: scope');
           roleScopedStorage.migrateOldKeys(role, oldKeys);
         }
-        
+
         // Clear demo-work storage to prevent contamination
         roleScopedStorage.clearRoleStorage('demo-work');
         console.log('🧹 [AuthContext] Cleared demo-work storage for real role');
