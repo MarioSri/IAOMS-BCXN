@@ -32,9 +32,9 @@ export const ApprovalDebugger: React.FC = () => {
     const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
     setPendingApprovals(stored);
 
-    let info = `📊 Debug Information:\n`;
-    info += `👤 Current User: ${user?.name} (${user?.role})\n`;
-    info += `📋 Total Cards in Storage: ${stored.length}\n\n`;
+    let info = `Debug Information:\n`;
+    info += `Current User: ${user?.name} (${user?.role})\n`;
+    info += `Total Cards in Storage: ${stored.length}\n\n`;
 
     stored.forEach((doc: PendingApproval, index: number) => {
       const shouldShow = isUserInRecipients({
@@ -52,7 +52,7 @@ export const ApprovalDebugger: React.FC = () => {
       info += `${index + 1}. "${doc.title}"\n`;
       info += `   Recipients: ${JSON.stringify(doc.recipients || [])}\n`;
       info += `   Recipient IDs: ${JSON.stringify(doc.recipientIds || [])}\n`;
-      info += `   Should Show: ${shouldShow ? '✅ YES' : '❌ NO'}\n`;
+      info += `   Should Show: ${shouldShow ? 'YES' : 'NO'}\n`;
       info += `   Source: ${doc.source || 'N/A'}\n`;
       info += `   Is Parallel: ${doc.isParallel || false}\n\n`;
     });

@@ -58,12 +58,12 @@ export const DocumentWorkflowProvider: React.FC<{ children: React.ReactNode }> =
     const workflowData = submittedDocs.map((doc: SubmittedDocument) => ({
       id: doc.id,
       title: doc.title,
-      currentStep: doc.workflow?.currentStep || 'Submission',
-      progress: doc.workflow?.progress || 0,
-      steps: doc.workflow?.steps || [],
-      recipients: doc.workflow?.recipients || [],
-      signedBy: doc.signedBy || [],
-      status: doc.status || 'pending'
+      currentStep: doc.workflow?.currentStep ?? 'Submission',
+      progress: doc.workflow?.progress ?? 0,
+      steps: doc.workflow?.steps ?? [],
+      recipients: doc.workflow?.recipients ?? [],
+      signedBy: doc.signedBy ?? [],
+      status: doc.status ?? 'pending'
     }));
     setWorkflows(workflowData);
   }, []);

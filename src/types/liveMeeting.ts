@@ -1,4 +1,3 @@
-// Live Meeting Request Types - Separate from regular meeting scheduler
 export interface LiveMeetingRequest {
   id: string;
   type: 'live_communication_request';
@@ -76,7 +75,6 @@ export interface RolePermissions {
 }
 
 export const LIVE_MEETING_PERMISSIONS: RolePermissions = {
-  // Employees can request from these roles
   'employee': [
     'employee',
     'program_head_eee', 'program_head_mech', 'program_head_cse', 'program_head_ece',
@@ -90,7 +88,6 @@ export const LIVE_MEETING_PERMISSIONS: RolePermissions = {
     'hod_eee', 'hod_mech', 'hod_cse', 'hod_ece', 'hod_csm', 'hod_cso', 'hod_csd', 'hod_csc',
     'registrar', 'principal'
   ],
-  // Principal can initiate with all roles
   'principal': [
     'employee', 'faculty', 'mentor',
     'program_head_eee', 'program_head_mech', 'program_head_cse', 'program_head_ece',
@@ -99,7 +96,6 @@ export const LIVE_MEETING_PERMISSIONS: RolePermissions = {
     'registrar', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership',
     'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'
   ],
-  // Program Heads can request from these roles
   'program_head_eee': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'program_head_mech': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'program_head_cse': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
@@ -108,7 +104,6 @@ export const LIVE_MEETING_PERMISSIONS: RolePermissions = {
   'program_head_cso': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'program_head_csd': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'program_head_csc': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
-  // HODs can request from these roles
   'hod_eee': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'hod_mech': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'hod_cse': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
@@ -117,11 +112,9 @@ export const LIVE_MEETING_PERMISSIONS: RolePermissions = {
   'hod_cso': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'hod_csd': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
   'hod_csc': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg'],
-  // Registrar can request from these roles
   'registrar': ['faculty', 'cdc_employee', 'dean', 'chairman', 'director', 'leadership', 'controller_examinations', 'asst_dean_iiic', 'head_operations', 'librarian', 'ssg']
 };
 
-// Urgency level configurations
 export const URGENCY_CONFIGS = {
   immediate: {
     label: 'Immediate',
@@ -149,7 +142,6 @@ export const URGENCY_CONFIGS = {
   }
 };
 
-// Meeting purpose configurations
 export const PURPOSE_CONFIGS = {
   clarification: {
     label: 'Need Clarification',

@@ -1,9 +1,3 @@
-/**
- * Mock Data Service
- * Centralized service for all demo data
- * Respects feature flags and role checks
- */
-
 import { FEATURE_FLAGS } from '@/config/featureFlags';
 import {
   MOCK_APPROVALS,

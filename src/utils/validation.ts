@@ -53,7 +53,6 @@ export function validateForm(data: Record<string, unknown>, schema: ValidationSc
   return errors;
 }
 
-
 export const validationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^[+]?[1-9][\d]{0,15}$/,
@@ -61,7 +60,6 @@ export const validationPatterns = {
   employeeId: /^HITAM-[A-Z]{2,4}-\d{3,4}$/,
   documentId: /^DOC-\d{4}-\d{3,4}$/,
 };
-
 
 export const authValidationSchema: ValidationSchema = {
   email: {

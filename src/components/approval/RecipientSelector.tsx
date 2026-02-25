@@ -54,9 +54,6 @@ interface RecipientSelectorProps {
   maxSelections?: number;
 }
 
-
-
-// Approval Flow Hierarchy Order
 const HIERARCHY_ORDER = {
   'Faculty': 1,
   'Employee': 2,
@@ -69,7 +66,6 @@ const HIERARCHY_ORDER = {
   'Registrar': 6,
   'Principal': 7,
   'Demo Work Role': 7,
-  // Administrative roles - placed appropriately in hierarchy
   'Controller of Examinations': 5,
   'Asst. Dean IIIC': 5,
   'Head Operations': 5,
@@ -81,7 +77,6 @@ const HIERARCHY_ORDER = {
   'Leadership': 7
 };
 
-// Function to sort recipients according to hierarchy
 const sortRecipientsByHierarchy = (recipientIds: string[], allRecipients: Recipient[]): string[] => {
   const recipientsData = recipientIds.map(id => allRecipients.find(r => r.id === id)).filter(Boolean) as Recipient[];
 
@@ -94,13 +89,11 @@ const sortRecipientsByHierarchy = (recipientIds: string[], allRecipients: Recipi
         return orderA - orderB;
       }
 
-      // If same hierarchy level, sort alphabetically by name
       return a.name.localeCompare(b.name);
     })
     .map(r => r.id);
 };
 
-// Group recipients by role
 const groupRecipients = (recipients: Recipient[]): RecipientGroup[] => {
   const groups: { [key: string]: { title: string; icon: any; recipients: Recipient[] } } = {};
 
@@ -167,10 +160,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
 
       const isDemoWorkRole = isAllowedMockData(userRole);
 
-      console.log('🔍 [RecipientSelector] Loading recipients for role:', { userRole, isDemoWorkRole });
-
       if (isDemoWorkRole) {
-        // Demo Work Role: Load mock data
         try {
           const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
           const filteredRecipients = MOCK_RECIPIENTS.filter(r => r.email !== 'demo.work@university.edu');
@@ -187,15 +177,12 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
           setDataSource('mock');
           logDataSource('RecipientSelector', 'mock', `${filteredRecipients.length} recipients`);
         } catch (error) {
-          console.error('❌ [RecipientSelector] Failed to load mock recipients:', error);
+          console.error('[RecipientSelector] Failed to load mock recipients:', error);
           setError('Failed to load demo recipients');
           setAllRecipients([]);
           setDataSource('empty');
         }
       } else {
-        // Real Roles: Fetch from Supabase
-        console.log('⚠️ [RecipientSelector] Real role detected - fetching from Supabase');
-
         try {
           const realRecipients = await recipientService.fetchRecipients();
 
@@ -216,7 +203,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
             logDataSource('RecipientSelector', 'empty', 'No recipients in database');
           }
         } catch (error) {
-          console.error('❌ [RecipientSelector] Failed to fetch real recipients:', error);
+          console.error('[RecipientSelector] Failed to fetch real recipients:', error);
           setError('Failed to load recipients from database. Please check your connection.');
           setAllRecipients([]);
           setDataSource('empty');
@@ -267,7 +254,7 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
       onRecipientsChange(finalSelection);
     } else {
       if (maxSelections && selectedRecipients.length >= maxSelections) {
-        return; // Don't add if max selections reached
+        return;
       }
       const newSelection = [...selectedRecipients, recipientId];
       const finalSelection = useHierarchicalOrder ? sortRecipientsByHierarchy(newSelection, allRecipients) : newSelection;
@@ -323,7 +310,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
   const toggleOrderMode = () => {
     const allRecipients = recipientGroups.flatMap(group => group.recipients);
     if (!useHierarchicalOrder) {
-      // Switch to hierarchical - sort current selection
       const sortedSelection = sortRecipientsByHierarchy(selectedRecipients, allRecipients);
       onRecipientsChange(sortedSelection);
     }
@@ -344,7 +330,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -355,7 +340,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
           />
         </div>
 
-        {/* Selected Recipients Chips */}
         {selectedRecipients.length > 0 && (
           <div className="space-y-2">
             <div className="flex flex-col gap-3">
@@ -429,7 +413,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
 
         <Separator />
 
-        {/* Role Hierarchy Display */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Approval Flow Hierarchy</Label>
           <div className="flex flex-wrap items-center gap-2 text-xs xs:text-sm text-muted-foreground bg-muted/30 p-2 sm:p-3 rounded-lg underline-offset-4">
@@ -447,7 +430,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
 
         <Separator />
 
-        {/* Recipient Groups */}
         <ScrollArea className="h-96">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -515,7 +497,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2">
-                            {/* Group Selection Controls */}
                             <div className="flex gap-1 shrink-0">
                               {selectionState !== 'all' && (
                                 <Button
@@ -563,11 +544,10 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                               key={recipient.id}
                               className={cn(
                                 "flex items-center space-x-3 p-2 hover:bg-muted/30 rounded transition-colors cursor-pointer",
-                                isMobile && "p-4 space-x-4 min-h-[56px]" // Touch-friendly on mobile
+                                isMobile && "p-4 space-x-4 min-h-[56px]"
                               )}
                               onClick={() => isMobile && toggleRecipient(recipient.id)}
                             >
-                              {/* Mobile: Radio circles */}
                               {isMobile ? (
                                 <div className="flex items-center justify-center w-5 h-5 rounded-full border-2 border-primary shrink-0">
                                   {selectedRecipients.includes(recipient.id) && (
@@ -575,7 +555,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
                                   )}
                                 </div>
                               ) : (
-                                /* Desktop: Checkboxes */
                                 <Checkbox
                                   id={recipient.id}
                                   checked={selectedRecipients.includes(recipient.id)}
@@ -645,7 +624,6 @@ export const RecipientSelector: React.FC<RecipientSelectorProps> = ({
           )}
         </ScrollArea>
 
-        {/* Data Source Indicator */}
         {dataSource === 'mock' && (
           <DemoIndicator variant="alert" location="recipients" />
         )}

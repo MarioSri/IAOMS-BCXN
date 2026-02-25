@@ -270,7 +270,6 @@ export interface DepartmentMeetingStats {
   topMeetingTypes: string[];
 }
 
-// Enums
 export type MeetingType = 'online' | 'physical' | 'hybrid';
 export type MeetingPlatform = 'google-meet' | 'zoom' | 'teams' | 'physical';
 export type MeetingStatus = 'scheduled' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'postponed';
@@ -279,7 +278,6 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'auto-approve
 export type MeetingPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type MeetingCategory = 'academic' | 'administrative' | 'financial' | 'recruitment' | 'disciplinary' | 'emergency' | 'social' | 'training' | 'other';
 
-// API Response Types
 export interface CreateMeetingResponse {
   meeting: Meeting;
   meetingLinks: MeetingLinks;
@@ -302,7 +300,6 @@ export interface MeetingAPIResponse<T = any> {
   message?: string;
 }
 
-// Calendar Integration Types
 export interface CalendarIntegration {
   platform: 'google' | 'outlook' | 'apple';
   isConnected: boolean;

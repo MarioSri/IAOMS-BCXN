@@ -5,20 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const ROLE_DISPLAY_NAMES: Record<string, string> = {
-  principal: 'Principal',
-  'demo-work': 'Demo Work Role',
-  registrar: 'Registrar',
-  hod: 'Head of Department',
-  'program-head': 'Program Department Head',
-  employee: 'Employee',
-};
-
 export default function Index() {
   const { user, isAuthenticated, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const [loadingKey, setLoadingKey] = useState(0);
-
 
   useEffect(() => {
     if (isLoading) {
@@ -26,12 +16,16 @@ export default function Index() {
     }
   }, [isLoading]);
 
+  /**
+   * handleLogin — only called for 'demo-work' via the Demo Mode button.
+   * Real auth (Google / Employee ID) goes through AuthService → AuthContext.loginWithResult.
+   */
   async function handleLogin(role: string) {
     try {
       await login(role);
 
       toast.success('Welcome to IAOMS!', {
-        description: `Successfully logged in as ${ROLE_DISPLAY_NAMES[role] ?? role}`,
+        description: 'Demo mode active — showing demonstration data.',
         duration: 3000,
       });
     } catch (error) {
@@ -40,7 +34,6 @@ export default function Index() {
       });
     }
   }
-
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -62,6 +55,5 @@ export default function Index() {
     );
   }
 
-  // Show authentication card only for unauthenticated users
   return <AuthenticationCard onLogin={handleLogin} />;
 }

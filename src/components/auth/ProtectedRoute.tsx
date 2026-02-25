@@ -24,14 +24,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!isAuthenticated || !user) {
-    // Store current location for redirect after login
     if (location.pathname !== '/') {
       localStorage.setItem('iaoms-redirect-path', location.pathname);
     }
     return <Navigate to="/" replace />;
   }
 
-  // Check if user has required permissions
   if (requiredPermissions.length > 0) {
     const hasPermission = requiredPermissions.some(permission => {
       switch (permission) {

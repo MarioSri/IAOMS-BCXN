@@ -40,17 +40,17 @@ export function useResponsive() {
   const isTablet = windowSize.width >= breakpoints.md && windowSize.width < breakpoints.lg;
   const isDesktop = windowSize.width >= breakpoints.lg;
 
-  const isBreakpoint = (breakpoint: Breakpoint) => {
+  function isBreakpoint(breakpoint: Breakpoint): boolean {
     return windowSize.width >= breakpoints[breakpoint];
-  };
+  }
 
-  const getCurrentBreakpoint = (): Breakpoint => {
+  function getCurrentBreakpoint(): Breakpoint {
     if (windowSize.width >= breakpoints['2xl']) return '2xl';
     if (windowSize.width >= breakpoints.xl) return 'xl';
     if (windowSize.width >= breakpoints.lg) return 'lg';
     if (windowSize.width >= breakpoints.md) return 'md';
     return 'sm';
-  };
+  }
 
   return {
     windowSize,
@@ -64,19 +64,20 @@ export function useResponsive() {
 }
 
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(query).matches;
+  });
 
   useEffect(() => {
     const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
+    setMatches(media.matches);
 
     const listener = () => setMatches(media.matches);
     media.addEventListener('change', listener);
 
     return () => media.removeEventListener('change', listener);
-  }, [matches, query]);
+  }, [query]);
 
   return matches;
 }

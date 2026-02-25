@@ -353,7 +353,6 @@ export interface ChatAnalytics {
   };
 }
 
-// API Response types
 export interface ChatApiResponse<T> {
   success: boolean;
   data?: T;
@@ -371,7 +370,6 @@ export interface PaginatedResponse<T> {
   hasPrev: boolean;
 }
 
-// WebSocket Event types
 export type ChatEventType =
   | 'message-sent'
   | 'message-edited'
@@ -396,7 +394,6 @@ export interface ChatEvent {
   timestamp: Date;
 }
 
-// Search and filtering
 export interface ChatSearchQuery {
   query: string;
   channelIds?: string[];

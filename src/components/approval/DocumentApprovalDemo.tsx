@@ -110,7 +110,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Document Info */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -139,7 +138,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
             </div>
           </div>
 
-          {/* Document Preview */}
           {showPreview && (
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h4 className="font-medium mb-2">Document Content:</h4>
@@ -149,7 +147,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
             </div>
           )}
 
-          {/* Attachments */}
           {document.attachments && document.attachments.length > 0 && (
             <div>
               <h4 className="font-medium text-sm mb-2">Attachments:</h4>
@@ -165,7 +162,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
 
           <Separator />
 
-          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex gap-2">
               <Button
@@ -181,27 +177,25 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
 
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {document.status === 'pending' && (
-                <>
-                  <Button
-                    onClick={handleApprove}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
-                    size="sm"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={handleReject}
-                    variant="destructive"
-                    className="flex items-center gap-1"
-                    size="sm"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Reject
-                  </Button>
-
-                  {/* NEW: Live Meeting Request Button */}
-                  <Button
+                  <>
+                    <Button
+                      onClick={handleApprove}
+                      className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-1"
+                      size="sm"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      onClick={handleReject}
+                      variant="destructive"
+                      className="flex items-center gap-1"
+                      size="sm"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </Button>
+                    <Button
                     onClick={() => setShowLiveMeetingModal(true)}
                     variant="outline"
                     className="border-orange-500 text-orange-600 hover:bg-orange-50 flex items-center gap-1"
@@ -216,7 +210,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
         </CardContent>
       </Card>
 
-      {/* Live Meeting Request Modal */}
       <LiveMeetingRequestModal
         isOpen={showLiveMeetingModal}
         onClose={() => setShowLiveMeetingModal(false)}
@@ -228,7 +221,6 @@ export const DocumentApprovalCard: React.FC<DocumentApprovalCardProps> = ({
   );
 };
 
-// Demo component with sample documents
 export const DocumentApprovalDemo: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([
     {

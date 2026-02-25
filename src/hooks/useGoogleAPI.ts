@@ -14,15 +14,13 @@ export function useGoogleAPI() {
   });
 
   useEffect(() => {
-    const loadGoogleAPI = async () => {
+    async function loadGoogleAPI() {
       try {
-        // Check if gapi is already loaded
         if (typeof window.gapi !== 'undefined') {
           setStatus(prev => ({ ...prev, isLoaded: true }));
           return;
         }
 
-        // Load the Google API script
         const script = document.createElement('script');
         script.src = 'https://apis.google.com/js/api.js';
         script.async = true;
@@ -41,45 +39,28 @@ export function useGoogleAPI() {
               const authInstance = window.gapi.auth2.getAuthInstance();
               const isSignedIn = authInstance.isSignedIn.get();
 
-              setStatus({
-                isLoaded: true,
-                isSignedIn,
-                error: null
-              });
+              setStatus({ isLoaded: true, isSignedIn, error: null });
             } catch (error) {
-              setStatus({
-                isLoaded: true,
-                isSignedIn: false,
-                error: 'Failed to initialize Google API'
-              });
+              setStatus({ isLoaded: true, isSignedIn: false, error: 'Failed to initialize Google API' });
             }
           });
         };
 
         script.onerror = () => {
-          setStatus({
-            isLoaded: false,
-            isSignedIn: false,
-            error: 'Failed to load Google API script'
-          });
+          setStatus({ isLoaded: false, isSignedIn: false, error: 'Failed to load Google API script' });
         };
 
         document.head.appendChild(script);
       } catch (error) {
-        setStatus({
-          isLoaded: false,
-          isSignedIn: false,
-          error: 'Error loading Google API'
-        });
+        setStatus({ isLoaded: false, isSignedIn: false, error: 'Error loading Google API' });
       }
-    };
+    }
 
     loadGoogleAPI();
   }, []);
 
-  const signIn = async () => {
+  async function signIn() {
     if (!status.isLoaded) return false;
-    
     try {
       const authInstance = window.gapi.auth2.getAuthInstance();
       await authInstance.signIn();
@@ -89,11 +70,10 @@ export function useGoogleAPI() {
       console.error('Google sign-in failed:', error);
       return false;
     }
-  };
+  }
 
-  const signOut = async () => {
+  async function signOut() {
     if (!status.isLoaded) return;
-    
     try {
       const authInstance = window.gapi.auth2.getAuthInstance();
       await authInstance.signOut();
@@ -101,7 +81,7 @@ export function useGoogleAPI() {
     } catch (error) {
       console.error('Google sign-out failed:', error);
     }
-  };
+  }
 
   return {
     ...status,

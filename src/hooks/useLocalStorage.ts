@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function useLocalStorage<T>(
   key: string,
@@ -41,7 +41,7 @@ export function useSessionStorage<T>(
     }
   });
 
-  const setValue = (value: T | ((val: T) => T)) => {
+  function setValue(value: T | ((val: T) => T)) {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value;
       setStoredValue(valueToStore);
@@ -49,7 +49,7 @@ export function useSessionStorage<T>(
     } catch (error) {
       console.error(`Error setting sessionStorage key "${key}":`, error);
     }
-  };
+  }
 
   return [storedValue, setValue];
 }

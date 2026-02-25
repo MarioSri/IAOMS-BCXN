@@ -28,7 +28,7 @@ interface SigningResponse {
   blockchainHash?: string;
 }
 
-export const useDocumensoAPI = (config: DocumensoConfig) => {
+export function useDocumensoAPI(config: DocumensoConfig) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +37,6 @@ export const useDocumensoAPI = (config: DocumensoConfig) => {
     setError(null);
 
     try {
-      // Real Documenso API call
       const apiResponse = await fetch(`${config.baseUrl}/documents/${request.documentId}/sign`, {
         method: 'POST',
         headers: {
@@ -62,8 +61,7 @@ export const useDocumensoAPI = (config: DocumensoConfig) => {
       }
 
       const apiData = await apiResponse.json();
-      
-      const response: SigningResponse = {
+      return {
         success: true,
         signatureId: apiData.signatureId || `sig_${Date.now()}`,
         certificateUrl: apiData.certificateUrl || `${config.baseUrl}/certificates/${request.documentId}`,
@@ -71,13 +69,9 @@ export const useDocumensoAPI = (config: DocumensoConfig) => {
         timestamp: apiData.timestamp || new Date().toISOString(),
         blockchainHash: apiData.blockchainHash || `0x${Math.random().toString(16).substr(2, 64)}`
       };
-
-      return response;
     } catch (err) {
-      // Fallback to mock response if API fails
       console.warn('Documenso API failed, using mock response:', err);
-      
-      const response: SigningResponse = {
+      return {
         success: true,
         signatureId: `sig_${Date.now()}`,
         certificateUrl: `${config.baseUrl}/certificates/${request.documentId}`,
@@ -85,8 +79,6 @@ export const useDocumensoAPI = (config: DocumensoConfig) => {
         timestamp: new Date().toISOString(),
         blockchainHash: `0x${Math.random().toString(16).substr(2, 64)}`
       };
-      
-      return response;
     } finally {
       setIsLoading(false);
     }

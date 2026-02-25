@@ -104,7 +104,6 @@ export const ResponsiveCharts: React.FC<ResponsiveChartsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Simple visual representation */}
             <div className="grid grid-cols-2 gap-4">
               {data.map((item, index) => (
                 <div key={index} className="text-center">
@@ -154,7 +153,6 @@ export const ResponsiveCharts: React.FC<ResponsiveChartsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Simple trend visualization */}
             <div className={cn(
               "relative bg-muted/30 rounded-lg p-4",
               isMobile ? "h-32" : "h-40"
@@ -193,7 +191,6 @@ export const ResponsiveCharts: React.FC<ResponsiveChartsProps> = ({
       "space-y-6",
       className
     )}>
-      {/* Charts Grid */}
       <div className={cn(
         "grid gap-6",
         isMobile ? "grid-cols-1" : isTablet ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-2"

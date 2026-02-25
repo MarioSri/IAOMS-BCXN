@@ -6,8 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function TrackDocuments() {
   const { user } = useAuth();
-
-
   const [viewingFile, setViewingFile] = useState<File | null>(null);
 
   const [viewingFiles, setViewingFiles] = useState<File[]>([]);

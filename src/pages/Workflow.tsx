@@ -32,7 +32,6 @@ export default function WorkflowManagement() {
     setExpandedHierarchy(expandedHierarchy === workflowId ? null : workflowId);
   };
 
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -180,7 +179,6 @@ export default function WorkflowManagement() {
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">Edit Workflow</Button>
 
-                        {/* Expandable Add Hierarchy Button */}
                         <div className="relative hierarchy-expandable">
                           <Button
                             variant="outline"
@@ -196,13 +194,11 @@ export default function WorkflowManagement() {
                             <span className="ml-1">Add Hierarchy</span>
                           </Button>
 
-                          {/* Expandable Options */}
                           <div className={`absolute top-full left-0 mt-2 hierarchy-options z-20 ${expandedHierarchy === workflow.id
                               ? 'opacity-100 translate-y-0 pointer-events-auto'
                               : 'opacity-0 -translate-y-2 pointer-events-none'
                             } transition-all duration-500 ease-in-out`}>
                             <div className="flex gap-2 bg-white border rounded-lg shadow-lg p-2 min-w-max">
-                              {/* Document Management Recipients */}
                               <button
                                 onClick={() => {
                                   handleHierarchyAction("Document Management Recipients");
@@ -218,7 +214,6 @@ export default function WorkflowManagement() {
                                 </span>
                               </button>
 
-                              {/* Emergency Management Recipients */}
                               <button
                                 onClick={() => {
                                   handleHierarchyAction("Emergency Management Recipients");
@@ -234,7 +229,6 @@ export default function WorkflowManagement() {
                                 </span>
                               </button>
 
-                              {/* Approval Chain with Bypass */}
                               <button
                                 onClick={() => {
                                   handleHierarchyAction("Approval Chain with Bypass");

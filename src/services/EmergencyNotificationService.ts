@@ -45,9 +45,7 @@ class EmergencyNotificationService {
     return EmergencyNotificationService.instance;
   }
 
-  // Get user notification preferences from profile - simplified for one-time notifications
   private getUserPreferences(recipientId: string): UserNotificationPreferences {
-    // Fixed preferences - no custom options, notifications sent only once
     return {
       email: { type: 'email', enabled: true, interval: 1, unit: 'seconds' },
       sms: { type: 'sms', enabled: true, interval: 1, unit: 'seconds' },
@@ -56,7 +54,6 @@ class EmergencyNotificationService {
     };
   }
 
-  // Send notifications based on profile settings - one-time only
   private async sendWithProfileSettings(
     recipients: string[],
     document: EmergencyDocument
@@ -64,7 +61,6 @@ class EmergencyNotificationService {
     for (const recipientId of recipients) {
       const preferences = this.getUserPreferences(recipientId);
       
-      // Send one-time notifications for all enabled channels
       Object.values(preferences).forEach(channel => {
         if (channel.enabled) {
           this.deliverNotification(recipientId, document, channel);
@@ -73,22 +69,19 @@ class EmergencyNotificationService {
     }
   }
 
-  // Send notifications with emergency override settings
   private async sendWithEmergencyOverride(
     recipients: string[],
     document: EmergencyDocument,
     settings: EmergencyNotificationSettings
   ): Promise<void> {
     if (settings.notificationStrategy === 'document-based') {
-      // Same notification settings for all recipients
       recipients.forEach(recipientId => {
         settings.channels.forEach(channel => {
           this.scheduleNotification(recipientId, document, channel);
         });
       });
-    } else {
-      // Recipient-based: Use individual settings per recipient
-      recipients.forEach(recipientId => {
+      } else {
+        recipients.forEach(recipientId => {
         const recipientSettings = this.getRecipientSpecificSettings(recipientId, settings);
         recipientSettings.forEach(channel => {
           this.scheduleNotification(recipientId, document, channel);
@@ -97,7 +90,6 @@ class EmergencyNotificationService {
     }
   }
 
-  // Get recipient-specific notification settings
   private getRecipientSpecificSettings(
     recipientId: string,
     settings: EmergencyNotificationSettings
@@ -109,7 +101,6 @@ class EmergencyNotificationService {
     return settings.channels;
   }
 
-  // Schedule notification delivery - modified for one-time delivery when using profile settings
   private scheduleNotification(
     recipientId: string,
     document: EmergencyDocument,
@@ -117,28 +108,23 @@ class EmergencyNotificationService {
   ): void {
     const intervalMs = this.convertToMilliseconds(channel.interval, channel.unit);
     
-    // Immediate notification for critical emergencies
     if (document.urgencyLevel === 'critical') {
       this.deliverNotification(recipientId, document, channel);
     }
     
-    // Schedule recurring notifications (only for emergency override mode)
     const notificationId = `${document.id}-${recipientId}-${channel.type}`;
-    
+
     setTimeout(() => {
       this.deliverNotification(recipientId, document, channel);
-      
-      // Set up recurring notifications
+
       const recurringInterval = setInterval(() => {
         this.deliverNotification(recipientId, document, channel);
       }, intervalMs);
       
-      // Store interval ID for cleanup
       localStorage.setItem(`notification-interval-${notificationId}`, recurringInterval.toString());
     }, document.urgencyLevel === 'critical' ? 0 : intervalMs);
   }
 
-  // Convert time units to milliseconds
   private convertToMilliseconds(interval: number, unit: string): number {
     const multipliers = {
       seconds: 1000,
@@ -151,7 +137,6 @@ class EmergencyNotificationService {
     return interval * (multipliers[unit as keyof typeof multipliers] || multipliers.minutes);
   }
 
-  // Deliver notification through specific channel
   private deliverNotification(
     recipientId: string,
     document: EmergencyDocument,
@@ -169,29 +154,26 @@ class EmergencyNotificationService {
       delivered: true
     };
 
-    // Store notification log
     const logs = JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]');
     logs.unshift(notification);
     localStorage.setItem('emergency-notification-logs', JSON.stringify(logs.slice(0, 1000)));
 
-    // Simulate actual delivery based on channel
     switch (channel.type) {
       case 'email':
-        console.log(`📧 Email sent to ${recipientId}: ${notification.title}`);
+        console.log(`Email sent to ${recipientId}: ${notification.title}`);
         break;
       case 'sms':
-        console.log(`📱 SMS sent to ${recipientId}: ${notification.title}`);
+        console.log(`SMS sent to ${recipientId}: ${notification.title}`);
         break;
       case 'push':
         this.sendBrowserNotification(notification);
         break;
       case 'whatsapp':
-        console.log(`💬 WhatsApp sent to ${recipientId}: ${notification.title}`);
+        console.log(`WhatsApp sent to ${recipientId}: ${notification.title}`);
         break;
     }
   }
 
-  // Send browser push notification
   private sendBrowserNotification(notification: any): void {
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification(notification.title, {
@@ -203,7 +185,6 @@ class EmergencyNotificationService {
     }
   }
 
-  // Main method to send emergency notifications
   async sendEmergencyNotification(
     recipients: string[],
     document: EmergencyDocument,
@@ -214,11 +195,9 @@ class EmergencyNotificationService {
     } else if (settings.overrideForEmergency) {
       await this.sendWithEmergencyOverride(recipients, document, settings);
     } else {
-      // Fallback to profile settings
       await this.sendWithProfileSettings(recipients, document);
     }
 
-    // Log emergency submission
     const emergencyLog = {
       id: document.id,
       document,
@@ -233,7 +212,6 @@ class EmergencyNotificationService {
     localStorage.setItem('emergency-submissions', JSON.stringify(logs.slice(0, 100)));
   }
 
-  // Get predefined scheduling intervals
   getSchedulingOptions(): Array<{value: string, label: string, interval: number, unit: string}> {
     return [
       { value: '1min', label: 'Every 1 minute', interval: 1, unit: 'minutes' },
@@ -245,24 +223,21 @@ class EmergencyNotificationService {
     ];
   }
 
-  // Handle document rejection - stops escalation
   handleDocumentRejection(documentId: string, rejectedBy: string): void {
     const escalationData = JSON.parse(localStorage.getItem(`escalation-${documentId}`) || '{}');
     escalationData.escalationStopped = true;
     escalationData.rejectedBy = rejectedBy;
     escalationData.status = 'rejected';
     localStorage.setItem(`escalation-${documentId}`, JSON.stringify(escalationData));
-    
-    // Stop all notifications for this document
+
     this.stopNotifications(documentId);
   }
 
-  // Handle cyclic escalation for non-responsive recipients
   handleCyclicEscalation(documentId: string, recipients: string[]): void {
     const escalationData = JSON.parse(localStorage.getItem(`escalation-${documentId}`) || '{}');
     
     if (escalationData.escalationStopped) {
-      return; // Don't escalate if document was rejected
+      return;
     }
 
     const currentIndex = escalationData.currentRecipientIndex || 0;
@@ -271,19 +246,16 @@ class EmergencyNotificationService {
     escalationData.currentRecipientIndex = nextIndex;
     escalationData.escalationLevel = (escalationData.escalationLevel || 0) + 1;
     
-    // If we've completed a full cycle, return to original non-responding recipient
     if (nextIndex === 0 && escalationData.escalationLevel > recipients.length) {
       escalationData.returnedToOriginal = true;
     }
     
     localStorage.setItem(`escalation-${documentId}`, JSON.stringify(escalationData));
-    
-    // Send notification to next recipient
+
     const nextRecipient = recipients[nextIndex];
     this.sendEscalationNotification(documentId, nextRecipient, escalationData.escalationLevel);
   }
 
-  // Send escalation notification to specific recipient
   private sendEscalationNotification(documentId: string, recipientId: string, escalationLevel: number): void {
     const document = this.getDocumentById(documentId);
     if (!document) return;
@@ -301,20 +273,17 @@ class EmergencyNotificationService {
       delivered: true
     };
 
-    // Store notification log
     const logs = JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]');
     logs.unshift(notification);
     localStorage.setItem('emergency-notification-logs', JSON.stringify(logs.slice(0, 1000)));
   }
 
-  // Get document by ID
   private getDocumentById(documentId: string): EmergencyDocument | null {
     const submissions = JSON.parse(localStorage.getItem('emergency-submissions') || '[]');
     const submission = submissions.find((s: any) => s.id === documentId);
     return submission ? submission.document : null;
   }
 
-  // Initialize escalation for a document
   initializeEscalation(document: EmergencyDocument, recipients: string[]): void {
     if (!document.autoEscalation) return;
 
@@ -332,7 +301,6 @@ class EmergencyNotificationService {
 
     localStorage.setItem(`escalation-${document.id}`, JSON.stringify(escalationData));
 
-    // Set up escalation timer
     const timeoutMs = this.convertToMilliseconds(escalationData.timeout, escalationData.timeUnit);
     
     setTimeout(() => {
@@ -340,7 +308,6 @@ class EmergencyNotificationService {
     }, timeoutMs);
   }
 
-  // Check if escalation is needed
   private checkForEscalation(documentId: string): void {
     const escalationData = JSON.parse(localStorage.getItem(`escalation-${documentId}`) || '{}');
     
@@ -348,14 +315,11 @@ class EmergencyNotificationService {
       return;
     }
 
-    // Check if current recipient has responded
     const hasResponse = this.checkRecipientResponse(documentId, escalationData.recipients[escalationData.currentRecipientIndex]);
     
     if (!hasResponse) {
-      // Escalate to next recipient
       this.handleCyclicEscalation(documentId, escalationData.recipients);
       
-      // Set up next escalation check
       const timeoutMs = this.convertToMilliseconds(escalationData.timeout, escalationData.timeUnit);
       setTimeout(() => {
         this.checkForEscalation(documentId);
@@ -363,13 +327,11 @@ class EmergencyNotificationService {
     }
   }
 
-  // Check if recipient has responded
   private checkRecipientResponse(documentId: string, recipientId: string): boolean {
     const responses = JSON.parse(localStorage.getItem(`document-responses-${documentId}`) || '[]');
     return responses.some((response: any) => response.recipientId === recipientId);
   }
 
-  // Stop all notifications for a document
   stopNotifications(documentId: string): void {
     const logs = JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]');
     logs.forEach((log: any) => {
@@ -381,8 +343,7 @@ class EmergencyNotificationService {
         }
       }
     });
-    
-    // Clear escalation data
+
     localStorage.removeItem(`escalation-${documentId}`);
   }
 }

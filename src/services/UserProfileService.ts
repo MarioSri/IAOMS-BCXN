@@ -1,11 +1,3 @@
-/**
- * UserProfileService - Fetches individual user profile data from the
- * Supabase `role_recipients` table, matched by email (Google OAuth).
- *
- * STRICT RULE: Only the 'demo-work' role loads mock profile data.
- * All other roles MUST fetch from Supabase and NEVER see mock names.
- */
-
 import { supabase } from '@/lib/supabase';
 
 export interface UserProfile {
@@ -23,16 +15,37 @@ export interface UserProfile {
   is_active: boolean;
 }
 
+// ── Session-scoped in-memory cache ───────────────────────────────────────────
+// Keyed by "email:<email>" or "id:<employee_id>".
+// Stores the resolved profile (or null for confirmed-not-found).
+// Cleared on page unload so stale data never persists across sessions.
+// Stores in-flight Promises too — deduplicates concurrent calls for the same key.
+const profileCache = new Map<string, Promise<UserProfile | null>>();
+
 class UserProfileService {
-  /**
-   * Fetch a user profile by their Google-authenticated email.
-   * Looks up in `role_recipients` to match real institutional users.
-   */
+
+  /** Clear every cached entry (call on sign-out). */
+  clearCache(): void {
+    profileCache.clear();
+  }
+
   async fetchProfileByEmail(email: string): Promise<UserProfile | null> {
     if (!email) return null;
 
+    const cacheKey = `email:${email}`;
+    if (profileCache.has(cacheKey)) {
+      console.log('[UserProfileService] Cache hit for email:', email);
+      return profileCache.get(cacheKey)!;
+    }
+
+    const request = this._fetchByEmail(email);
+    profileCache.set(cacheKey, request);
+    return request;
+  }
+
+  private async _fetchByEmail(email: string): Promise<UserProfile | null> {
     try {
-      console.log('🔄 [UserProfileService] Fetching profile by email:', email);
+      console.log('[UserProfileService] Fetching profile by email:', email);
 
       const { data, error } = await supabase
         .from('role_recipients')
@@ -42,34 +55,44 @@ class UserProfileService {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [UserProfileService] Supabase error:', error.message);
+        console.error('[UserProfileService] Supabase error:', error.message);
+        // Remove from cache so next call retries
+        profileCache.delete(`email:${email}`);
         throw error;
       }
 
       if (!data) {
-        console.log('ℹ️ [UserProfileService] No profile found for email:', email);
+        console.log('[UserProfileService] No profile found for email:', email);
         return null;
       }
 
-      console.log('✅ [UserProfileService] Profile fetched:', data.name);
+      console.log('[UserProfileService] Profile fetched:', data.name);
       return data as UserProfile;
     } catch (error) {
-      console.error('❌ [UserProfileService] Failed to fetch profile by email:', error);
+      profileCache.delete(`email:${email}`);
+      console.error('[UserProfileService] Failed to fetch profile by email:', error);
       throw new Error('Failed to fetch user profile from database');
     }
   }
 
-  /**
-   * Fetch a user profile by their UUID (legacy method, resolves via email lookup when possible).
-   * Falls back to ID-based UUID lookup if a `user_id` column is added.
-   */
   async fetchProfile(userId: string): Promise<UserProfile | null> {
     if (!userId) return null;
 
-    try {
-      console.log('🔄 [UserProfileService] Fetching profile by user ID:', userId);
+    const cacheKey = `id:${userId}`;
+    if (profileCache.has(cacheKey)) {
+      console.log('[UserProfileService] Cache hit for user ID:', userId);
+      return profileCache.get(cacheKey)!;
+    }
 
-      // Primary: match by employee_id field
+    const request = this._fetchById(userId);
+    profileCache.set(cacheKey, request);
+    return request;
+  }
+
+  private async _fetchById(userId: string): Promise<UserProfile | null> {
+    try {
+      console.log('[UserProfileService] Fetching profile by user ID:', userId);
+
       const { data, error } = await supabase
         .from('role_recipients')
         .select('id, name, email, role, department, branch, phone, employee_id, designation, bio, avatar, is_active')
@@ -78,19 +101,21 @@ class UserProfileService {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [UserProfileService] Supabase error:', error.message);
+        console.error('[UserProfileService] Supabase error:', error.message);
+        profileCache.delete(`id:${userId}`);
         throw error;
       }
 
       if (!data) {
-        console.log('ℹ️ [UserProfileService] No profile found for user ID:', userId);
+        console.log('[UserProfileService] No profile found for user ID:', userId);
         return null;
       }
 
-      console.log('✅ [UserProfileService] Profile fetched:', data.name);
+      console.log('[UserProfileService] Profile fetched:', data.name);
       return data as UserProfile;
     } catch (error) {
-      console.error('❌ [UserProfileService] Failed to fetch profile:', error);
+      profileCache.delete(`id:${userId}`);
+      console.error('[UserProfileService] Failed to fetch profile:', error);
       throw new Error('Failed to fetch user profile from database');
     }
   }

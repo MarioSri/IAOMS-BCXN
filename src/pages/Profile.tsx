@@ -29,7 +29,7 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataSource, setDataSource] = useState<DataSource>('empty');
+  const [dataSource, setDataSource] = useState<DataSource>('loading');
 
   const [profileData, setProfileData] = useState<PersonalInfoData>({
     name: "",
@@ -42,7 +42,10 @@ export default function Profile() {
     avatar: ""
   });
 
-  const [notificationPreferences, setNotificationPreferences] = useState({
+  type NotificationChannel = { enabled: boolean; interval: number; unit: string };
+  type NotificationPreferences = { email: NotificationChannel; sms: NotificationChannel; push: NotificationChannel; whatsapp: NotificationChannel };
+
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
     email: { enabled: true, interval: 15, unit: 'minutes' },
     sms: { enabled: false, interval: 30, unit: 'minutes' },
     push: { enabled: true, interval: 5, unit: 'minutes' },
@@ -64,7 +67,6 @@ export default function Profile() {
         const isDemoWork = isAllowedMockData(user.role);
 
         if (isDemoWork) {
-          // Demo Work ONLY: Load from MOCK_RECIPIENTS
           const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
           const mockProfile = MOCK_RECIPIENTS.find(r => r.user_id === user.id);
 
@@ -122,13 +124,12 @@ export default function Profile() {
           }
         }
 
-        // Load notification preferences (UI preferences only)
         const savedNotificationPrefs = localStorage.getItem(`user-preferences-${user.id}`);
         if (savedNotificationPrefs) {
           setNotificationPreferences(JSON.parse(savedNotificationPrefs));
         }
       } catch (error) {
-        console.error('❌ [Profile] Error loading profile data:', error);
+        console.error('[Profile] Error loading profile data:', error);
         setError('Failed to load profile data. Please try again.');
         setDataSource('empty');
       } finally {
@@ -142,7 +143,6 @@ export default function Profile() {
   const handleSaveProfile = async (data: PersonalInfoData) => {
     try {
       if (isAllowedMockData(user?.role || '')) {
-        // Demo Work: save locally only
         localStorage.setItem('user-profile', JSON.stringify(data));
       }
       // Real roles: profile editing is view-only for now;
@@ -165,15 +165,15 @@ export default function Profile() {
     }
   };
 
-  const handleNotificationPreferenceChange = (channel: string, field: string, value: any) => {
-    const updated = {
+  const handleNotificationPreferenceChange = (channel: keyof NotificationPreferences, field: string, value: boolean | number | string) => {
+    const updated: NotificationPreferences = {
       ...notificationPreferences,
       [channel]: {
-        ...(notificationPreferences as any)[channel],
+        ...notificationPreferences[channel],
         [field]: value
       }
     };
-    setNotificationPreferences(updated as any);
+    setNotificationPreferences(updated);
     localStorage.setItem(`user-preferences-${user?.id || 'default'}`, JSON.stringify(updated));
 
     toast({
@@ -234,12 +234,10 @@ export default function Profile() {
           <p className="text-muted-foreground">Manage your account information and preferences</p>
         </div>
 
-        {/* Data Source Alert */}
         {dataSource === 'mock' && (
           <DemoIndicator variant="alert" location="profile" className="mb-6" />
         )}
 
-        {/* Error State */}
         {error && (
           <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
             <p className="text-destructive font-medium">Profile Data Temporarily Unavailable</p>

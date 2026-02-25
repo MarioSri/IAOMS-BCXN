@@ -46,7 +46,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
     if (user) {
       refreshData();
       
-      // Set up timeout checking interval
       const timeoutInterval = setInterval(() => {
         workflowEngine.checkTimeouts();
         refreshData();
@@ -87,7 +86,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
           variant: 'default'
         });
 
-        // Check if counter-approval is needed
         if (action === 'approve' && result.message.includes('Counter-approval required')) {
           setShowCounterApproval(true);
         }
@@ -224,7 +222,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
         
         <CardContent>
           <div className="space-y-4">
-            {/* Workflow Progress */}
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Workflow Progress</h4>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -235,7 +232,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
               </div>
             </div>
 
-            {/* Recent Actions */}
             {instance.history.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Recent Actions</h4>
@@ -268,7 +264,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
               </div>
             )}
 
-            {/* Action Buttons */}
             {showActions && currentStep && (
               <div className="flex gap-2 pt-2 border-t">
                 <Button
@@ -333,7 +328,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Bi-Directional Approval Routing</h2>
@@ -410,7 +404,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
         </TabsContent>
       </Tabs>
 
-      {/* Action Dialog */}
       {selectedInstance && actionType && (
         <AlertDialog open={!!selectedInstance} onOpenChange={() => {
           setSelectedInstance(null);
@@ -463,7 +456,6 @@ export const BiDirectionalApprovalManager: React.FC<BiDirectionalApprovalManager
         </AlertDialog>
       )}
 
-      {/* Counter-Approval Dialog */}
       {showCounterApproval && selectedInstance && (
         <AlertDialog open={showCounterApproval} onOpenChange={setShowCounterApproval}>
           <AlertDialogContent>

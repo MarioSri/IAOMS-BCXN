@@ -30,7 +30,6 @@ export class ZoomService {
     password?: string;
   }> {
     try {
-      // For instant meetings, use the Zoom web meeting start URL
       const meetingId = `zoom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const joinUrl = 'https://zoom.us/start/webmeeting';
       

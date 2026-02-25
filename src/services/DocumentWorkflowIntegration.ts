@@ -29,10 +29,6 @@ export interface WorkflowNotification {
   expiresAt?: Date;
 }
 
-/**
- * Service to integrate chat system with document workflows
- * Handles automatic channel creation, document notifications, and approval routing
- */
 export class DocumentWorkflowIntegration {
   private chatService: DecentralizedChatService;
   private workflowEventHandlers: Map<string, (event: DocumentWorkflowEvent) => void> = new Map();
@@ -43,16 +39,12 @@ export class DocumentWorkflowIntegration {
   }
 
   private setupEventHandlers() {
-    // Handle document workflow events
     this.workflowEventHandlers.set('document_created', this.handleDocumentCreated.bind(this));
     this.workflowEventHandlers.set('approval_requested', this.handleApprovalRequested.bind(this));
     this.workflowEventHandlers.set('approval_completed', this.handleApprovalCompleted.bind(this));
     this.workflowEventHandlers.set('document_shared', this.handleDocumentShared.bind(this));
   }
 
-  /**
-   * Process workflow events from the document management system
-   */
   async processWorkflowEvent(event: DocumentWorkflowEvent): Promise<void> {
     const handler = this.workflowEventHandlers.get(event.type);
     if (handler) {
@@ -60,14 +52,10 @@ export class DocumentWorkflowIntegration {
     }
   }
 
-  /**
-   * Create document-specific discussion thread
-   */
   private async handleDocumentCreated(event: DocumentWorkflowEvent): Promise<void> {
     const channelName = `doc-${event.documentType}-${event.documentId.slice(0, 8)}`;
     const channelDescription = `Discussion thread for: ${event.title}`;
 
-    // Create dedicated channel for document discussion
     const channel = await this.chatService.createChannel({
       name: channelName,
       description: channelDescription,
@@ -78,7 +66,6 @@ export class DocumentWorkflowIntegration {
       members: event.recipientIds || [event.userId]
     });
 
-    // Send initial message with document context
     await this.chatService.sendMessage({
       channelId: channel.id,
       content: `📄 Document "${event.title}" has been created and is ready for discussion.`,
@@ -90,7 +77,6 @@ export class DocumentWorkflowIntegration {
       }
     });
 
-    // Add document preview/metadata message
     await this.chatService.sendMessage({
       channelId: channel.id,
       content: `**Document Details:**
@@ -105,16 +91,11 @@ Use this channel to discuss, ask questions, or provide feedback on this document
     });
   }
 
-  /**
-   * Handle approval request workflow
-   */
   private async handleApprovalRequested(event: DocumentWorkflowEvent): Promise<void> {
     if (!event.recipientIds?.length) return;
 
-    // Find or create approval channel - simplified approach
     const channelName = `approval-${event.documentId.slice(0, 8)}`;
-    
-    // For now, create a private channel for approvals
+
     const channel = await this.chatService.createChannel({
       name: channelName,
       description: `Approval workflow for: ${event.title}`,
@@ -125,7 +106,6 @@ Use this channel to discuss, ask questions, or provide feedback on this document
       members: [...event.recipientIds, event.userId]
     });
 
-    // Send approval request message
     const approverMentions = event.recipientIds.map(id => `@${id}`).join(' ');
     await this.chatService.sendMessage({
       channelId: channel.id,
@@ -146,24 +126,17 @@ Please review and provide your approval or feedback.`,
       }
     });
 
-    // Create signature request for approvals
     await this.chatService.createSignatureRequest({
       title: `Approval for: ${event.title}`,
       description: `Please review and approve this ${event.documentType}`,
       targetUsers: event.recipientIds,
       documentId: event.documentId,
       requestedBy: event.userId,
-      deadline: event.metadata.dueDate ? new Date(event.metadata.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days default
+      deadline: event.metadata.dueDate ? new Date(event.metadata.dueDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     });
   }
 
-  /**
-   * Handle approval completion
-   */
   private async handleApprovalCompleted(event: DocumentWorkflowEvent): Promise<void> {
-    // For now, we'll send a system message about completion
-    // In a real implementation, we'd find the specific approval channel
-    
     const completionMessage = `✅ **Approval Completed**
 
 The document "${event.title}" has been successfully approved.
@@ -173,13 +146,9 @@ The document "${event.title}" has been successfully approved.
 
 Thank you to all approvers for your timely response!`;
 
-    // If we have a specific channel, send there, otherwise log
     console.log('Approval completed:', completionMessage);
   }
 
-  /**
-   * Handle document sharing
-   */
   private async handleDocumentShared(event: DocumentWorkflowEvent): Promise<void> {
     if (!event.channelId || !event.recipientIds?.length) return;
 
@@ -192,7 +161,6 @@ Thank you to all approvers for your timely response!`;
       mimeType: event.metadata.fileType || 'application/pdf'
     };
 
-    // Send document share message to existing channel
     await this.chatService.sendMessage({
       channelId: event.channelId,
       content: `📤 **Document Shared**
@@ -215,20 +183,10 @@ Click to view and download the document.`,
     });
   }
 
-  /**
-   * Send workflow notification
-   */
   private async sendWorkflowNotification(notification: WorkflowNotification): Promise<void> {
-    // In a real implementation, this would integrate with the notification system
     console.log('Workflow notification:', notification);
-    
-    // For now, we'll use a simplified approach without DM channels
-    // You could integrate this with the existing notification system
   }
 
-  /**
-   * Create discussion thread for specific document section
-   */
   async createDocumentThread(
     documentId: string,
     sectionId: string,
@@ -249,11 +207,7 @@ Click to view and download the document.`,
     });
   }
 
-  /**
-   * Generate AI summary of document discussions
-   */
   async generateDocumentDiscussionSummary(documentId: string): Promise<string> {
-    // Simplified implementation - in reality would integrate with existing AI service
     return `Summary of discussions for document ${documentId}: 
     
 Key points discussed:
@@ -268,9 +222,6 @@ Action items:
 - Finalize approval workflow`;
   }
 
-  /**
-   * Export document workflow audit trail
-   */
   async exportWorkflowAuditTrail(documentId: string): Promise<{
     documentId: string;
     timeline: Array<{
@@ -294,8 +245,6 @@ Action items:
       comments?: string;
     }>;
   }> {
-    // Implementation would collect and format audit trail data
-    // This is a stub for the interface
     return {
       documentId,
       timeline: [

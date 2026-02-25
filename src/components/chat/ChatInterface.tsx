@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { DecentralizedChatService } from '@/services/DecentralizedChatService';
+import { recipientService } from '@/services/RecipientService';
 import {
   ChatChannel,
   ChatMessage,
@@ -88,13 +89,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
 
-  // Chat service
   const [chatService] = useState(() => new DecentralizedChatService(
     import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
     import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
 
-  // State
   const [channels, setChannels] = useState<ChatChannel[]>([]);
   const [activeChannel, setActiveChannel] = useState<ChatChannel | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -103,8 +102,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   const [notifications, setNotifications] = useState<ChatNotification[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<string>('connecting');
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  const [recipientsError, setRecipientsError] = useState<string | null>(null);
 
-  // UI State
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -148,7 +148,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
   const [showPrivateReplyModal, setShowPrivateReplyModal] = useState(false);
   const [privateReplyMessage, setPrivateReplyMessage] = useState('');
 
-  // Handle click outside emoji picker
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
@@ -165,7 +164,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
     };
   }, [showEmojiPicker]);
 
-  // Filtered messages calculation (Outside JSX to follow Rules of Hooks)
   const filteredMessages = useMemo(() => {
     if (!activeChannel) return [];
     return messages.filter(message =>
@@ -175,7 +173,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
     );
   }, [messages, searchQuery, users, activeChannel]);
 
-  // Memoized default channels for instant loading
   const defaultChannels = useMemo(() => {
     if (!user || user.role !== 'demo-work') return [];
     const channels: ChatChannel[] = [
@@ -246,7 +243,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
     return channels;
   }, [user]);
 
-  // Memoized users for instant loading
   const defaultUsers = useMemo(() => {
     if (!user || user.role !== 'demo-work') return [];
     return [
@@ -286,10 +282,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
     ];
   }, [user]);
 
-  // Load real recipients from MOCK_RECIPIENTS
+  // Load MOCK recipients (DEMO-WORK ONLY)
   useEffect(() => {
     if (user?.role !== 'demo-work') return;
-    const loadRecipients = async () => {
+    const loadDemoRecipients = async () => {
       try {
         const { MOCK_RECIPIENTS } = await import('@/contexts/AuthContext');
         const recipients: ChatUser[] = MOCK_RECIPIENTS.map(r => ({
@@ -331,25 +327,94 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
         setChannels([initialChannel]);
         setActiveChannel(initialChannel);
       } catch (error) {
-        console.error('Failed to load recipients:', error);
+        console.error('Failed to load demo recipients:', error);
       }
     };
-    loadRecipients();
+    loadDemoRecipients();
   }, [setAvailableRecipients, user]);
+
+  // Load REAL recipients from Supabase (NON-DEMO roles ONLY)
+  useEffect(() => {
+    if (!user || user.role === 'demo-work') return;
+
+    let cancelled = false;
+    const loadSupabaseRecipients = async () => {
+      setRecipientsLoading(true);
+      setRecipientsError(null);
+      try {
+        const recipients = await recipientService.fetchRecipients();
+        if (cancelled) return;
+
+        const chatUsers: ChatUser[] = recipients.map(r => ({
+          id: r.id,
+          username: r.email.split('@')[0],
+          email: r.email,
+          fullName: r.name,
+          role: r.role as UserRole,
+          department: r.department as any,
+          isOnline: false,
+          lastSeen: new Date(),
+          status: 'available' as const,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${r.name}`
+        }));
+
+        const currentUserInList = chatUsers.find(u => u.email === user.email || u.id === user.id);
+        if (!currentUserInList) {
+          chatUsers.unshift({
+            id: user.id,
+            username: user.email.split('@')[0],
+            email: user.email,
+            fullName: user.name || 'You',
+            role: user.role as UserRole,
+            isOnline: true,
+            lastSeen: new Date(),
+            status: 'available' as const,
+            avatar: ''
+          });
+        }
+
+        setAvailableRecipients(chatUsers);
+        setUsers(chatUsers);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('[ChatInterface] Failed to load recipients from Supabase:', error);
+        setRecipientsError('Failed to load recipients from database');
+        const selfUser: ChatUser = {
+          id: user.id,
+          username: user.email.split('@')[0],
+          email: user.email,
+          fullName: user.name || 'You',
+          role: user.role as UserRole,
+          isOnline: true,
+          lastSeen: new Date(),
+          status: 'available' as const,
+          avatar: ''
+        };
+        setAvailableRecipients([selfUser]);
+        setUsers([selfUser]);
+      } finally {
+        if (!cancelled) setRecipientsLoading(false);
+      }
+    };
+
+    loadSupabaseRecipients();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Optimized initialization for instant loading
   useEffect(() => {
     if (!user) return;
 
-    // Instant setup with default data
-    setUsers(defaultUsers);
-    setChannels(defaultChannels);
-    if (defaultChannels.length > 0) {
-      setActiveChannel(defaultChannels[0]);
+    // Only set mock defaults for demo-work role
+    if (user.role === 'demo-work') {
+      setUsers(defaultUsers);
+      setChannels(defaultChannels);
+      if (defaultChannels.length > 0) {
+        setActiveChannel(defaultChannels[0]);
+      }
     }
     setConnectionStatus('connected');
 
-    // Background initialization (non-blocking)
     const initChatBackground = async () => {
       try {
         const documentChannels = JSON.parse(localStorage.getItem('document-channels') || '[]');
@@ -358,18 +423,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ className, channel
         );
 
         if (userDocumentChannels.length > 0) {
-          const allChannels = [...userDocumentChannels, ...defaultChannels].map(channel => ({
-            ...channel,
-            members: channel.members?.length > 0 ? channel.members : (user?.role === 'demo-work' ? [user.id, 'principal', 'registrar', 'dean'] : [user.id])
-          }));
-          setChannels(allChannels);
+          if (user.role === 'demo-work') {
+            const allChannels = [...userDocumentChannels, ...defaultChannels].map(channel => ({
+              ...channel,
+              members: channel.members?.length > 0 ? channel.members : [user.id, 'principal', 'registrar', 'dean']
+            }));
+            setChannels(allChannels);
+          } else {
+            const allChannels = userDocumentChannels.map((channel: any) => ({
+              ...channel,
+              members: channel.members?.length > 0 ? channel.members : [user.id]
+            }));
+            setChannels(prev => [...allChannels, ...prev]);
+          }
         }
       } catch (error) {
-        // Keep default channels on error
       }
     };
 
-    // Run background init after component is mounted
     setTimeout(initChatBackground, 0);
 
     // Optimized event listeners
@@ -1549,7 +1620,29 @@ Generated on: ${new Date().toLocaleString()}`;
 
         <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
-            {/* Add default channels with message counts if none exist */}
+            {/* Loading state for real roles */}
+            {recipientsLoading && user?.role !== 'demo-work' && (
+              <div className="p-4 text-center">
+                <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">Loading channels...</p>
+              </div>
+            )}
+            {/* Error state for real roles */}
+            {recipientsError && user?.role !== 'demo-work' && (
+              <div className="p-3 text-center">
+                <AlertTriangle className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">{recipientsError}</p>
+              </div>
+            )}
+            {/* Empty state for real roles (no channels, not loading) */}
+            {channels.length === 0 && user?.role !== 'demo-work' && !recipientsLoading && (
+              <div className="p-4 text-center">
+                <MessageSquare className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No Channels Yet</p>
+                <p className="text-[10px] text-muted-foreground/70 mt-1">Create A New Channel To Start Chatting</p>
+              </div>
+            )}
+            {/* Add default channels with message counts if none exist (DEMO-WORK ONLY) */}
             {channels.length === 0 && user?.role === 'demo-work' && ([
               {
                 id: 'admin-council',
@@ -1861,10 +1954,10 @@ Generated on: ${new Date().toLocaleString()}`;
                 <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 text-blue-500" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Welcome to your Chat Hub</h3>
+                <h3 className="text-xl font-bold mb-2">Welcome To Your Chat Hub</h3>
                 <p className="text-sm text-muted-foreground max-w-xs mb-6">
-                  Select a channel from the sidebar or start a new conversation to begin.
-                </p>
+                  Start A New Conversation To Begin.
+                </p>   
                 <div className="flex gap-3">
                   <Button variant="outline" size="sm" onClick={() => setShowNewChannelModal(true)} className="gap-2">
                     <Plus className="w-4 h-4" /> New Channel
@@ -2061,34 +2154,53 @@ Generated on: ${new Date().toLocaleString()}`;
               <div>
                 <Label className="text-sm font-medium mb-2 block">Add Recipients</Label>
                 <ScrollArea className="h-64 border rounded-md p-2">
-                  {availableRecipients.map((person) => (
-                    <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs">
-                            {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{person.fullName || person.username}</p>
-                          <p className="text-xs text-muted-foreground">{person.role}</p>
-                        </div>
+                  {recipientsLoading && user?.role !== 'demo-work' ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">Loading recipients...</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (newChannelRecipients.includes(person.id)) {
-                            setNewChannelRecipients(newChannelRecipients.filter(id => id !== person.id));
-                          } else {
-                            setNewChannelRecipients([...newChannelRecipients, person.id]);
-                          }
-                        }}
-                      >
-                        {newChannelRecipients.includes(person.id) ? 'Remove' : 'Add'}
-                      </Button>
                     </div>
-                  ))}
+                  ) : availableRecipients.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Users className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No recipients available</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {user?.role !== 'demo-work' ? 'Recipients are not configured in the database' : 'No demo recipients found'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    availableRecipients.map((person) => (
+                      <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-xs">
+                              {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{person.fullName || person.username}</p>
+                            <p className="text-xs text-muted-foreground">{person.role}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (newChannelRecipients.includes(person.id)) {
+                              setNewChannelRecipients(newChannelRecipients.filter(id => id !== person.id));
+                            } else {
+                              setNewChannelRecipients([...newChannelRecipients, person.id]);
+                            }
+                          }}
+                        >
+                          {newChannelRecipients.includes(person.id) ? 'Remove' : 'Add'}
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </ScrollArea>
               </div>
               {newChannelRecipients.length > 0 && (
@@ -2179,34 +2291,53 @@ Generated on: ${new Date().toLocaleString()}`;
               <div>
                 <Label className="text-sm font-medium mb-2 block">Available Staff</Label>
                 <ScrollArea className="h-64 border rounded-md p-2">
-                  {availableRecipients.map((person) => (
-                    <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="text-xs">
-                            {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium">{person.fullName || person.username}</p>
-                          <p className="text-xs text-muted-foreground">{person.role}</p>
-                        </div>
+                  {recipientsLoading && user?.role !== 'demo-work' ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">Loading staff...</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (selectedRecipients.includes(person.id)) {
-                            setSelectedRecipients(selectedRecipients.filter(id => id !== person.id));
-                          } else {
-                            setSelectedRecipients([...selectedRecipients, person.id]);
-                          }
-                        }}
-                      >
-                        {selectedRecipients.includes(person.id) ? 'Remove' : 'Add'}
-                      </Button>
                     </div>
-                  ))}
+                  ) : availableRecipients.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Users className="w-6 h-6 text-muted-foreground/50 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No staff available</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">
+                          {user?.role !== 'demo-work' ? 'Staff data is not configured in the database' : 'No demo staff found'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    availableRecipients.map((person) => (
+                      <div key={person.id} className="flex items-center justify-between p-2 hover:bg-accent rounded-md">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-8 h-8">
+                            <AvatarFallback className="text-xs">
+                              {(person.fullName || person.username).split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{person.fullName || person.username}</p>
+                            <p className="text-xs text-muted-foreground">{person.role}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (selectedRecipients.includes(person.id)) {
+                              setSelectedRecipients(selectedRecipients.filter(id => id !== person.id));
+                            } else {
+                              setSelectedRecipients([...selectedRecipients, person.id]);
+                            }
+                          }}
+                        >
+                          {selectedRecipients.includes(person.id) ? 'Remove' : 'Add'}
+                        </Button>
+                      </div>
+                    ))
+                  )}
                 </ScrollArea>
               </div>
               {selectedRecipients.length > 0 && (
@@ -2405,52 +2536,12 @@ Generated on: ${new Date().toLocaleString()}`;
                 {selectedChannelForMembers?.members?.map((memberId) => {
                   // Helper function to get user display info from member ID
                   const getMemberInfo = (id: string) => {
-                    // Map of common recipient IDs to their display names
-                    const recipientMap: { [key: string]: { fullName: string; role: string } } = user?.role === 'demo-work' ? {
-                      // Leadership
-                      'principal-dr.-robert-principal': { fullName: 'Dr. Robert Principal', role: 'Principal' },
-                      'registrar-prof.-sarah-registrar': { fullName: 'Prof. Sarah Registrar', role: 'Registrar' },
-                      'dean-dr.-maria-dean': { fullName: 'Dr. Maria Dean', role: 'Dean' },
-                      'chairman-mr.-david-chairman': { fullName: 'Mr. David Chairman', role: 'Chairman' },
-                      'director-(for-information)-ms.-lisa-director': { fullName: 'Ms. Lisa Director', role: 'Director' },
-                      'leadership-prof.-leadership-officer': { fullName: 'Prof. Leadership Officer', role: 'Leadership' },
-
-                      // CDC Employees
-                      'cdc-head-dr.-cdc-head': { fullName: 'Dr. CDC Head', role: 'CDC Head' },
-                      'cdc-coordinator-prof.-cdc-coordinator': { fullName: 'Prof. CDC Coordinator', role: 'CDC Coordinator' },
-                      'cdc-executive-ms.-cdc-executive': { fullName: 'Ms. CDC Executive', role: 'CDC Executive' },
-
-                      // Administrative
-                      'controller-of-examinations-dr.-robert-controller': { fullName: 'Dr. Robert Controller', role: 'Controller' },
-                      'asst.-dean-iiic-prof.-asst-dean': { fullName: 'Prof. Asst Dean', role: 'Asst. Dean IIIC' },
-                      'head-operations-mr.-michael-operations': { fullName: 'Mr. Michael Operations', role: 'Head Operations' },
-                      'librarian-ms.-jennifer-librarian': { fullName: 'Ms. Jennifer Librarian', role: 'Librarian' },
-                      'ssg-prof.-william-ssg': { fullName: 'Prof. William SSG', role: 'SSG' },
-
-                      // HODs
-                      'hod-dr.-eee-hod-eee': { fullName: 'Dr. EEE HOD', role: 'HOD EEE' },
-                      'hod-dr.-mech-hod-mech': { fullName: 'Dr. MECH HOD', role: 'HOD MECH' },
-                      'hod-dr.-cse-hod-cse': { fullName: 'Dr. CSE HOD', role: 'HOD CSE' },
-                      'hod-dr.-ece-hod-ece': { fullName: 'Dr. ECE HOD', role: 'HOD ECE' },
-                      'hod-dr.-csm-hod-csm': { fullName: 'Dr. CSM HOD', role: 'HOD CSM' },
-                      'hod-dr.-cso-hod-cso': { fullName: 'Dr. CSO HOD', role: 'HOD CSO' },
-                      'hod-dr.-csd-hod-csd': { fullName: 'Dr. CSD HOD', role: 'HOD CSD' },
-                      'hod-dr.-csc-hod-csc': { fullName: 'Dr. CSC HOD', role: 'HOD CSC' },
-
-                      // Program Department Heads
-                      'program-department-head-prof.-eee-head-eee': { fullName: 'Prof. EEE Head', role: 'Program Head EEE' },
-                      'program-department-head-prof.-mech-head-mech': { fullName: 'Prof. MECH Head', role: 'Program Head MECH' },
-                      'program-department-head-prof.-cse-head-cse': { fullName: 'Prof. CSE Head', role: 'Program Head CSE' },
-                      'program-department-head-prof.-ece-head-ece': { fullName: 'Prof. ECE Head', role: 'Program Head ECE' },
-                      'program-department-head-prof.-csm-head-csm': { fullName: 'Prof. CSM Head', role: 'Program Head CSM' },
-                      'program-department-head-prof.-cso-head-cso': { fullName: 'Prof. CSO Head', role: 'Program Head CSO' },
-                      'program-department-head-prof.-csd-head-csd': { fullName: 'Prof. CSD Head', role: 'Program Head CSD' },
-                      'program-department-head-prof.-csc-head-csc': { fullName: 'Prof. CSC Head', role: 'Program Head CSC' }
-                    } : {};
-
-                    // Check if we have a mapping
-                    if (recipientMap[id]) {
-                      return recipientMap[id];
+                    // For real roles: look up from Supabase-loaded availableRecipients
+                    const recipientFromSupabase = availableRecipients.find(
+                      r => r.id === id || r.username === id || r.email === id
+                    );
+                    if (recipientFromSupabase) {
+                      return { fullName: recipientFromSupabase.fullName, role: recipientFromSupabase.role as string };
                     }
 
                     // Check if it's the current user
@@ -2458,39 +2549,91 @@ Generated on: ${new Date().toLocaleString()}`;
                       return { fullName: user?.name || 'You', role: user?.role || 'User' };
                     }
 
-                    // Try to extract name from ID
-                    const parts = id.split('-');
-                    let name = '';
-                    let role = '';
+                    // For demo-work role: use hardcoded mock recipient map
+                    if (user?.role === 'demo-work') {
+                      const recipientMap: { [key: string]: { fullName: string; role: string } } = {
+                        // Leadership
+                        'principal-dr.-robert-principal': { fullName: 'Dr. Robert Principal', role: 'Principal' },
+                        'registrar-prof.-sarah-registrar': { fullName: 'Prof. Sarah Registrar', role: 'Registrar' },
+                        'dean-dr.-maria-dean': { fullName: 'Dr. Maria Dean', role: 'Dean' },
+                        'chairman-mr.-david-chairman': { fullName: 'Mr. David Chairman', role: 'Chairman' },
+                        'director-(for-information)-ms.-lisa-director': { fullName: 'Ms. Lisa Director', role: 'Director' },
+                        'leadership-prof.-leadership-officer': { fullName: 'Prof. Leadership Officer', role: 'Leadership' },
 
-                    for (let i = 0; i < parts.length; i++) {
-                      if (parts[i].match(/^(dr\.|prof\.|mr\.|ms\.)$/i)) {
-                        name = parts.slice(i).join(' ').replace(/-/g, ' ')
+                        // CDC Employees
+                        'cdc-head-dr.-cdc-head': { fullName: 'Dr. CDC Head', role: 'CDC Head' },
+                        'cdc-coordinator-prof.-cdc-coordinator': { fullName: 'Prof. CDC Coordinator', role: 'CDC Coordinator' },
+                        'cdc-executive-ms.-cdc-executive': { fullName: 'Ms. CDC Executive', role: 'CDC Executive' },
+
+                        // Administrative
+                        'controller-of-examinations-dr.-robert-controller': { fullName: 'Dr. Robert Controller', role: 'Controller' },
+                        'asst.-dean-iiic-prof.-asst-dean': { fullName: 'Prof. Asst Dean', role: 'Asst. Dean IIIC' },
+                        'head-operations-mr.-michael-operations': { fullName: 'Mr. Michael Operations', role: 'Head Operations' },
+                        'librarian-ms.-jennifer-librarian': { fullName: 'Ms. Jennifer Librarian', role: 'Librarian' },
+                        'ssg-prof.-william-ssg': { fullName: 'Prof. William SSG', role: 'SSG' },
+
+                        // HODs
+                        'hod-dr.-eee-hod-eee': { fullName: 'Dr. EEE HOD', role: 'HOD EEE' },
+                        'hod-dr.-mech-hod-mech': { fullName: 'Dr. MECH HOD', role: 'HOD MECH' },
+                        'hod-dr.-cse-hod-cse': { fullName: 'Dr. CSE HOD', role: 'HOD CSE' },
+                        'hod-dr.-ece-hod-ece': { fullName: 'Dr. ECE HOD', role: 'HOD ECE' },
+                        'hod-dr.-csm-hod-csm': { fullName: 'Dr. CSM HOD', role: 'HOD CSM' },
+                        'hod-dr.-cso-hod-cso': { fullName: 'Dr. CSO HOD', role: 'HOD CSO' },
+                        'hod-dr.-csd-hod-csd': { fullName: 'Dr. CSD HOD', role: 'HOD CSD' },
+                        'hod-dr.-csc-hod-csc': { fullName: 'Dr. CSC HOD', role: 'HOD CSC' },
+
+                        // Program Department Heads
+                        'program-department-head-prof.-eee-head-eee': { fullName: 'Prof. EEE Head', role: 'Program Head EEE' },
+                        'program-department-head-prof.-mech-head-mech': { fullName: 'Prof. MECH Head', role: 'Program Head MECH' },
+                        'program-department-head-prof.-cse-head-cse': { fullName: 'Prof. CSE Head', role: 'Program Head CSE' },
+                        'program-department-head-prof.-ece-head-ece': { fullName: 'Prof. ECE Head', role: 'Program Head ECE' },
+                        'program-department-head-prof.-csm-head-csm': { fullName: 'Prof. CSM Head', role: 'Program Head CSM' },
+                        'program-department-head-prof.-cso-head-cso': { fullName: 'Prof. CSO Head', role: 'Program Head CSO' },
+                        'program-department-head-prof.-csd-head-csd': { fullName: 'Prof. CSD Head', role: 'Program Head CSD' },
+                        'program-department-head-prof.-csc-head-csc': { fullName: 'Prof. CSC Head', role: 'Program Head CSC' }
+                      };
+
+                      if (recipientMap[id]) {
+                        return recipientMap[id];
+                      }
+
+                      // Try to extract name from ID for demo-work
+                      const parts = id.split('-');
+                      let name = '';
+                      let role = '';
+
+                      for (let i = 0; i < parts.length; i++) {
+                        if (parts[i].match(/^(dr\.|prof\.|mr\.|ms\.)$/i)) {
+                          name = parts.slice(i).join(' ').replace(/-/g, ' ')
+                            .split(' ')
+                            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                            .join(' ');
+                          break;
+                        }
+                      }
+
+                      // Extract role
+                      if (id.includes('hod')) role = 'HOD';
+                      else if (id.includes('principal')) role = 'Principal';
+                      else if (id.includes('registrar')) role = 'Registrar';
+                      else if (id.includes('dean')) role = 'Dean';
+                      else if (id.includes('program-department-head')) role = 'Program Head';
+                      else if (id.includes('faculty')) role = 'Faculty';
+                      else if (id.includes('employee')) role = 'Employee';
+                      else role = 'Member';
+
+                      if (!name) {
+                        name = id.replace(/-/g, ' ')
                           .split(' ')
                           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                           .join(' ');
-                        break;
                       }
+
+                      return { fullName: name, role: role };
                     }
 
-                    // Extract role
-                    if (id.includes('hod')) role = 'HOD';
-                    else if (id.includes('principal')) role = 'Principal';
-                    else if (id.includes('registrar')) role = 'Registrar';
-                    else if (id.includes('dean')) role = 'Dean';
-                    else if (id.includes('program-department-head')) role = 'Program Head';
-                    else if (id.includes('faculty')) role = 'Faculty';
-                    else if (id.includes('employee')) role = 'Employee';
-                    else role = 'Member';
-
-                    if (!name) {
-                      name = id.replace(/-/g, ' ')
-                        .split(' ')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                        .join(' ');
-                    }
-
-                    return { fullName: name, role: role };
+                    // For real roles: show the ID as-is (no mock name generation)
+                    return { fullName: id, role: 'Member' };
                   };
 
                   const memberInfo = getMemberInfo(memberId);

@@ -73,22 +73,10 @@ const Approvals = () => {
     }
     setSharedComments(savedSharedComments);
 
-    // Listen for document management approval cards
     const handleDocumentApprovalCreated = (event: any) => {
-      console.log('🚨 [Approvals] Document approval event received:', event.type);
       const approval = event.detail?.approval || event.detail?.document || event.detail?.approvalCard;
 
       if (approval) {
-        console.log('📋 [Approvals] Approval card received:', {
-          id: approval.id,
-          title: approval.title,
-          isEmergency: approval.isEmergency,
-          recipients: approval.recipients,
-          recipientIds: approval.recipientIds
-        });
-        console.log('👤 [Approvals] Current user:', user?.name, '| Role:', user?.role);
-
-        // Check if user should see this card
         const shouldShow = isUserInRecipients({
           user: {
             id: user?.id,
@@ -101,17 +89,12 @@ const Approvals = () => {
           recipientIds: approval?.recipientIds,
           workflowSteps: approval?.workflow?.steps
         });
-        console.log(`🔍 [Approvals] Should show card "${approval.title}" to current user: ${shouldShow}`);
-
-        // Add to state if not duplicate and user should see it
         setPendingApprovals(prev => {
           const isDuplicate = prev.some((existing: any) => existing.id === approval.id);
 
           if (!isDuplicate) {
-            console.log('✅ [Approvals] Adding approval card to state');
             const newState = [approval, ...prev];
 
-            // Show notification if user should see this card
             if (shouldShow) {
               toast({
                 title: "New Approval Required",
@@ -122,40 +105,29 @@ const Approvals = () => {
 
             return newState;
           } else {
-            console.log('ℹ️ [Approvals] Approval card already exists, skipping duplicate');
             return prev;
           }
         });
       } else {
         // Fallback: reload from localStorage if no event detail
-        console.log('🔄 [Approvals] No event detail, reloading from localStorage');
         const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-        console.log('📥 [Approvals] Loaded', stored.length, 'cards from localStorage');
         setPendingApprovals(stored);
       }
     };
 
-    // Listen for shared comment updates
     const handleSharedCommentUpdate = (event: any) => {
-      console.log('🔄 Shared comment update received:', event.detail);
-      // Reload shared comments from localStorage to get latest updates
       const updatedSharedComments = JSON.parse(localStorage.getItem('shared-comments') || '{}');
       setSharedComments(updatedSharedComments);
     };
 
-    // 🆕 Listen for approval card updates (bypass/rejection handling)
+    // Listen for approval card updates (bypass/rejection handling)
     const handleApprovalCardUpdate = (event: any) => {
-      console.log('🔄 Approval card update received:', event.detail);
-      // Reload pending approvals from localStorage to see updated workflow state
       const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-      console.log('📥 [Approvals] Reloaded', stored.length, 'cards after update event');
       setPendingApprovals(stored);
 
-      // Show notification if user is now the current recipient
       if (event.detail?.action === 'bypassed' && user) {
         const updatedCard = stored.find((card: any) => card.id === event.detail.docId);
         if (updatedCard && isUserInRecipients(updatedCard)) {
-          // Check if it's now user's turn
           const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
           const trackingCard = trackingCards.find((tc: any) => tc.id === updatedCard.trackingCardId || tc.id === updatedCard.id);
 
@@ -220,22 +192,18 @@ const Approvals = () => {
         message: comment
       };
 
-      // Save to localStorage for Track Documents
       const existingComments = JSON.parse(localStorage.getItem('document-comments') || '{}');
       existingComments[cardId] = [...(existingComments[cardId] || []), newComment];
       localStorage.setItem('document-comments', JSON.stringify(existingComments));
 
-      // Save to approval-comments with author info (now consistent with document-comments)
       const newComments = {
         ...comments,
         [cardId]: [...(comments[cardId] || []), newComment]
       };
       setComments(newComments);
 
-      // Save comments to localStorage for persistence
       localStorage.setItem('approval-comments', JSON.stringify(newComments));
 
-      // Clear input field after submission
       const clearedInputs = { ...commentInputs, [cardId]: '' };
       setCommentInputs(clearedInputs);
       localStorage.setItem('comment-inputs', JSON.stringify(clearedInputs));
@@ -245,7 +213,6 @@ const Approvals = () => {
   const handleShareComment = (cardId: string, doc?: any) => {
     const comment = commentInputs[cardId]?.trim();
     if (comment) {
-      // Determine the next recipient
       let nextRecipient = 'all';
       if (doc) {
         nextRecipient = getNextRecipient(doc);
@@ -253,8 +220,8 @@ const Approvals = () => {
 
       const sharedComment = {
         comment,
-        sharedBy: user?.name || 'Previous Approver',
-        sharedFor: nextRecipient,  // Who should see this shared comment
+        sharedBy: user?.name ?? 'Previous Approver',
+        sharedFor: nextRecipient,
         timestamp: new Date().toISOString()
       };
 
@@ -265,7 +232,6 @@ const Approvals = () => {
       setSharedComments(newSharedComments);
       localStorage.setItem('shared-comments', JSON.stringify(newSharedComments));
 
-      // Clear input field after sharing
       const clearedInputs = { ...commentInputs, [cardId]: '' };
       setCommentInputs(clearedInputs);
       localStorage.setItem('comment-inputs', JSON.stringify(clearedInputs));
@@ -278,24 +244,20 @@ const Approvals = () => {
   };
 
   const handleUndoComment = (cardId: string, index: number) => {
-    // Remove from comments state
     const newComments = {
       ...comments,
       [cardId]: comments[cardId]?.filter((_, i) => i !== index) || []
     };
     setComments(newComments);
 
-    // Save updated comments to localStorage
     localStorage.setItem('approval-comments', JSON.stringify(newComments));
 
-    // Remove from localStorage comments for Track Documents
     const existingComments = JSON.parse(localStorage.getItem('document-comments') || '{}');
     if (existingComments[cardId]) {
       existingComments[cardId] = existingComments[cardId].filter((_: any, i: number) => i !== index);
       localStorage.setItem('document-comments', JSON.stringify(existingComments));
     }
 
-    // Trigger real-time update for Track Documents
     window.dispatchEvent(new CustomEvent('approval-comments-changed'));
   };
 
@@ -308,7 +270,6 @@ const Approvals = () => {
     setSharedComments(newSharedComments);
     localStorage.setItem('shared-comments', JSON.stringify(newSharedComments));
 
-    // Trigger real-time update for next recipient's approval card
     if (removedComment) {
       window.dispatchEvent(new CustomEvent('shared-comment-updated', {
         detail: { cardId, action: 'undo', comment: removedComment }
@@ -324,7 +285,6 @@ const Approvals = () => {
       localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
       handleUndoSharedComment(cardId, index);
 
-      // Trigger real-time update for next recipient's approval card
       window.dispatchEvent(new CustomEvent('shared-comment-updated', {
         detail: { cardId, action: 'edit', comment: sharedComment }
       }));
@@ -334,20 +294,16 @@ const Approvals = () => {
   const handleEditComment = (cardId: string, index: number) => {
     const commentObj = comments[cardId]?.[index];
     if (commentObj) {
-      // Load the comment message back into the input field
       const newInputs = { ...commentInputs, [cardId]: commentObj.message };
       setCommentInputs(newInputs);
       localStorage.setItem('comment-inputs', JSON.stringify(newInputs));
       handleUndoComment(cardId, index);
 
-      // Trigger real-time update for Track Documents
       window.dispatchEvent(new CustomEvent('approval-comments-changed'));
     }
   };
 
-  // Create a demo file for the document or convert from base64
   const createDocumentFile = (doc: any): File => {
-    // 🆕 Filter files based on assignments first
     let filesToUse = doc.files || [];
 
     if (doc.fileAssignments && Object.keys(doc.fileAssignments).length > 0 && user) {
@@ -363,7 +319,6 @@ const Approvals = () => {
       });
     }
 
-    // If document has uploaded files, use the first one
     if (filesToUse && filesToUse.length > 0) {
       const fileData = filesToUse[0];
       if (fileData.data) {
@@ -451,45 +406,28 @@ const Approvals = () => {
 
 
 
-  // Handle view document with FileViewer
   const handleViewDocument = async (doc: any) => {
-    // 🆕 Filter files based on assignments (if any)
     let filesToView = doc.files || [];
 
     if (doc.fileAssignments && Object.keys(doc.fileAssignments).length > 0 && user) {
-      console.log('📋 File assignments detected, filtering for current user...');
-
-      // Find current user's recipient ID
       const currentUserRole = user?.role?.toLowerCase() || '';
       const userRecipientId = doc.recipientIds?.find((id: string) =>
         id.toLowerCase().includes(currentUserRole)
       );
 
-      console.log('👤 Current user recipient ID:', userRecipientId);
-
-      // Filter files assigned to this user
       filesToView = doc.files.filter((file: any) => {
         const assignedRecipients = doc.fileAssignments[file.name];
 
-        // If no specific assignments for this file, show to all
         if (!assignedRecipients || assignedRecipients.length === 0) {
           return true;
         }
 
-        // Check if user is in assigned recipients
-        const isAssigned = assignedRecipients.includes(userRecipientId);
-        console.log(`📄 File "${file.name}" assigned to user: ${isAssigned}`);
-        return isAssigned;
+        return assignedRecipients.includes(userRecipientId);
       });
-
-      console.log(`✅ Filtered files: ${filesToView.length} of ${doc.files.length} files visible to user`);
     }
 
-    // Check if document has multiple uploaded files
     if (filesToView && filesToView.length > 0) {
       try {
-        console.log('📄 Reconstructing files for viewing:', filesToView.length, 'files');
-        // Reconstruct all files from base64
         const reconstructedFiles: File[] = [];
 
         for (const file of filesToView) {
@@ -497,17 +435,8 @@ const Approvals = () => {
           const fileType = file.type || 'application/octet-stream';
           const fileData = file.data || file;
 
-          console.log('🔄 Processing file:', {
-            name: fileName,
-            type: fileType,
-            hasData: !!fileData,
-            dataType: typeof fileData
-          });
-
-          // If file has base64 data, reconstruct File object
           if (typeof fileData === 'string' && fileData.startsWith('data:')) {
             try {
-              // Extract base64 data and MIME type from data URL
               const matches = fileData.match(/^data:([^;]+);base64,(.+)$/);
               if (!matches) {
                 throw new Error('Invalid data URL format');
@@ -516,22 +445,9 @@ const Approvals = () => {
               const mimeType = matches[1] || fileType;
               const base64Data = matches[2];
 
-              console.log('📦 Decoding base64:', {
-                mimeType: mimeType,
-                base64Length: base64Data.length,
-                base64Preview: base64Data.substring(0, 50) + '...',
-                base64IsValid: /^[A-Za-z0-9+/]*={0,2}$/.test(base64Data)
-              });
-
-              // CRITICAL DEBUG: Check if this is actually a data URL nested in the data
               if (base64Data.startsWith('data:')) {
-                console.error('🚨 FOUND THE PROBLEM: Base64 data contains another data URL!');
-                console.log('Raw stored data preview:', fileData.substring(0, 200));
-
-                // The data URL is double-encoded, extract the actual base64
                 const innerMatches = base64Data.match(/^data:([^;]+);base64,(.+)$/);
                 if (innerMatches) {
-                  console.log('✅ Extracting inner base64 data');
                   const realBase64 = innerMatches[2];
 
                   const binaryString = atob(realBase64);
@@ -544,47 +460,34 @@ const Approvals = () => {
                   if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
                     const isValidJpg = isJpg(bytes);
                     if (!isValidJpg) {
-                      console.error('❌ Still invalid after extraction:', {
+                      console.error('Invalid JPEG after extraction:', {
                         firstBytes: Array.from(bytes.slice(0, 10)),
                         lastBytes: Array.from(bytes.slice(-10))
                       });
                       throw new Error(`Invalid JPEG file: ${fileName}. Even after extraction, file signature is wrong.`);
                     }
-                    console.log('✅ JPEG validation passed after extraction!');
                   }
 
                   const blob = new Blob([bytes], { type: mimeType });
                   const reconstructedFile = new File([blob], fileName, { type: mimeType });
-                  console.log('✅ File reconstructed from nested data URL:', reconstructedFile.size);
                   reconstructedFiles.push(reconstructedFile);
-                  continue; // Skip normal processing
+                  continue;
                 }
               }
 
               // Convert base64 to binary
-              const binaryString = atob(base64Data);
-              const bytes = new Uint8Array(binaryString.length);
+              const binaryString = atob(base64Data);              const bytes = new Uint8Array(binaryString.length);
               for (let i = 0; i < binaryString.length; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
               }
 
-              // Validate JPEG files with is-jpg
               if (mimeType === 'image/jpeg' || mimeType === 'image/jpg' ||
                 fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) {
-
-                console.log('🔍 Validating JPEG with is-jpg:', fileName);
-                console.log('📊 Byte analysis:', {
-                  firstBytes: Array.from(bytes.slice(0, 10)),
-                  firstBytesAsText: String.fromCharCode(...bytes.slice(0, 20)),
-                  lastBytes: Array.from(bytes.slice(-10)),
-                  expectedStart: [255, 216], // FF D8
-                  expectedEnd: [255, 217]    // FF D9
-                });
 
                 const isValidJpg = isJpg(bytes);
 
                 if (!isValidJpg) {
-                  console.error('❌ Invalid JPEG detected:', {
+                  console.error('Invalid JPEG detected:', {
                     fileName,
                     size: bytes.length,
                     firstBytes: Array.from(bytes.slice(0, 10)),
@@ -592,52 +495,31 @@ const Approvals = () => {
                     asText: String.fromCharCode(...bytes.slice(0, 50))
                   });
 
-                  // Try to give helpful error message based on what we found
                   const firstByte = bytes[0];
                   let errorHint = '';
-                  if (firstByte === 100 && bytes[1] === 97) { // 'd', 'a'
+                  if (firstByte === 100 && bytes[1] === 97) {
                     errorHint = ' (Appears to be text starting with "da..." - possibly corrupted base64)';
-                  } else if (firstByte === 60) { // '<'
+                  } else if (firstByte === 60) {
                     errorHint = ' (Appears to be HTML/XML content)';
-                  } else if (firstByte === 123) { // '{'
+                  } else if (firstByte === 123) {
                     errorHint = ' (Appears to be JSON data)';
                   }
 
                   throw new Error(`Invalid JPEG file: ${fileName}. The file signature does not match JPEG format${errorHint}.`);
                 }
-
-                console.log('✅ JPEG validation passed for:', fileName);
               }
 
-              // Create blob with correct MIME type
               const blob = new Blob([bytes], { type: mimeType });
               const reconstructedFile = new File([blob], fileName, { type: mimeType });
 
-              // DETAILED DEBUG: Check if blob is valid
-              console.log('✅ File reconstructed:', {
-                name: fileName,
-                size: reconstructedFile.size,
-                type: reconstructedFile.type,
-                blobSize: blob.size,
-                firstBytes: Array.from(bytes.slice(0, 10))
-              });
-
-              // DETAILED DEBUG: Try creating blob URL to verify
               const testUrl = URL.createObjectURL(blob);
-              console.log('🔍 Test blob URL created:', testUrl);
 
-              // DETAILED DEBUG: For images, test if they can load
               if (mimeType.startsWith('image/')) {
                 const testImg = new Image();
                 testImg.onload = () => {
-                  console.log('✅ Blob test: Image loaded successfully via blob URL', {
-                    width: testImg.width,
-                    height: testImg.height
-                  });
                   URL.revokeObjectURL(testUrl);
                 };
-                testImg.onerror = (e) => {
-                  console.error('❌ Blob test: Image failed to load via blob URL', e);
+                testImg.onerror = () => {
                   URL.revokeObjectURL(testUrl);
                 };
                 testImg.src = testUrl;
@@ -645,7 +527,7 @@ const Approvals = () => {
 
               reconstructedFiles.push(reconstructedFile);
             } catch (err) {
-              console.error('❌ Failed to reconstruct file:', fileName, err);
+              console.error('Failed to reconstruct file:', fileName, err);
               toast({
                 title: "File Error",
                 description: `Failed to load ${fileName}: ${err instanceof Error ? err.message : 'Unknown error'}`,
@@ -659,7 +541,7 @@ const Approvals = () => {
 
         // Use multi-file viewer if has multiple files
         if (reconstructedFiles.length === 0) {
-          console.warn('⚠️ No files could be reconstructed');
+          console.warn('No files could be reconstructed');
           toast({
             title: "No Files",
             description: "No valid files found to display",
@@ -667,16 +549,14 @@ const Approvals = () => {
           });
           return;
         } else if (reconstructedFiles.length > 1) {
-          console.log('✅ Opening multi-file viewer with', reconstructedFiles.length, 'files');
           setViewingFiles(reconstructedFiles);
           setViewingFile(null);
         } else if (reconstructedFiles.length === 1) {
-          console.log('✅ Opening single file:', reconstructedFiles[0].name);
           setViewingFile(reconstructedFiles[0]);
           setViewingFiles([]);
         }
       } catch (error) {
-        console.error('❌ Error reconstructing files:', error);
+        console.error('Error reconstructing files:', error);
         toast({
           title: "Error",
           description: `Failed to load files: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -685,7 +565,6 @@ const Approvals = () => {
         return;
       }
     } else {
-      // Fallback to creating a demo HTML file
       const file = createDocumentFile(doc);
       setViewingFile(file);
       setViewingFiles([]);
@@ -695,21 +574,17 @@ const Approvals = () => {
     setShowDocumentViewer(true);
   };
 
-  // Handle Approve & Sign with file routing
   const handleApproveSign = (doc: any) => {
-    // Create or retrieve file for the document
     const file = createDocumentFile(doc);
 
-    // Set document metadata for Documenso
     setDocumensoDocument({
       id: doc.id,
       title: doc.title,
       content: doc.description,
       type: doc.type,
-      file: file  // Store file reference
+      file: file
     });
 
-    // Store the file for Documenso to use
     setViewingFile(file);
     setShowDocumenso(true);
   };
@@ -721,7 +596,6 @@ const Approvals = () => {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [realTimePendingApprovals, setRealTimePendingApprovals] = useState<any[]>([]);
 
-  // Use real-time approval cards
   useEffect(() => {
     setRealTimePendingApprovals(approvalCards);
   }, [approvalCards]);
@@ -765,7 +639,6 @@ const Approvals = () => {
   };
 
   const handleAcceptDocumentFallback = async (docId: string) => {
-    // Find the document in pending approvals
     const doc = realTimePendingApprovals.find(d => d.id === docId) ||
       pendingApprovals.find(d => d.id === docId) ||
       staticPendingDocs.find(d => d.id === docId);
@@ -774,12 +647,6 @@ const Approvals = () => {
       const currentUserName = user?.name || 'Approver';
       const currentDate = new Date().toISOString().split('T')[0];
 
-      console.log(`✅ [Accept] Processing approval for: ${doc.title}`);
-      console.log(`   User: ${currentUserName}`);
-      console.log(`   Source: ${doc.source}, Routing: ${doc.routingType}`);
-      console.log(`   Is Parallel: ${doc.isParallel}`);
-
-      // Update document in Track Documents with signature
       const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
       const updatedDocs = submittedDocs.map((trackDoc: any) => {
         // Match by ID or trackingCardId
@@ -794,11 +661,8 @@ const Approvals = () => {
           const routingType = trackDoc.routingType || doc.routingType;
           const isApprovalChainBypass = trackDoc.source === 'approval-chain-bypass' || doc.source === 'approval-chain-bypass';
 
-          // 🆕 APPROVAL CHAIN WITH BYPASS ROUTING HANDLING
+          // APPROVAL CHAIN WITH BYPASS ROUTING HANDLING
           if (isApprovalChainBypass && routingType) {
-            console.log(`  🔀 Approval Chain Bypass - ${routingType.toUpperCase()} MODE`);
-
-            // Find current user's step
             const currentStepIndex = trackDoc.workflow.steps.findIndex((step: any) => {
               const assigneeLower = step.assignee.toLowerCase();
               const userNameLower = currentUserName.toLowerCase();
@@ -815,7 +679,6 @@ const Approvals = () => {
 
               if (routingType === 'sequential' || routingType === 'reverse') {
                 // Sequential/Reverse: Move to next recipient
-                console.log(`  🔄 ${routingType.toUpperCase()}: Moving to next recipient`);
                 if (currentStepIndex + 1 < updatedSteps.length) {
                   updatedSteps[currentStepIndex + 1] = {
                     ...updatedSteps[currentStepIndex + 1],
@@ -841,8 +704,6 @@ const Approvals = () => {
                 };
               } else if (routingType === 'parallel' || routingType === 'bidirectional') {
                 // Parallel/Bi-Directional: All continue
-                console.log(`  ⚡ ${routingType.toUpperCase()}: Tracking signature`);
-
                 const recipientSteps = updatedSteps.filter((s: any) => s.name !== 'Submission');
                 const completedCount = recipientSteps.filter((s: any) => s.status === 'completed' || s.status === 'bypassed').length;
                 const allCompleted = completedCount === recipientSteps.length;
@@ -864,30 +725,22 @@ const Approvals = () => {
           }
 
           if (isParallel) {
-            // ⚡ PARALLEL MODE: Track individual signatures, don't advance steps
-            console.log('  ⚡ PARALLEL MODE: Recording signature without advancing workflow');
-
-            // Find and mark user's step as completed (but others stay 'current')
+            // PARALLEL MODE: Track individual signatures, don't advance steps
             const updatedSteps = trackDoc.workflow.steps.map((step: any) => {
               const assigneeLower = step.assignee.toLowerCase();
               const userNameLower = currentUserName.toLowerCase();
 
               if (assigneeLower.includes(userNameLower) || assigneeLower.includes(user?.role?.toLowerCase() || '')) {
-                // Mark this user's step as completed
                 return { ...step, status: 'completed', completedDate: currentDate };
               }
               return step;
             });
 
-            // Calculate progress based on completed signatures
             const recipientSteps = updatedSteps.filter((s: any) => s.name !== 'Submission');
             const completedCount = recipientSteps.filter((s: any) => s.status === 'completed').length;
             const totalRecipients = recipientSteps.length;
             const newProgress = Math.round((completedCount / totalRecipients) * 100);
             const allCompleted = completedCount === totalRecipients;
-
-            console.log(`  📊 Progress: ${completedCount} of ${totalRecipients} signed (${newProgress}%)`);
-
             return {
               ...trackDoc,
               signedBy: newSignedBy,
@@ -900,9 +753,7 @@ const Approvals = () => {
               }
             };
           } else {
-            // 📋 SEQUENTIAL MODE: Advance to next step
-            console.log('  📋 SEQUENTIAL MODE: Advancing workflow to next step');
-
+            // SEQUENTIAL MODE: Advance to next step
             const currentStepIndex = trackDoc.workflow.steps.findIndex((step: any) => step.status === 'current');
             const updatedSteps = trackDoc.workflow.steps.map((step: any, index: number) => {
               if (index === currentStepIndex) {
@@ -917,8 +768,6 @@ const Approvals = () => {
             const newProgress = isLastStep ? 100 : Math.round(((currentStepIndex + 1) / trackDoc.workflow.steps.length) * 100);
             const newCurrentStep = isLastStep ? 'Complete' : updatedSteps[currentStepIndex + 1]?.name;
             const newStatus = isLastStep ? 'approved' : 'pending';
-
-            console.log(`  📊 Progress: Step ${currentStepIndex + 1} of ${trackDoc.workflow.steps.length} (${newProgress}%)`);
 
             return {
               ...trackDoc,
@@ -952,8 +801,6 @@ const Approvals = () => {
             const nextRecipientId = doc.recipientIds?.[currentStepIndex - 1];
 
             if (nextRecipientId && nextRecipientName) {
-              console.log(`📬 Notifying next recipient: ${nextRecipientName}`);
-
               ExternalNotificationDispatcher.notifyRecipient(
                 nextRecipientId,
                 nextRecipientName,
@@ -967,23 +814,22 @@ const Approvals = () => {
                 }
               ).then((result) => {
                 if (result.success) {
-                  console.log(`✅ Next recipient notified via: ${result.channels.join(', ')}`);
+                  // notified
                 }
               }).catch((error) => {
-                console.error('❌ Error notifying next recipient:', error);
+                console.error('Error notifying next recipient:', error);
               });
             }
           }
         } else {
           // PARALLEL: Notify remaining recipients (optional - they already have the card)
-          console.log('  ⚡ Parallel mode: Other recipients already have access, no sequential notification needed');
         }
       }
 
       // Trigger real-time update for Track Documents
       window.dispatchEvent(new CustomEvent('workflow-updated'));
 
-      // 🆕 Dispatch document-signed event with signature details for real-time badge updates
+      // Dispatch document-signed event with signature details for real-time badge updates
       const currentSignedCount = updatedDoc?.signedBy?.length || 0;
       const totalRecipients = updatedDoc?.workflow?.steps?.filter((step: any) =>
         step.name !== 'Submission' && step.assignee !== updatedDoc.submittedBy
@@ -1009,12 +855,10 @@ const Approvals = () => {
       // Add to approval history state
       setApprovalHistory(prev => {
         const updated = [approvedDoc, ...prev];
-        // Save to localStorage for persistence
         try {
           localStorage.setItem('approval-history-new', JSON.stringify(updated));
-          console.log('✅ [Approval History] Saved approved document to localStorage');
         } catch (error) {
-          console.error('❌ [Approval History] Error saving to localStorage:', error);
+          console.error('[Approval History] Error saving to localStorage:', error);
         }
         return updated;
       });
@@ -1025,13 +869,12 @@ const Approvals = () => {
 
       const pendingApprovalsData = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
 
-      // 🆕 Check if workflow is complete for this card
+      // Check if workflow is complete for this card
       const workflowDoc = updatedDocs.find((d: any) => d.id === docId || d.id === doc.trackingCardId);
       const isWorkflowComplete = workflowDoc?.status === 'approved';
 
-      // 🆕 For Approval Chain Bypass routing types, keep card for next recipients unless workflow is complete
+      // For Approval Chain Bypass routing types, keep card for next recipients unless workflow is complete
       if (isApprovalChainBypass && (routingType === 'sequential' || routingType === 'reverse') && !isWorkflowComplete) {
-        console.log(`  🔄 Approval Chain Bypass ${routingType.toUpperCase()}: Card continues for next recipient`);
         // Keep card in localStorage for next recipients
         localStorage.setItem('pending-approvals', JSON.stringify(pendingApprovalsData));
 
@@ -1047,7 +890,6 @@ const Approvals = () => {
         // Remove from local state only for current user
         setPendingApprovals(prev => prev.filter(d => d.id !== docId));
       } else if (isApprovalChainBypass && (routingType === 'parallel' || routingType === 'bidirectional') && !isWorkflowComplete) {
-        console.log(`  ⚡ Approval Chain Bypass ${routingType.toUpperCase()}: Card stays for all recipients`);
         // Keep card in localStorage for all recipients
         localStorage.setItem('pending-approvals', JSON.stringify(pendingApprovalsData));
 
@@ -1064,7 +906,6 @@ const Approvals = () => {
         setPendingApprovals(prev => prev.filter(d => d.id !== docId));
       } else {
         // Workflow complete or non-bypass cards: Remove for everyone
-        console.log('  🗑️ Removing card for ALL recipients (workflow complete or non-bypass)');
         const updatedPendingApprovals = pendingApprovalsData.filter((approval: any) =>
           approval.id !== docId && approval.trackingCardId !== docId
         );
@@ -1092,9 +933,8 @@ const Approvals = () => {
           actionType: 'approve',
           signatureData: { comment: comments[docId]?.join(' ') }
         });
-        console.log('✅ Audit log recorded for approval');
       } catch (error) {
-        console.error('❌ Failed to record audit log:', error);
+        console.error('Failed to record audit log:', error);
       }
 
       toast({
@@ -1142,11 +982,6 @@ const Approvals = () => {
       const currentUserName = user?.name || 'Approver';
       const currentDate = new Date().toISOString().split('T')[0];
 
-      console.log(`❌ [Reject] Processing rejection for: ${doc.title}`);
-      console.log(`   User: ${currentUserName}`);
-      console.log(`   Source: ${doc.source}, Routing: ${doc.routingType}`);
-      console.log(`   Is Parallel: ${doc.isParallel}, Has Bypass: ${doc.hasBypass}`);
-
       // Update document in Track Documents with rejection status
       const submittedDocs = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
       const updatedDocs = submittedDocs.map((trackDoc: any) => {
@@ -1163,13 +998,11 @@ const Approvals = () => {
           const currentRejectedBy = trackDoc.rejectedBy || [];
           const newRejectedBy = [...currentRejectedBy, currentUserName];
 
-          // 🆕 Initialize bypassed recipients array if doesn't exist
+          // Initialize bypassed recipients array if doesn't exist
           const bypassedRecipients = trackDoc.workflow?.bypassedRecipients || [];
 
-          // 🆕 APPROVAL CHAIN WITH BYPASS ROUTING HANDLING
+          // APPROVAL CHAIN WITH BYPASS ROUTING HANDLING
           if (isApprovalChainBypass && routingType) {
-            console.log(`  🔀 Approval Chain Bypass - ${routingType.toUpperCase()} MODE`);
-
             // Find current user's step
             const currentStepIndex = trackDoc.workflow.steps.findIndex((step: any) => {
               const assigneeLower = step.assignee.toLowerCase();
@@ -1183,7 +1016,7 @@ const Approvals = () => {
               // Mark current user's step as rejected with BYPASS
               updatedSteps[currentStepIndex] = {
                 ...updatedSteps[currentStepIndex],
-                status: 'bypassed', // 🆕 Use 'bypassed' instead of 'rejected'
+                status: 'bypassed', // Use 'bypassed' instead of 'rejected'
                 rejectedBy: currentUserName,
                 rejectedDate: currentDate,
                 bypassReason: userComments.join(' ')
@@ -1194,7 +1027,6 @@ const Approvals = () => {
 
               if (routingType === 'sequential') {
                 // Sequential: Move to next recipient
-                console.log('  🔄 SEQUENTIAL: Moving to next recipient');
                 if (currentStepIndex + 1 < updatedSteps.length) {
                   updatedSteps[currentStepIndex + 1] = {
                     ...updatedSteps[currentStepIndex + 1],
@@ -1222,13 +1054,11 @@ const Approvals = () => {
                 };
               } else if (routingType === 'parallel' || routingType === 'bidirectional') {
                 // Parallel/Bi-Directional: All continue
-                console.log(`  ⚡ ${routingType.toUpperCase()}: Others continue`);
-
-                const recipientSteps = updatedSteps.filter((s: any) => s.name !== 'Submission');
-                const actionedCount = recipientSteps.filter((s: any) =>
+                const recipientSteps2 = updatedSteps.filter((s: any) => s.name !== 'Submission');
+                const actionedCount = recipientSteps2.filter((s: any) =>
                   s.status === 'completed' || s.status === 'bypassed'
                 ).length;
-                const allActioned = actionedCount === recipientSteps.length;
+                const allActioned = actionedCount === recipientSteps2.length;
 
                 return {
                   ...trackDoc,
@@ -1236,15 +1066,14 @@ const Approvals = () => {
                   status: allActioned ? 'partially-approved' : 'pending',
                   workflow: {
                     ...trackDoc.workflow,
-                    currentStep: allActioned ? 'Complete (with bypasses)' : `${actionedCount} of ${recipientSteps.length} completed`,
-                    progress: Math.round((actionedCount / recipientSteps.length) * 100),
+                    currentStep: allActioned ? 'Complete (with bypasses)' : `${actionedCount} of ${recipientSteps2.length} completed`,
+                    progress: Math.round((actionedCount / recipientSteps2.length) * 100),
                     steps: updatedSteps,
                     bypassedRecipients: bypassedRecipients
                   }
                 };
               } else if (routingType === 'reverse') {
                 // Reverse: Move to next (downward in hierarchy)
-                console.log('  🔙 REVERSE: Moving to next level down');
                 if (currentStepIndex + 1 < updatedSteps.length) {
                   updatedSteps[currentStepIndex + 1] = {
                     ...updatedSteps[currentStepIndex + 1],
@@ -1275,9 +1104,7 @@ const Approvals = () => {
           }
 
           if (isParallel && hasBypass) {
-            // ⚡ PARALLEL WITH BYPASS: Mark user's step as rejected, others continue
-            console.log('  🔄 PARALLEL + BYPASS MODE: Rejection bypassed, workflow continues');
-
+            // PARALLEL WITH BYPASS: Mark user's step as rejected, others continue
             const updatedSteps = trackDoc.workflow.steps.map((step: any) => {
               const assigneeLower = step.assignee.toLowerCase();
               const userNameLower = currentUserName.toLowerCase();
@@ -1303,8 +1130,6 @@ const Approvals = () => {
             const newProgress = Math.round((actionedCount / totalRecipients) * 100);
             const allActioned = actionedCount === totalRecipients;
 
-            console.log(`  📊 Progress: ${actionedCount} of ${totalRecipients} actioned (${newProgress}%)`);
-
             return {
               ...trackDoc,
               rejectedBy: newRejectedBy,
@@ -1317,9 +1142,7 @@ const Approvals = () => {
               }
             };
           } else if (isParallel && !hasBypass) {
-            // ⚡ PARALLEL WITHOUT BYPASS: Stop entire workflow, cancel all
-            console.log('  🛑 PARALLEL MODE: Rejection stops all recipients');
-
+            // PARALLEL WITHOUT BYPASS: Stop entire workflow, cancel all
             const currentStepIndex = trackDoc.workflow.steps.findIndex((step: any) => {
               const assigneeLower = step.assignee.toLowerCase();
               const userNameLower = currentUserName.toLowerCase();
@@ -1353,9 +1176,7 @@ const Approvals = () => {
               }
             };
           } else {
-            // 📋 SEQUENTIAL MODE: Mark rejected, cancel pending
-            console.log('  📋 SEQUENTIAL MODE: Rejection stops workflow');
-
+            // SEQUENTIAL MODE: Mark rejected, cancel pending
             const currentStepIndex = trackDoc.workflow.steps.findIndex(
               (step: any) => step.status === 'current'
             );
@@ -1402,11 +1223,10 @@ const Approvals = () => {
       const pendingApprovalsData = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
       let updatedPendingApprovals;
 
-      // 🆕 ALL Approval Chain with Bypass routing types continue workflow
+      // ALL Approval Chain with Bypass routing types continue workflow
       if (isApprovalChainBypass && (routingType === 'sequential' || routingType === 'parallel' || routingType === 'reverse' || routingType === 'bidirectional')) {
-        console.log(`  🔄 Approval Chain Bypass ${routingType.toUpperCase()}: Card continues for others`);
         updatedPendingApprovals = pendingApprovalsData; // Keep all cards in storage
-        localStorage.setItem('pending-approvals', JSON.stringify(updatedPendingApprovals)); // 🆕 Save to localStorage
+        localStorage.setItem('pending-approvals', JSON.stringify(updatedPendingApprovals));
 
         // Broadcast update event for other users to refresh
         window.dispatchEvent(new CustomEvent('approval-card-updated', {
@@ -1421,13 +1241,11 @@ const Approvals = () => {
         setPendingApprovals(prev => prev.filter(d => d.id !== docId));
       } else if (isParallel && hasBypass) {
         // BYPASS MODE (Emergency Management): Remove only for current user (card stays for others)
-        console.log('  🔄 Bypass mode: Removing card only for current user');
         updatedPendingApprovals = pendingApprovalsData; // Keep all cards in storage
         // Remove from local state only
         setPendingApprovals(prev => prev.filter(d => d.id !== docId));
       } else {
         // NO BYPASS: Remove for ALL users
-        console.log('  🗑️ Removing card for ALL recipients');
         updatedPendingApprovals = pendingApprovalsData.filter((approval: any) =>
           approval.id !== docId && approval.trackingCardId !== docId
         );
@@ -1468,9 +1286,8 @@ const Approvals = () => {
         // Save to localStorage for persistence
         try {
           localStorage.setItem('approval-history-new', JSON.stringify(updated));
-          console.log('✅ [Approval History] Saved rejected document to localStorage');
         } catch (error) {
-          console.error('❌ [Approval History] Error saving to localStorage:', error);
+          console.error('[Approval History] Error saving to localStorage:', error);
         }
         return updated;
       });
@@ -1495,9 +1312,8 @@ const Approvals = () => {
           actionType: 'reject',
           signatureData: { reason: userComments.join(' ') }
         });
-        console.log('✅ Audit log recorded for rejection');
       } catch (error) {
-        console.error('❌ Failed to record audit log:', error);
+        console.error('Failed to record audit log:', error);
       }
 
       const rejectionMessage = (isApprovalChainBypass && routingType)
@@ -1542,7 +1358,7 @@ const Approvals = () => {
       }
     ];
 
-    console.log('🧪 Testing recipient matching logic:');
+    console.log('Testing recipient matching logic:');
     testCases.forEach((testCase, index) => {
       const mockDoc = { recipientIds: testCase.recipientIds };
       const mockUser = testCase.user;
@@ -1564,7 +1380,7 @@ const Approvals = () => {
         return roleMatches.some(match => match);
       });
 
-      console.log(`  Test ${index + 1}: ${result === testCase.expected ? '✅ PASS' : '❌ FAIL'} - User: ${mockUser.name} (${mockUser.role}) - Recipients: ${testCase.recipientIds.join(', ')} - Expected: ${testCase.expected}, Got: ${result}`);
+      console.log(`  Test ${index + 1}: ${result === testCase.expected ? 'PASS' : 'FAIL'} - User: ${mockUser.name} (${mockUser.role}) - Recipients: ${testCase.recipientIds.join(', ')} - Expected: ${testCase.expected}, Got: ${result}`);
     });
   };
 
@@ -1575,11 +1391,8 @@ const Approvals = () => {
     }
   }, []);
 
-  // Helper function to check if current user is in recipients list
   const isUserInRecipientsLocal = (doc: any): boolean => {
-    // If no recipients specified, show to everyone (for backward compatibility)
     if ((!doc.recipients || doc.recipients.length === 0) && (!doc.recipientIds || doc.recipientIds.length === 0)) {
-      console.log('✅ No recipients filter - showing card:', doc.title);
       return true;
     }
 
@@ -1587,23 +1400,16 @@ const Approvals = () => {
     const currentUserRole = user?.role || '';
     const currentUserId = user?.id || '';
 
-    console.log(`🔍 Checking card "${doc.title}" for user: ${currentUserName} (${currentUserRole}) [${currentUserId}]`);
-
     // Check recipientIds first (most reliable)
     if (doc.recipientIds && doc.recipientIds.length > 0) {
-      console.log('📋 Checking recipientIds:', doc.recipientIds);
-
       const matchesRecipientId = doc.recipientIds.some((recipientId: string) => {
         const recipientLower = recipientId.toLowerCase();
         const userRoleLower = currentUserRole.toLowerCase();
 
-        // Check UUID match first
         if (recipientId === currentUserId) {
-          console.log(`  "${recipientId}" -> UUID MATCH`);
           return true;
         }
 
-        // Enhanced matching for all roles including employee
         const isMatch = recipientLower.includes(userRoleLower) ||
           recipientLower.includes('principal') && userRoleLower === 'principal' ||
           recipientLower.includes('registrar') && userRoleLower === 'registrar' ||
@@ -1612,26 +1418,21 @@ const Approvals = () => {
           recipientLower.includes('program head') && userRoleLower === 'program-head' ||
           recipientLower.includes('dean') && userRoleLower === 'dean';
 
-        console.log(`  "${recipientId}" -> ${isMatch ? 'MATCH' : 'NO MATCH'}`);
         return isMatch;
       });
 
       if (matchesRecipientId) {
-        console.log('✅ Matches recipientIds');
         return true;
       }
     }
 
     // Check display names (legacy support)
     if (doc.recipients && doc.recipients.length > 0) {
-      console.log('📋 Checking recipients:', doc.recipients);
-
       const matchesDisplayName = doc.recipients.some((recipient: string) => {
         const recipientLower = recipient.toLowerCase();
         const userNameLower = currentUserName.toLowerCase();
         const userRoleLower = currentUserRole.toLowerCase();
 
-        // Enhanced matching for names and roles including employee
         const isMatch = recipient.includes(currentUserName) ||
           userNameLower && recipientLower.includes(userNameLower) ||
           recipientLower.includes(userRoleLower) ||
@@ -1642,18 +1443,14 @@ const Approvals = () => {
           recipientLower.includes('program head') && userRoleLower === 'program-head' ||
           recipientLower.includes('dean') && userRoleLower === 'dean';
 
-        console.log(`  "${recipient}" -> ${isMatch ? 'MATCH' : 'NO MATCH'}`);
         return isMatch;
       });
 
-
       if (matchesDisplayName) {
-        console.log('✅ Matches display names');
         return true;
       }
     }
 
-    console.log('❌ No matches found');
     return false;
   };
 
@@ -1678,7 +1475,6 @@ const Approvals = () => {
       (currentUserName && currentUserName.includes(sharedForLower)) ||
       (currentUserName && sharedForLower.replace(/\s+/g, '-').includes(currentUserName.replace(/\s+/g, '-')));
 
-    console.log(`👁️ Shared comment visibility check: sharedFor="${sharedFor}", user="${user.name}", role="${user.role}", visible=${matches}`);
     return matches;
   };
 
@@ -1695,7 +1491,6 @@ const Approvals = () => {
       if (currentStepIndex !== -1 && currentStepIndex < doc.workflow.steps.length - 1) {
         const nextStep = doc.workflow.steps[currentStepIndex + 1];
         const nextRecipient = nextStep.name || nextStep.assignee || 'next-recipient';
-        console.log(`📤 Next recipient from workflow: ${nextRecipient}`);
         return nextRecipient;
       }
     }
@@ -1714,13 +1509,11 @@ const Approvals = () => {
 
       if (userIndex !== -1 && userIndex < doc.recipientIds.length - 1) {
         const nextRecipientId = doc.recipientIds[userIndex + 1];
-        console.log(`📤 Next recipient from recipientIds: ${nextRecipientId}`);
         return nextRecipientId;
       }
     }
 
     // Default to 'all' if next recipient cannot be determined
-    console.log(`⚠️ Cannot determine next recipient - sharing with all`);
     return 'all';
   };
 
@@ -1734,7 +1527,6 @@ const Approvals = () => {
         (step: any) => step.status === 'current'
       );
       const isLastStep = currentStepIndex === doc.workflow.steps.length - 1;
-      console.log(`🔍 Workflow check for "${doc.title}": currentStep=${currentStepIndex}, lastStep=${doc.workflow.steps.length - 1}, isLast=${isLastStep}`);
       return isLastStep;
     }
 
@@ -1751,20 +1543,17 @@ const Approvals = () => {
 
       if (userIndex !== -1) {
         const isLast = userIndex === doc.recipientIds.length - 1;
-        console.log(`🔍 RecipientIds check for "${doc.title}": userIndex=${userIndex}, totalRecipients=${doc.recipientIds.length}, isLast=${isLast}`);
         return isLast;
       }
     }
 
     // Default to false (show button) if structure is unclear
-    console.log(`⚠️ Cannot determine last recipient for "${doc.title}" - showing share button`);
     return false;
   };
 
   useEffect(() => {
     const loadPendingApprovals = () => {
       const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
-      console.log('📥 Loading pending approvals from localStorage:', stored.length, 'cards');
       setPendingApprovals(stored);
     };
 
@@ -1797,42 +1586,29 @@ const Approvals = () => {
     saveApprovalData();
 
     const handleStorageChange = () => {
-      console.log('🔄 Storage changed, reloading approvals');
       loadPendingApprovals();
     };
 
     // Listen for document removal from Track Documents
     const handleDocumentRemoval = (event: any) => {
       const { docId } = event.detail;
-      console.log('🗑️ Document removed:', docId);
       setPendingApprovals(prev => prev.filter(doc => doc.id !== docId));
     };
 
-    // Listen for new approval cards from Emergency Management
     const handleApprovalCardCreated = (event: any) => {
       const { approval } = event.detail;
-      console.log('📋 New approval card received in Approvals page:', approval);
-      console.log('👤 Current user:', user?.name, '| Role:', user?.role);
-      console.log('👥 Card recipients:', approval.recipients);
-
-      // Check if card already exists
       setPendingApprovals(prev => {
         const isDuplicate = prev.some((existing: any) => existing.id === approval.id);
-
         if (!isDuplicate) {
-          console.log('✅ Adding new approval card to state');
           return [approval, ...prev];
         } else {
-          console.log('ℹ️ Approval card already exists, skipping duplicate');
           return prev;
         }
       });
     };
 
-    // Listen for document rejections to remove from all recipients
     const handleDocumentRejected = (event: any) => {
       const { docId, rejectedBy } = event.detail;
-      console.log('❌ Document rejected:', docId, 'by', rejectedBy);
       setPendingApprovals(prev => prev.filter(doc => doc.id !== docId));
 
       toast({
@@ -1858,9 +1634,6 @@ const Approvals = () => {
   // Listen for document signature events
   useEffect(() => {
     const handleDocumentSigned = (event: any) => {
-      console.log('🖊️ [Approval Center] Document signed event received:', event.detail);
-
-      // Reload pending approvals to show updated signed files
       const stored = JSON.parse(localStorage.getItem('pending-approvals') || '[]');
       setPendingApprovals(stored);
 
@@ -1894,9 +1667,8 @@ const Approvals = () => {
       }));
 
       localStorage.setItem('approval-history-new', JSON.stringify(compactHistory));
-      console.log('💾 Saved approval history:', compactHistory.length, 'items');
     } catch (quotaError) {
-      console.error('⚠️ LocalStorage quota exceeded for approval history:', quotaError);
+      console.error('LocalStorage quota exceeded for approval history:', quotaError);
       // Clear old history and try again
       try {
         const recentHistory = approvalHistory.slice(0, 20).map(item => ({
@@ -1997,30 +1769,19 @@ const Approvals = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* Real-time Approval Cards */}
                   {realTimePendingApprovals.filter(doc => {
-                    // Step 1: Check if user is in recipients
                     const isInRecipients = isUserInRecipientsLocal(doc);
-                    console.log(`📄 Card "${doc.title}" - Is in recipients: ${isInRecipients}`);
 
                     if (!isInRecipients) {
-                      console.log('  ❌ User not in recipients, hiding card');
                       return false;
                     }
 
-                    // Step 2: Check workflow-specific logic
-
-                    // For parallel mode cards, always show to all recipients
+                    // Check workflow-specific logic
                     if (doc.isParallel || doc.routingType === 'parallel' || doc.routingType === 'bidirectional') {
-                      console.log('  ⚡ PARALLEL MODE - Showing card to all recipients');
                       return true;
                     }
 
-                    // For approval chain bypass cards
                     if (doc.source === 'approval-chain-bypass') {
-                      console.log(`  🔀 Approval Chain Bypass - Routing: ${doc.routingType}`);
-
-                      // Get tracking card for workflow state
                       const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
                       const trackingCard = trackingCards.find((tc: any) => tc.id === doc.trackingCardId || tc.id === doc.id);
 
@@ -2032,29 +1793,22 @@ const Approvals = () => {
 
                         if (userStep) {
                           const shouldShow = userStep.step.status === 'current' || userStep.step.status === 'pending';
-                          console.log(`  🔄 User step status: ${userStep.step.status}, Show: ${shouldShow}`);
                           return shouldShow;
                         }
                       }
 
-                      // Fallback: show if in recipients
-                      console.log('  ✅ Fallback: showing to recipient');
                       return true;
                     }
 
-                    // For cards with tracking (sequential workflow)
                     if (doc.trackingCardId) {
                       const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
                       const trackingCard = trackingCards.find((tc: any) => tc.id === doc.trackingCardId);
 
                       if (trackingCard?.workflow?.steps) {
-                        // If tracking card is parallel, show to all
                         if (trackingCard.workflow.isParallel) {
-                          console.log('  ⚡ Tracking card is PARALLEL - Showing to all recipients');
                           return true;
                         }
 
-                        // Sequential workflow: check if it's user's turn
                         const userStep = findUserStepInWorkflow(
                           { name: user?.name, role: user?.role, department: user?.department, branch: user?.branch },
                           trackingCard.workflow.steps
@@ -2062,20 +1816,15 @@ const Approvals = () => {
 
                         if (userStep) {
                           const shouldShow = userStep.step.status === 'current';
-                          console.log(`  🔄 SEQUENTIAL - User step status: ${userStep.step.status}, Show: ${shouldShow}`);
                           return shouldShow;
                         } else {
-                          console.log('  ⚠️ User not found in workflow, showing as fallback');
-                          return true; // Show as fallback if user not found in workflow but is in recipients
+                          return true;
                         }
                       }
                     }
 
-                    // For non-tracking cards or legacy cards, show if user is in recipients
-                    console.log('  ✅ Non-workflow card, showing to recipient');
                     return true;
                   })
-                    // 🆕 REMOVE DUPLICATE CARDS BY ID TO FIX REACT KEY WARNING
                     .filter((doc, index, self) =>
                       index === self.findIndex((d) => d.id === doc.id)
                     )
@@ -2152,7 +1901,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Action Required Indicator */}
                               {(() => {
                                 const trackingCards = JSON.parse(localStorage.getItem('submitted-documents') || '[]');
                                 const trackingCard = trackingCards.find((tc: any) =>
@@ -2178,7 +1926,6 @@ const Approvals = () => {
                                 return null;
                               })()}
 
-                              {/* Shared Comments from Previous Approvers */}
                               {sharedComments[doc.id]?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2196,7 +1943,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Shared Comments (above input field) */}
                               {sharedComments[doc.id]?.filter(s => s.sharedBy === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2369,10 +2115,8 @@ const Approvals = () => {
                       </Card>
                     ))}
 
-                  {/* Demo Cards - Visible only to demo-work role */}
                   {user.role === 'demo-work' && (
                     <>
-                      {/* Faculty Meeting Minutes Card */}
                       <Card className="hover:shadow-md transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex flex-col lg:flex-row gap-6">
@@ -2404,7 +2148,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Description */}
                               <div className="space-y-2">
                                 <div className="flex items-center gap-1">
                                   <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -2415,7 +2158,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Shared Comments from Previous Approvers */}
                               {sharedComments['faculty-meeting']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2433,7 +2175,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Shared Comments (above input field) */}
                               {sharedComments['faculty-meeting']?.filter(s => s.sharedBy === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2474,7 +2215,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments */}
                               {comments['faculty-meeting']?.filter(c => c.author === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2516,7 +2256,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments Header - only when no comments exist */}
                               {!comments['faculty-meeting']?.length && (
                                 <div className="flex items-center gap-1">
                                   <MessageSquare className="h-4 w-4" />
@@ -2524,7 +2263,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Input Field */}
                               <div className="space-y-2">
                                 <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                                   <textarea
@@ -2626,7 +2364,6 @@ const Approvals = () => {
                         </CardContent>
                       </Card>
 
-                      {/* Budget Request Card */}
                       <Card className="hover:shadow-md transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex flex-col lg:flex-row gap-6">
@@ -2658,7 +2395,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Description */}
                               <div className="space-y-2">
                                 <div className="flex items-center gap-1">
                                   <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -2669,7 +2405,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Shared Comments from Previous Approvers */}
                               {sharedComments['budget-request']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2687,7 +2422,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Shared Comments (above input field) */}
                               {sharedComments['budget-request']?.filter(s => s.sharedBy === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2728,7 +2462,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments */}
                               {comments['budget-request']?.filter(c => c.author === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -2770,7 +2503,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments Header - only when no comments exist */}
                               {!comments['budget-request']?.length && (
                                 <div className="flex items-center gap-1">
                                   <MessageSquare className="h-4 w-4" />
@@ -2778,7 +2510,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Input Field */}
                               <div className="space-y-2">
                                 <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                                   <textarea
@@ -2880,7 +2611,6 @@ const Approvals = () => {
                         </CardContent>
                       </Card>
 
-                      {/* Student Event Proposal Card */}
                       <Card className="hover:shadow-md transition-shadow border-destructive bg-red-50 animate-pulse">
                         <CardContent className="p-6">
                           <div className="flex flex-col lg:flex-row gap-6">
@@ -2926,7 +2656,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Action Required Indicator */}
                               <div className="flex items-center gap-2 p-2 bg-warning/10 rounded border border-warning/20">
                                 <Zap className="w-4 h-4 text-warning" />
                                 <span className="text-sm font-medium text-warning">
@@ -3082,7 +2811,6 @@ const Approvals = () => {
                         </CardContent>
                       </Card>
 
-                      {/* Demo Card - Pending Approvals */}
                       <Card className="hover:shadow-md transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex flex-col lg:flex-row gap-6">
@@ -3124,7 +2852,6 @@ const Approvals = () => {
                                 </div>
                               </div>
 
-                              {/* Shared Comments from Previous Approvers */}
                               {sharedComments['research-methodology']?.filter(s => shouldSeeSharedComment(s.sharedFor) && s.sharedBy !== user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -3142,7 +2869,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Shared Comments (above input field) */}
                               {sharedComments['research-methodology']?.filter(s => s.sharedBy === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -3183,7 +2909,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments */}
                               {comments['research-methodology']?.filter(c => c.author === user?.name).length > 0 && (
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
@@ -3225,7 +2950,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Your Comments Header - only when no comments exist */}
                               {!comments['research-methodology']?.length && (
                                 <div className="flex items-center gap-1">
                                   <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -3233,7 +2957,6 @@ const Approvals = () => {
                                 </div>
                               )}
 
-                              {/* Input Field */}
                               <div className="space-y-2">
                                 <div className={`flex border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors bg-white ${isMobile ? 'flex-col' : 'items-start'}`}>
                                   <textarea
@@ -3419,7 +3142,6 @@ const Approvals = () => {
                                   </div>
                                 </div>
 
-                                {/* Description */}
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
                                     <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -3430,7 +3152,6 @@ const Approvals = () => {
                                   </div>
                                 </div>
 
-                                {/* Shared Comments from Previous Approvers - only for Research Grant Application */}
                                 {doc.title === 'Research Grant Application' && (
                                   <div className="space-y-2">
                                     <div className="flex items-center gap-1">
@@ -3444,7 +3165,6 @@ const Approvals = () => {
                                   </div>
                                 )}
 
-                                {/* Your Comments */}
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
                                     <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -3455,7 +3175,6 @@ const Approvals = () => {
                                   </div>
                                 </div>
 
-                                {/* Status Information */}
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-1">
                                     <Clock className="h-4 w-4" />
@@ -3525,7 +3244,6 @@ const Approvals = () => {
           />
         )}
 
-        {/* FileViewer Modal */}
         <FileViewer
           file={viewingFile}
           files={viewingFiles.length > 0 ? viewingFiles : undefined}

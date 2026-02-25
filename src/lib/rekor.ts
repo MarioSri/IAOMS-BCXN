@@ -1,12 +1,3 @@
-// Sigstore Rekor integration for immutable audit logging
-
-interface RekorEntry {
-  uuid: string;
-  logIndex: number;
-  body: string;
-  integratedTime: number;
-}
-
 export async function submitToRekor(data: unknown): Promise<{ uuid: string; logIndex: number }> {
   const payload = {
     kind: 'hashedrekord',

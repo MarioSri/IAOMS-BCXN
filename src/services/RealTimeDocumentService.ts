@@ -1,8 +1,3 @@
-/**
- * Real-time document service for unified document management
- * Re-factored to be purely localStorage-based for document management
- */
-
 export interface DocumentData {
   id: string;
   title: string;
@@ -48,10 +43,9 @@ class RealTimeDocumentService {
   private eventListeners: Map<string, Function[]> = new Map();
 
   constructor() {
-    console.log('📦 RealTimeDocumentService initialized (localStorage only)');
+    console.log('RealTimeDocumentService initialized');
   }
 
-  // Document Management Integration
   async submitDocument(documentData: Partial<DocumentData>, currentUser: User): Promise<DocumentData> {
     const document: DocumentData = {
       id: `doc-${Date.now()}`,
@@ -72,18 +66,15 @@ class RealTimeDocumentService {
       files: documentData.files
     };
 
-    // Save to localStorage
     this.saveToTrackDocuments(document);
     this.createApprovalCards(document);
 
-    // Emit real-time events
     this.emit('document-submitted', document);
     this.emit('document-created', document);
 
     return document;
   }
 
-  // Emergency Management Integration
   async createEmergencyDocument(documentData: Partial<DocumentData>, currentUser: User): Promise<DocumentData> {
     const document: DocumentData = {
       id: `emergency-${Date.now()}`,
@@ -104,17 +95,14 @@ class RealTimeDocumentService {
       files: documentData.files
     };
 
-    // Save to localStorage
     this.saveToTrackDocuments(document);
     this.createApprovalCards(document);
 
-    // Emit emergency events
     this.emit('emergency-document-created', document);
 
     return document;
   }
 
-  // Approval Chain with Bypass Integration
   async createApprovalChainDocument(documentData: Partial<DocumentData>, currentUser: User): Promise<DocumentData> {
     const document: DocumentData = {
       id: `approval-chain-${Date.now()}`,
@@ -135,22 +123,18 @@ class RealTimeDocumentService {
       files: documentData.files
     };
 
-    // Save to localStorage
     this.saveToTrackDocuments(document);
     this.createApprovalCards(document);
 
-    // Emit events
     this.emit('approval-chain-created', document);
 
     return document;
   }
 
-  // Approval Processing
   async approveDocument(documentId: string, currentUser: User, comments?: string): Promise<void> {
     const trackingDocs = this.getTrackDocuments();
     const approvalCards = this.getApprovalCards();
 
-    // Update tracking document
     const updatedTracking = trackingDocs.map(doc => {
       if (doc.id === documentId) {
         return this.processApproval(doc, currentUser, 'approved', comments);
@@ -158,7 +142,6 @@ class RealTimeDocumentService {
       return doc;
     });
 
-    // Update approval cards
     const updatedApprovals = approvalCards.filter(card => {
       if (card.id === documentId || (card as any).trackingCardId === documentId) {
         if (card.isParallel || card.routingType === 'parallel') {
@@ -170,11 +153,9 @@ class RealTimeDocumentService {
       return true;
     });
 
-    // Save updates
     localStorage.setItem('submitted-documents', JSON.stringify(updatedTracking));
     localStorage.setItem('pending-approvals', JSON.stringify(updatedApprovals));
 
-    // Emit real-time updates
     this.emit('document-approved', { documentId, approvedBy: currentUser.name });
   }
 
@@ -182,7 +163,6 @@ class RealTimeDocumentService {
     const trackingDocs = this.getTrackDocuments();
     const approvalCards = this.getApprovalCards();
 
-    // Update tracking document
     const updatedTracking = trackingDocs.map(doc => {
       if (doc.id === documentId) {
         return this.processApproval(doc, currentUser, 'rejected', reason);
@@ -190,7 +170,6 @@ class RealTimeDocumentService {
       return doc;
     });
 
-    // Handle approval cards
     const updatedApprovals = approvalCards.filter(card => {
       if (card.id === documentId || (card as any).trackingCardId === documentId) {
         const trackingDoc = updatedTracking.find(td => td.id === documentId);
@@ -205,20 +184,16 @@ class RealTimeDocumentService {
       return true;
     });
 
-    // Save updates
     localStorage.setItem('submitted-documents', JSON.stringify(updatedTracking));
     localStorage.setItem('pending-approvals', JSON.stringify(updatedApprovals));
 
-    // Emit real-time updates
     this.emit('document-rejected', { documentId, rejectedBy: currentUser.name, reason });
   }
 
-  // Real-time recipient management
   async updateRecipients(documentId: string, newRecipients: string[], newRecipientIds: string[]): Promise<void> {
     const trackingDocs = this.getTrackDocuments();
     const approvalCards = this.getApprovalCards();
 
-    // Update tracking documents
     const updatedTracking = trackingDocs.map(doc => {
       if (doc.id === documentId) {
         return {
@@ -231,7 +206,6 @@ class RealTimeDocumentService {
       return doc;
     });
 
-    // Update approval cards
     const updatedApprovals = approvalCards.map(card => {
       if (card.id === documentId || (card as any).trackingCardId === documentId) {
         return {
@@ -243,15 +217,12 @@ class RealTimeDocumentService {
       return card;
     });
 
-    // Save updates
     localStorage.setItem('submitted-documents', JSON.stringify(updatedTracking));
     localStorage.setItem('pending-approvals', JSON.stringify(updatedApprovals));
 
-    // Emit real-time updates
     this.emit('recipients-updated', { documentId, recipients: newRecipients, recipientIds: newRecipientIds });
   }
 
-  // Helper methods
   private createWorkflow(recipients: string[], routingType?: string, hasBypass?: boolean) {
     const steps = recipients.map((recipient, index) => ({
       name: `Step ${index + 1}`,
@@ -335,7 +306,6 @@ class RealTimeDocumentService {
     return JSON.parse(localStorage.getItem('pending-approvals') || '[]');
   }
 
-  // Event system
   on(event: string, callback: Function) {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
@@ -344,19 +314,15 @@ class RealTimeDocumentService {
   }
 
   private emit(event: string, data: any) {
-    const listeners = this.eventListeners.get(event) || [];
+    const listeners = this.eventListeners.get(event) ?? [];
     listeners.forEach(callback => callback(data));
-
-    // Also emit as window event for component communication
     window.dispatchEvent(new CustomEvent(event, { detail: data }));
   }
 
-  // Cleanup
   destroy() {
     this.eventListeners.clear();
   }
 }
 
-// Singleton instance
 export const realTimeDocumentService = new RealTimeDocumentService();
 export default realTimeDocumentService;

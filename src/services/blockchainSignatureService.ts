@@ -1,16 +1,3 @@
-/**
- * Blockchain Signature Service for IOAMS
- * 
- * This service handles recording and verifying digital signatures on blockchain
- * Integrates with existing Documenso workflow
- * 
- * Features:
- * - Record signatures on Polygon blockchain
- * - Verify signature authenticity
- * - Generate immutable proof of signing
- * - Cost-effective (~$0.0001 per signature)
- */
-
 import { ethers } from 'ethers';
 
 interface BlockchainSignature {
@@ -35,47 +22,28 @@ interface SignatureRecord {
   isValid: boolean;
 }
 
-/**
- * Blockchain configuration
- * Update these values based on your deployment
- */
 const BLOCKCHAIN_CONFIG = {
-  // Polygon Mumbai Testnet (for testing)
   testnet: {
     chainId: 80001,
     name: 'Polygon Mumbai',
     rpcUrl: 'https://rpc-mumbai.maticvigil.com',
     explorerUrl: 'https://mumbai.polygonscan.com',
-    contractAddress: '0x0000000000000000000000000000000000000000' // Deploy your contract here
+    contractAddress: '0x0000000000000000000000000000000000000000'
   },
-  // Polygon Mainnet (for production)
   mainnet: {
     chainId: 137,
     name: 'Polygon',
     rpcUrl: 'https://polygon-rpc.com',
     explorerUrl: 'https://polygonscan.com',
-    contractAddress: '0x0000000000000000000000000000000000000000' // Deploy your contract here
+    contractAddress: '0x0000000000000000000000000000000000000000'
   }
 };
 
-/**
- * Smart Contract ABI for signature recording
- * Deploy the Solidity contract and update this ABI
- */
 const SIGNATURE_CONTRACT_ABI = [
-  // Record a signature
   "function recordSignature(bytes32 documentHash, bytes32 signatureHash, string signerName, string signerRole) external returns (uint256)",
-  
-  // Verify a signature
   "function verifySignature(bytes32 documentHash, bytes32 signatureHash) external view returns (bool)",
-  
-  // Get signature details
   "function getSignature(bytes32 documentHash) external view returns (tuple(bytes32 signatureHash, address signer, string signerName, string signerRole, uint256 timestamp, bool isValid))",
-  
-  // Get all signatures for a document
   "function getDocumentSignatures(bytes32 documentHash) external view returns (tuple(bytes32 signatureHash, address signer, string signerName, string signerRole, uint256 timestamp, bool isValid)[])",
-  
-  // Events
   "event SignatureRecorded(bytes32 indexed documentHash, bytes32 indexed signatureHash, address indexed signer, string signerName, uint256 timestamp)"
 ];
 
@@ -85,10 +53,6 @@ export class BlockchainSignatureService {
   private signer?: ethers.Signer;
   private config: typeof BLOCKCHAIN_CONFIG.testnet;
 
-  /**
-   * Initialize the blockchain service
-   * @param useTestnet - Use testnet (true) or mainnet (false)
-   */
   constructor(useTestnet: boolean = true) {
     this.config = useTestnet ? BLOCKCHAIN_CONFIG.testnet : BLOCKCHAIN_CONFIG.mainnet;
     this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
@@ -99,16 +63,10 @@ export class BlockchainSignatureService {
     );
   }
 
-  /**
-   * Connect a wallet for signing transactions
-   * @param walletClient - Wallet client from wagmi/viem
-   */
   async connectWallet(walletClient?: any) {
     if (walletClient) {
-      // If using wagmi/viem wallet
       this.signer = await walletClient.getSigner();
     } else if (typeof window !== 'undefined' && (window as any).ethereum) {
-      // Fallback to window.ethereum (MetaMask)
       const browserProvider = new ethers.BrowserProvider((window as any).ethereum);
       this.signer = await browserProvider.getSigner();
     } else {
@@ -118,13 +76,6 @@ export class BlockchainSignatureService {
     this.contract = this.contract.connect(this.signer);
   }
 
-  /**
-   * Record a signature on the blockchain
-   * @param documentId - Unique document identifier
-   * @param signatureData - Base64 signature image or signature text
-   * @param signerInfo - Information about the signer
-   * @returns Blockchain signature record with transaction hash
-   */
   async recordSignature(
     documentId: string,
     signatureData: string,
@@ -135,12 +86,10 @@ export class BlockchainSignatureService {
     }
 
     try {
-      // 1. Create document hash (unique identifier)
       const documentHash = ethers.keccak256(
         ethers.toUtf8Bytes(documentId)
       );
 
-      // 2. Create signature hash (proof of signature)
       const signatureHash = ethers.keccak256(
         ethers.toUtf8Bytes(signatureData)
       );
@@ -152,7 +101,6 @@ export class BlockchainSignatureService {
         role: signerInfo.role
       });
 
-      // 3. Estimate gas to ensure transaction will succeed
       const gasEstimate = await this.contract.recordSignature.estimateGas(
         documentHash,
         signatureHash,
@@ -162,30 +110,27 @@ export class BlockchainSignatureService {
 
       console.log('Gas estimate:', gasEstimate.toString());
 
-      // 4. Send transaction to blockchain
       const tx = await this.contract.recordSignature(
         documentHash,
         signatureHash,
         signerInfo.name,
         signerInfo.role,
         {
-          gasLimit: gasEstimate * 120n / 100n // Add 20% buffer
+          gasLimit: gasEstimate * 120n / 100n
         }
       );
 
       console.log('Transaction sent:', tx.hash);
       console.log('Waiting for confirmation...');
 
-      // 5. Wait for transaction to be mined
       const receipt = await tx.wait();
 
-      console.log('✅ Signature recorded on blockchain!', {
+      console.log('Signature recorded on blockchain!', {
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString()
       });
 
-      // 6. Return blockchain record
       const signerAddress = await this.signer.getAddress();
 
       return {
@@ -206,12 +151,6 @@ export class BlockchainSignatureService {
     }
   }
 
-  /**
-   * Verify a signature on the blockchain
-   * @param documentId - Document identifier
-   * @param signatureHash - Hash of the signature to verify
-   * @returns True if signature is valid and exists on blockchain
-   */
   async verifySignature(
     documentId: string,
     signatureHash: string
@@ -219,7 +158,6 @@ export class BlockchainSignatureService {
     try {
       const documentHash = ethers.keccak256(ethers.toUtf8Bytes(documentId));
       
-      // Convert signature hash if it's not already a bytes32
       const sigHashBytes32 = signatureHash.startsWith('0x') 
         ? signatureHash 
         : ethers.keccak256(ethers.toUtf8Bytes(signatureHash));
@@ -236,11 +174,6 @@ export class BlockchainSignatureService {
     }
   }
 
-  /**
-   * Get signature details from blockchain
-   * @param documentId - Document identifier
-   * @returns Signature record with signer details
-   */
   async getSignatureDetails(documentId: string): Promise<SignatureRecord | null> {
     try {
       const documentHash = ethers.keccak256(ethers.toUtf8Bytes(documentId));
@@ -262,11 +195,6 @@ export class BlockchainSignatureService {
     }
   }
 
-  /**
-   * Get all signatures for a document
-   * @param documentId - Document identifier
-   * @returns Array of signature records
-   */
   async getAllSignatures(documentId: string): Promise<SignatureRecord[]> {
     try {
       const documentHash = ethers.keccak256(ethers.toUtf8Bytes(documentId));
@@ -288,18 +216,10 @@ export class BlockchainSignatureService {
     }
   }
 
-  /**
-   * Get explorer URL for a transaction
-   * @param transactionHash - Transaction hash
-   * @returns URL to blockchain explorer
-   */
   getExplorerUrl(transactionHash: string): string {
     return `${this.config.explorerUrl}/tx/${transactionHash}`;
   }
 
-  /**
-   * Get current network configuration
-   */
   getNetworkConfig() {
     return {
       chainId: this.config.chainId,
@@ -309,31 +229,23 @@ export class BlockchainSignatureService {
     };
   }
 
-  /**
-   * Check if wallet is connected
-   */
   isWalletConnected(): boolean {
     return this.signer !== undefined;
   }
 
-  /**
-   * Get connected wallet address
-   */
   async getWalletAddress(): Promise<string | null> {
     if (!this.signer) return null;
     return await this.signer.getAddress();
   }
 }
 
-// Export singleton instance for easy use
 let blockchainServiceInstance: BlockchainSignatureService | null = null;
 
-export const getBlockchainService = (useTestnet: boolean = true): BlockchainSignatureService => {
+export function getBlockchainService(useTestnet: boolean = true): BlockchainSignatureService {
   if (!blockchainServiceInstance) {
     blockchainServiceInstance = new BlockchainSignatureService(useTestnet);
   }
   return blockchainServiceInstance;
-};
+}
 
-// Export for use in components
 export default BlockchainSignatureService;

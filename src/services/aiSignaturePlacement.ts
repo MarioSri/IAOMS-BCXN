@@ -32,18 +32,13 @@ export class AISignaturePlacementService {
     return AISignaturePlacementService.instance;
   }
 
-  /**
-   * Analyze document for optimal signature placement using AI
-   */
   async analyzeDocument(documentContent: string, documentType: string): Promise<DocumentAnalysis> {
     const startTime = Date.now();
     
     try {
-      // Use Gemini AI for real document analysis
       const { geminiAI } = await import('@/services/geminiAI');
       const geminiResult = await geminiAI.analyzeDocumentForSignatures(documentContent, documentType);
       
-      // Convert Gemini results to our format
       const zones: SignatureZone[] = geminiResult.signatureZones.map((zone, index) => ({
         id: `gemini_${index}`,
         x: zone.x,
@@ -56,7 +51,6 @@ export class AISignaturePlacementService {
         legalCompliance: zone.confidence > 0.8
       }));
       
-      // Add fallback zones from traditional methods
       const fallbackZones = await this.detectSignatureZones(documentContent, documentType);
       zones.push(...fallbackZones);
       
@@ -74,7 +68,6 @@ export class AISignaturePlacementService {
         }
       };
     } catch (error) {
-      // Fallback to traditional analysis
       const zones = await this.detectSignatureZones(documentContent, documentType);
       const recommendedZone = this.selectOptimalZone(zones);
       
@@ -92,30 +85,17 @@ export class AISignaturePlacementService {
     }
   }
 
-  /**
-   * Detect signature zones using multiple AI methods
-   */
   private async detectSignatureZones(content: string, docType: string): Promise<SignatureZone[]> {
     const zones: SignatureZone[] = [];
     
-    // Text Pattern Recognition
     zones.push(...this.detectTextPatterns(content));
-    
-    // Coordinate-based placement
     zones.push(...this.detectCoordinateZones(docType));
-    
-    // Template-based detection
     zones.push(...this.detectTemplateZones(docType));
-    
-    // Whitespace analysis
     zones.push(...this.detectWhitespaceZones(content));
     
     return zones.sort((a, b) => b.confidence - a.confidence);
   }
 
-  /**
-   * Text pattern recognition for signature indicators
-   */
   private detectTextPatterns(content: string): SignatureZone[] {
     const patterns = [
       { regex: /authorized\s+signatory/i, description: 'Authorized Signatory Field' },
@@ -147,9 +127,6 @@ export class AISignaturePlacementService {
     return zones;
   }
 
-  /**
-   * Coordinate-based placement using document structure analysis
-   */
   private detectCoordinateZones(docType: string): SignatureZone[] {
     const coordinateMap: Record<string, Array<{x: number, y: number, desc: string}>> = {
       'letter': [
@@ -181,9 +158,6 @@ export class AISignaturePlacementService {
     }));
   }
 
-  /**
-   * Template-based approaches for institutional documents
-   */
   private detectTemplateZones(docType: string): SignatureZone[] {
     const institutionalTemplates = {
       'academic': [
@@ -200,7 +174,6 @@ export class AISignaturePlacementService {
       ]
     };
 
-    // Determine template type based on document content analysis
     const templateType = this.determineTemplateType(docType);
     const template = institutionalTemplates[templateType] || institutionalTemplates['administrative'];
     
@@ -217,11 +190,7 @@ export class AISignaturePlacementService {
     }));
   }
 
-  /**
-   * Visual analysis for optimal whitespace detection
-   */
   private detectWhitespaceZones(content: string): SignatureZone[] {
-    // Simulate ML-based whitespace detection
     const whitespaceZones = [
       { x: 350, y: 600, confidence: 0.78, desc: 'Optimal Whitespace Zone A' },
       { x: 480, y: 720, confidence: 0.82, desc: 'Optimal Whitespace Zone B' },
@@ -241,9 +210,6 @@ export class AISignaturePlacementService {
     }));
   }
 
-  /**
-   * Extract text patterns for signature indicators
-   */
   private extractTextPatterns(content: string): string[] {
     const patterns = [
       'Authorized Signatory',
@@ -258,15 +224,10 @@ export class AISignaturePlacementService {
     );
   }
 
-  /**
-   * Select optimal signature zone using ML algorithms
-   */
   private selectOptimalZone(zones: SignatureZone[]): string {
-    // Priority algorithm: Legal compliance > Confidence > Type preference
     const sortedZones = zones
       .filter(zone => zone.legalCompliance)
       .sort((a, b) => {
-        // Prioritize text patterns and templates over whitespace
         const typeScore = (zone: SignatureZone) => {
           switch (zone.type) {
             case 'text_pattern': return 4;
@@ -286,9 +247,6 @@ export class AISignaturePlacementService {
     return sortedZones.length > 0 ? sortedZones[0].id : '';
   }
 
-  /**
-   * Determine template type based on document analysis
-   */
   private determineTemplateType(docType: string): string {
     const typeMapping: Record<string, string> = {
       'letter': 'administrative',
@@ -301,9 +259,6 @@ export class AISignaturePlacementService {
     return typeMapping[docType] || 'administrative';
   }
 
-  /**
-   * Validate signature placement for legal compliance
-   */
   validatePlacement(zone: SignatureZone, documentType: string): {
     isValid: boolean;
     issues: string[];
@@ -312,19 +267,16 @@ export class AISignaturePlacementService {
     const issues: string[] = [];
     const recommendations: string[] = [];
     
-    // Check confidence threshold
     if (zone.confidence < 0.75) {
       issues.push('Low confidence placement detected');
       recommendations.push('Consider manual adjustment for better positioning');
     }
     
-    // Check legal compliance
     if (!zone.legalCompliance) {
       issues.push('Placement may not meet legal requirements');
       recommendations.push('Use template-based or text pattern placement');
     }
     
-    // Check positioning bounds
     if (zone.x < 50 || zone.y < 50) {
       issues.push('Signature too close to document edges');
       recommendations.push('Move signature away from margins');

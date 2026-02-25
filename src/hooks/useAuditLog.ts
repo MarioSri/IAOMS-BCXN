@@ -1,15 +1,14 @@
-
 import { recordAction } from '@/lib/auditLogger';
 
 export function useAuditLog() {
-  const logAction = async (
+  async function logAction(
     documentId: string,
     recipientId: string,
     recipientName: string,
     recipientRole: string,
     actionType: 'approve' | 'reject',
     signatureData?: unknown
-  ) => {
+  ) {
     try {
       const result = await recordAction({
         documentId,
@@ -20,13 +19,13 @@ export function useAuditLog() {
         signatureData
       });
 
-      console.log(`✅ Action logged to Rekor: ${result.rekorUUID}`);
+      console.log(`Action logged to Rekor: ${result.rekorUUID}`);
       return result;
     } catch (error) {
-      console.error('❌ Failed to log action:', error);
+      console.error('Failed to log action:', error);
       throw error;
     }
-  };
+  }
 
   return { logAction };
 }

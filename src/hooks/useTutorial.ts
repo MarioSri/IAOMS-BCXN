@@ -86,11 +86,10 @@ export function useTutorial() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Check if tutorial should be shown on mount
   useEffect(() => {
     const tutorialCompleted = localStorage.getItem('tutorialCompleted');
     const isFirstLogin = localStorage.getItem('isFirstLogin');
-    
+
     if (!tutorialCompleted && isFirstLogin === 'true') {
       setIsActive(true);
       localStorage.removeItem('isFirstLogin');
@@ -99,48 +98,46 @@ export function useTutorial() {
     }
   }, []);
 
-  const startTutorial = () => {
+  function startTutorial() {
     setIsActive(true);
     setCurrentStep(0);
     setIsCompleted(false);
     localStorage.removeItem('tutorialCompleted');
-  };
+  }
 
-  const nextStep = () => {
+  function nextStep() {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       completeTutorial();
     }
-  };
+  }
 
-  const previousStep = () => {
+  function previousStep() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
-  };
+  }
 
-  const skipTutorial = () => {
-    completeTutorial();
-  };
-
-  const completeTutorial = () => {
+  function completeTutorial() {
     setIsActive(false);
     setIsCompleted(true);
     localStorage.setItem('tutorialCompleted', 'true');
-  };
+  }
 
-  const getCurrentStep = () => TUTORIAL_STEPS[currentStep];
-  
-  const isCurrentRoute = (route: string) => {
+  function getCurrentStep() {
+    return TUTORIAL_STEPS[currentStep];
+  }
+
+  function isCurrentRoute(route: string): boolean {
     return isActive && getCurrentStep()?.route === route;
-  };
+  }
 
-  const navigateToCurrentStep = (navigate: (path: string) => void) => {
+  function navigateToCurrentStep(navigate: (path: string) => void) {
     if (isActive && TUTORIAL_STEPS[currentStep]) {
       navigate(TUTORIAL_STEPS[currentStep].route);
     }
-  };
+  }
 
   return {
     isActive,
@@ -153,7 +150,7 @@ export function useTutorial() {
     startTutorial,
     nextStep,
     previousStep,
-    skipTutorial,
+    skipTutorial: completeTutorial,
     completeTutorial,
     steps: TUTORIAL_STEPS
   };

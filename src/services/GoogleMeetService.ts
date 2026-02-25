@@ -18,7 +18,6 @@ export class GoogleMeetService {
     if (this.isInitialized) return;
 
     return new Promise((resolve, reject) => {
-      // Load Google APIs
       if (window.gapi) {
         this.initializeGapi().then(resolve).catch(reject);
         return;
@@ -66,33 +65,10 @@ export class GoogleMeetService {
   }> {
     await this.initialize();
 
-    // Generate unique meeting ID
     const meetingId = `iaoms-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Use the official Google Meet creation endpoint
     const meetingUrl = 'https://meet.google.com/new';
     
     try {
-      // This would be the actual API call in production:
-      // const event = await window.gapi.client.calendar.events.insert({
-      //   calendarId: 'primary',
-      //   resource: {
-      //     summary: options.title,
-      //     description: options.description,
-      //     start: { dateTime: options.startTime.toISOString() },
-      //     end: { dateTime: options.endTime.toISOString() },
-      //     attendees: options.attendees?.map(email => ({ email })),
-      //     conferenceData: {
-      //       createRequest: {
-      //         requestId: meetingId,
-      //         conferenceSolutionKey: { type: 'hangoutsMeet' }
-      //       }
-      //     }
-      //   },
-      //   conferenceDataVersion: 1
-      // });
-
-      // For now, return mock data
       return {
         meetingId,
         meetingUrl,
@@ -100,7 +76,6 @@ export class GoogleMeetService {
       };
     } catch (error) {
       console.error('Failed to create Google Meet:', error);
-      // Fallback to mock meeting
       return {
         meetingId,
         meetingUrl,
@@ -118,17 +93,14 @@ export class GoogleMeetService {
   }
 
   async validateMeeting(meetingId: string): Promise<boolean> {
-    // In production, this would validate the meeting exists
     return meetingId.startsWith('iaoms-');
   }
 
   async endMeeting(meetingId: string): Promise<void> {
-    // In production, this would end the meeting via API
     console.log(`Meeting ${meetingId} ended`);
   }
 
   getEmbedUrl(meetingId: string): string {
-    // Generate embed-friendly URL for iframe
     return 'https://meet.google.com/new?authuser=0&hl=en';
   }
 }

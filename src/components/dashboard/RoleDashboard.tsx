@@ -28,7 +28,10 @@ export const RoleDashboard: React.FC = () => {
   const { user } = useAuth();
   const { isMobile } = useResponsive();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [dataSource, setDataSource] = useState<DataSource>('empty');
+  // 'loading' prevents "Profile Not Yet Configured" from flashing while the
+  // Supabase request is in-flight. It transitions to 'real'/'mock'/'empty'
+  // only once the fetch has resolved.
+  const [dataSource, setDataSource] = useState<DataSource>('loading');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,13 +94,10 @@ export const RoleDashboard: React.FC = () => {
       } catch (error) {
         console.error('❌ [RoleDashboard] Error loading profile:', error);
         setError('Failed to load profile data');
-        // Error state: show empty rather than mock names for real roles
-        setProfileData({
-          name: '',
-          department: '',
-          designation: '',
-          employeeId: ''
-        });
+        // On error keep whatever profile we already have (if any).
+        // Only fall to empty if we have nothing — avoids wiping a previously
+        // loaded name on a transient network glitch.
+        setProfileData(prev => prev ?? { name: '', department: '', designation: '', employeeId: '' });
         setDataSource('empty');
       } finally {
         setLoading(false);

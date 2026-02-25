@@ -29,13 +29,9 @@ export default function Messages() {
     import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
   const [isInitialized, setIsInitialized] = useState(false);
-
-
   const [stats, setStats] = useState(MockDataService.getMessageStats(user?.role || ''));
   const [channelMessageCounts, setChannelMessageCounts] = useState<{ [key: string]: number }>(MockDataService.getChannelCounts(user?.role || ''));
-
   const [liveMeetRequests, setLiveMeetRequests] = useState<LiveMeetingRequest[]>([]);
-
 
   const messagesData = useMemo(() => MockDataService.getMessagesData(user?.role || '') || {
     meetings: [],
@@ -43,7 +39,6 @@ export default function Messages() {
     stickyNotes: [],
     channels: []
   }, [user?.role]);
-
 
   const updateMessageCounts = useCallback(() => {
     if (user?.role !== 'demo-work') return;
@@ -56,7 +51,6 @@ export default function Messages() {
       return newCounts;
     });
   }, [user?.role]);
-
 
   useEffect(() => {
     const totalMessages = Object.values(channelMessageCounts).reduce((sum, count) => sum + count, 0);
@@ -101,7 +95,6 @@ export default function Messages() {
       setLiveMeetRequests([]);
     }
   }, [user]);
-
 
   useEffect(() => {
     if (!user) return;

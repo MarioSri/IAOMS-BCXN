@@ -60,7 +60,6 @@ Respond only with valid JSON.`;
       
       throw new Error('No response from Gemini');
     } catch (error) {
-      // Fallback to mock data if API fails
       return {
         signatureZones: [
           { x: 450, y: 680, confidence: 0.92, type: 'text_pattern', description: 'Authorized Signatory Field' },

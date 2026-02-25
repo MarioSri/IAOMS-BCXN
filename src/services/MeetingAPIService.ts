@@ -43,7 +43,6 @@ export class MeetingAPIService {
     this.isDevelopment = import.meta.env.DEV || false;
   }
 
-  // Google Calendar API Integration
   async initializeGoogleAuth(): Promise<boolean> {
     try {
       await new Promise((resolve, reject) => {
@@ -78,12 +77,10 @@ export class MeetingAPIService {
 
   async createGoogleMeetEvent(meeting: Partial<Meeting>): Promise<GoogleMeetInfo> {
     try {
-      // Explicit check for gapi availability
       if (typeof window === 'undefined' || typeof window.gapi === 'undefined') {
         throw new Error('Google API not loaded. Please refresh the page and try again.');
       }
 
-      // Check if user is authenticated with Google
       const authInstance = window.gapi?.auth2?.getAuthInstance();
       if (!authInstance) {
         throw new Error('Google Auth not initialized. Please refresh the page and try again.');
@@ -101,7 +98,6 @@ export class MeetingAPIService {
         }
       }
 
-      // Create a calendar event with Google Meet conference
       const startDateTime = this.formatISODateTime(meeting.date!, meeting.time!);
       const endDateTime = this.formatISODateTime(meeting.date!, meeting.time!, meeting.duration || 60);
 
@@ -138,7 +134,6 @@ export class MeetingAPIService {
         }
       };
 
-      // Insert event with conference data
       const response = await window.gapi.client.calendar.events.insert({
         calendarId: 'primary',
         conferenceDataVersion: 1,
@@ -152,7 +147,6 @@ export class MeetingAPIService {
 
       const conferenceData = response.result.conferenceData;
 
-      // Safe property access with proper fallback logic
       let meetingLink = 'https://meet.google.com/new';
       if (conferenceData?.entryPoints && Array.isArray(conferenceData.entryPoints)) {
         const videoEntry = conferenceData.entryPoints.find((ep: any) => ep.entryPointType === 'video');
@@ -175,7 +169,6 @@ export class MeetingAPIService {
     } catch (error: any) {
       console.error('Google Meet creation failed:', error);
 
-      // If API call fails, provide helpful error message
       if (error.message?.includes('authentication')) {
         throw new Error('Google authentication required. Please sign in with your Google account.');
       } else if (error.result?.error?.message) {
@@ -186,19 +179,15 @@ export class MeetingAPIService {
     }
   }
 
-  // Zoom API Integration
   async createZoomMeeting(meeting: Partial<Meeting>): Promise<ZoomMeetingInfo> {
     try {
-      // Get Zoom access token
       const accessToken = await this.getZoomAccessToken();
 
-      // Calculate meeting start time
       const startDateTime = this.formatISODateTime(meeting.date!, meeting.time!);
 
-      // Create meeting via Zoom API
       const meetingData = {
         topic: meeting.title || 'Meeting',
-        type: 2, // Scheduled meeting
+          type: 2,
         start_time: startDateTime,
         duration: meeting.duration || 60,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -210,7 +199,7 @@ export class MeetingAPIService {
           mute_upon_entry: false,
           watermark: false,
           use_pmi: false,
-          approval_type: 2, // No registration required
+          approval_type: 2,
           audio: 'both',
           auto_recording: 'none',
           waiting_room: false
@@ -218,10 +207,10 @@ export class MeetingAPIService {
       };
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      try {
-        const response = await fetch('https://api.zoom.us/v2/users/me/meetings', {
+        try {
+          const response = await fetch('https://api.zoom.us/v2/users/me/meetings', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -240,7 +229,6 @@ export class MeetingAPIService {
 
         const zoomMeeting = await response.json();
 
-        // Validate Zoom meeting ID before conversion
         if (!zoomMeeting.id || (typeof zoomMeeting.id !== 'number' && typeof zoomMeeting.id !== 'string')) {
           throw new Error('Invalid Zoom meeting ID received from API');
         }
@@ -266,7 +254,6 @@ export class MeetingAPIService {
     } catch (error: any) {
       console.error('Zoom meeting creation failed:', error);
 
-      // Provide helpful error messages
       if (error.message?.includes('access token')) {
         throw new Error('Zoom authentication failed. Please check your credentials.');
       } else if (error.message?.includes('Zoom API error')) {
@@ -282,10 +269,10 @@ export class MeetingAPIService {
   private async getZoomAccessToken(): Promise<string> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      try {
-        const response = await fetch(`${this.apiUrl}/zoom/auth/token`, {
+        try {
+          const response = await fetch(`${this.apiUrl}/zoom/auth/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -318,7 +305,6 @@ export class MeetingAPIService {
     }
   }
 
-  // Microsoft Teams API Integration
   async createTeamsMeeting(meeting: Partial<Meeting>): Promise<TeamsMeetingInfo> {
     try {
       const accessToken = await this.getMicrosoftAccessToken();
@@ -371,7 +357,6 @@ export class MeetingAPIService {
             const errorData = JSON.parse(errorText);
             errorMessage = errorData.error?.message || errorMessage;
           } catch {
-            // If error response is not JSON, use text
             errorMessage = errorText || errorMessage;
           }
           throw new Error(`Microsoft Graph API error: ${errorMessage}`);
@@ -403,7 +388,7 @@ export class MeetingAPIService {
   private async getMicrosoftAccessToken(): Promise<string> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
         const response = await fetch(`${this.apiUrl}/microsoft/auth/token`, {
@@ -440,7 +425,6 @@ export class MeetingAPIService {
     }
   }
 
-  // Main meeting creation function
   async createMeeting(meeting: Partial<Meeting>): Promise<CreateMeetingResponse> {
     if (this.isDevelopment) {
       return mockMeetingService.createMeeting(meeting as Meeting);
@@ -451,9 +435,7 @@ export class MeetingAPIService {
         primary: meeting.type === 'online' ? 'google-meet' : 'physical'
       };
 
-      // Create meeting links based on type - Respect meetingLinks.primary field
       if (meeting.type === 'online' || meeting.type === 'hybrid') {
-        // Check if meeting already has a primary platform preference
         const preferredPlatform = meeting.meetingLinks?.primary || meeting.location?.toLowerCase();
 
         switch (preferredPlatform) {
@@ -472,13 +454,11 @@ export class MeetingAPIService {
             meetingLinks.primary = 'teams';
             break;
           default:
-            // Default to Google Meet only if no preference specified
             meetingLinks.googleMeet = await this.createGoogleMeetEvent(meeting);
             meetingLinks.primary = 'google-meet';
         }
       }
 
-      // Save meeting to IAOMS database
       const savedMeeting = await this.saveMeetingToDatabase({
         ...meeting,
         meetingLinks,
@@ -487,7 +467,6 @@ export class MeetingAPIService {
         updatedAt: new Date()
       } as Meeting);
 
-      // Send notifications
       const notifications = await this.sendMeetingNotifications(savedMeeting);
 
       return {
@@ -501,7 +480,6 @@ export class MeetingAPIService {
     }
   }
 
-  // Conflict checking with AI suggestions
   async checkConflicts(meeting: Partial<Meeting>): Promise<ConflictCheck> {
     if (this.isDevelopment) {
       return mockMeetingService.checkConflicts(meeting);
@@ -509,7 +487,7 @@ export class MeetingAPIService {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/conflicts`, {
@@ -548,7 +526,6 @@ export class MeetingAPIService {
     }
   }
 
-  // AI-powered scheduling suggestions
   async getAISchedulingSuggestions(meeting: Partial<Meeting>): Promise<AISchedulingSuggestion> {
     if (this.isDevelopment) {
       return mockMeetingService.getAISchedulingSuggestions(meeting);
@@ -556,7 +533,7 @@ export class MeetingAPIService {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/ai-suggestions`, {
@@ -596,11 +573,10 @@ export class MeetingAPIService {
     }
   }
 
-  // Attendance tracking
   async trackAttendance(meetingId: string): Promise<AttendanceRecord[]> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/${meetingId}/attendance`, {
@@ -629,11 +605,10 @@ export class MeetingAPIService {
     }
   }
 
-  // Meeting management
   async updateMeeting(meetingId: string, updates: Partial<Meeting>): Promise<Meeting> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/${meetingId}`, {
@@ -669,7 +644,7 @@ export class MeetingAPIService {
   async cancelMeeting(meetingId: string, reason?: string): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/${meetingId}/cancel`, {
@@ -700,7 +675,7 @@ export class MeetingAPIService {
   async generateMOM(meetingId: string): Promise<string> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout (MOM generation may take longer)
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/${meetingId}/mom`, {
@@ -732,7 +707,6 @@ export class MeetingAPIService {
     }
   }
 
-  // Helper methods
   private formatDateTime(date: string, time: string, durationMinutes?: number): string {
     const [hours, minutes] = time.split(':');
     const meetingDate = new Date(date);
@@ -752,7 +726,7 @@ export class MeetingAPIService {
   private async saveMeetingToDatabase(meeting: Meeting): Promise<Meeting> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings`, {
@@ -788,7 +762,7 @@ export class MeetingAPIService {
   private async sendMeetingNotifications(meeting: Meeting): Promise<any[]> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       try {
         const response = await fetch(`${this.apiUrl}/meetings/${meeting.id}/notifications`, {

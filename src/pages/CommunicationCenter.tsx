@@ -41,8 +41,6 @@ export default function CommunicationCenter() {
     import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
     import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   ));
-
-
   const [stats, setStats] = useState({
     unreadMessages: 0,
     pendingSignatures: 0,
@@ -60,10 +58,8 @@ export default function CommunicationCenter() {
       Notification.requestPermission();
     }
 
-
     loadStats();
     loadNotifications();
-
 
     chatService.on('notification', (notification: ChatNotification) => {
       setNotifications(prev => [notification, ...prev]);
@@ -188,7 +184,6 @@ export default function CommunicationCenter() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Communication Center</h1>
@@ -227,7 +222,6 @@ export default function CommunicationCenter() {
         </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -302,7 +296,6 @@ export default function CommunicationCenter() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
@@ -326,7 +319,6 @@ export default function CommunicationCenter() {
         </CardContent>
       </Card>
 
-      {/* Features Overview */}
       <Card>
         <CardHeader>
           <CardTitle>Platform Features</CardTitle>
@@ -350,7 +342,6 @@ export default function CommunicationCenter() {
         </CardContent>
       </Card>
 
-      {/* Main Interface */}
       <Card className="min-h-[600px]">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <CardHeader className="pb-2">
@@ -421,8 +412,8 @@ export default function CommunicationCenter() {
             </TabsContent>
 
             <TabsContent value="analytics" className="h-full mt-0 p-6">
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">Message Activity</CardTitle>
@@ -490,7 +481,6 @@ export default function CommunicationCenter() {
                   </Card>
                 </div>
 
-                {/* Engagement Metrics */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Engagement Metrics</CardTitle>
@@ -530,7 +520,6 @@ export default function CommunicationCenter() {
         </Tabs>
       </Card>
 
-      {/* Recent Notifications */}
       {notifications.length > 0 && (
         <Card>
           <CardHeader>

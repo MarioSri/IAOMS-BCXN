@@ -176,9 +176,9 @@ export const roleConfigs: Record<string, RoleConfig> = {
       canEscalateDocuments: true,
       canOverrideApprovals: false,
       canManageUsers: false,
-      departments: [], // Set based on user's department
-      branches: [], // Set based on user's branch
-      years: [] // Set based on user's year
+      departments: [],
+      branches: [],
+      years: []
     },
     defaultWidgets: [
       'quickActions', 'documents', 'calendar',
@@ -227,8 +227,8 @@ export const roleConfigs: Record<string, RoleConfig> = {
       canEscalateDocuments: true,
       canOverrideApprovals: false,
       canManageUsers: false,
-      departments: [], // Set based on user's department
-      branches: [], // Set based on user's branch
+      departments: [],
+      branches: [],
       years: years
     },
     defaultWidgets: [
@@ -278,8 +278,8 @@ export const roleConfigs: Record<string, RoleConfig> = {
       canEscalateDocuments: false,
       canOverrideApprovals: false,
       canManageUsers: false,
-      departments: [], // Set based on user's department
-      branches: [], // Set based on user's branch
+      departments: [],
+      branches: [],
       years: []
     },
     defaultWidgets: [
@@ -311,10 +311,9 @@ export const roleConfigs: Record<string, RoleConfig> = {
   }
 };
 
-export const getDashboardConfig = (userRole: string, userDepartment?: string, userBranch?: string, userYear?: string) => {
-  const config = roleConfigs[userRole] || roleConfigs.employee;
+export function getDashboardConfig(userRole: string, userDepartment?: string, userBranch?: string, userYear?: string) {
+  const config = roleConfigs[userRole] ?? roleConfigs.employee;
 
-  // Customize permissions based on user's specific department/branch/year
   if (userDepartment && userBranch) {
     config.permissions.departments = [userDepartment];
     config.permissions.branches = [userBranch];
@@ -325,4 +324,4 @@ export const getDashboardConfig = (userRole: string, userDepartment?: string, us
   }
 
   return config;
-};
+}

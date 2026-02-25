@@ -23,7 +23,16 @@ import Emergency from "@/pages/Emergency";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,   // 5 minutes — prevent constant re-fetching
+      gcTime: 10 * 60 * 1000,      // 10 minutes — keep cache longer
+      retry: 1,                     // Only retry once instead of default 3
+      refetchOnWindowFocus: false,  // Don't re-fetch when window regains focus
+    },
+  },
+});
 
 // Clean up localStorage on app start to prevent quota issues
 function cleanupLocalStorage(): void {
@@ -37,7 +46,7 @@ function cleanupLocalStorage(): void {
     const MAX_SIZE = 4 * 1024 * 1024;
     if (totalSize <= MAX_SIZE) return;
 
-    console.log('🧹 Cleaning up localStorage...');
+    console.log('Cleaning up localStorage...');
 
     try {
       const history = JSON.parse(localStorage.getItem('approval-history-new') || '[]');
@@ -125,7 +134,6 @@ function App() {
                             <Profile />
                           </ProtectedRoute>
                         } />
-                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </TutorialProvider>

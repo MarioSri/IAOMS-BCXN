@@ -1,4 +1,3 @@
-// Services
 export { BiDirectionalWorkflowEngine } from './BiDirectionalWorkflowEngine';
 export { ChannelAutoCreationService, channelAutoCreationService } from './ChannelAutoCreationService';
 export { DecentralizedChatService } from './DecentralizedChatService';

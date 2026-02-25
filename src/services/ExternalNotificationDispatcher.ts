@@ -1,9 +1,3 @@
-/**
- * External Notification Dispatcher
- * Handles sending notifications via Email, Push, SMS, and WhatsApp
- * based on user preferences
- */
-
 export interface NotificationPreferences {
   email: {
     enabled: boolean;
@@ -42,18 +36,13 @@ export interface NotificationContent {
 }
 
 class ExternalNotificationDispatcherClass {
-  /**
-   * Get recipient's notification preferences from localStorage
-   */
   private getRecipientPreferences(recipientId: string): NotificationPreferences | null {
     try {
-      // Try to get user-specific preferences
       const userPrefs = localStorage.getItem(`notification-preferences-${recipientId}`);
       if (userPrefs) {
         return JSON.parse(userPrefs);
       }
-      
-      // Fallback to default preferences (if user is currently logged in)
+
       const defaultPrefs = localStorage.getItem('notification-preferences');
       if (defaultPrefs) {
         return JSON.parse(defaultPrefs);
@@ -66,15 +55,9 @@ class ExternalNotificationDispatcherClass {
     }
   }
 
-  /**
-   * Send Email Notification
-   */
   private async sendEmail(recipientEmail: string, content: NotificationContent): Promise<boolean> {
-    console.log('📧 Sending Email Notification to:', recipientEmail);
-    
-    // TODO: Replace with actual email API call
-    // Example: SendGrid, AWS SES, Nodemailer, etc.
-    
+    console.log('Sending Email Notification to:', recipientEmail);
+
     const emailContent = {
       to: recipientEmail,
       subject: `${content.type === 'approval' ? '📋 New Document' : '🔔 Document Update'} - ${content.documentTitle}`,
@@ -94,29 +77,14 @@ class ExternalNotificationDispatcherClass {
       `
     };
     
-    // Simulate API call
-    console.log('📧 Email content prepared:', emailContent);
-    
-    // In production, replace with:
-    // const response = await fetch('/api/send-email', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(emailContent)
-    // });
-    // return response.ok;
-    
-    return true; // Simulated success
+    console.log('Email content prepared:', emailContent);
+
+    return true;
   }
 
-  /**
-   * Send Push Notification
-   */
   private async sendPushNotification(recipientId: string, content: NotificationContent): Promise<boolean> {
-    console.log('🔔 Sending Push Notification to:', recipientId);
-    
-    // TODO: Replace with actual push notification service
-    // Example: Firebase Cloud Messaging (FCM), OneSignal, etc.
-    
+    console.log('Sending Push Notification to:', recipientId);
+
     const pushContent = {
       title: content.type === 'approval' ? 'New Document for Approval' : 'Document Update',
       body: `${content.documentTitle} - Priority: ${content.priority}`,
@@ -129,96 +97,55 @@ class ExternalNotificationDispatcherClass {
       }
     };
     
-    console.log('🔔 Push notification prepared:', pushContent);
-    
-    // In production, replace with:
-    // if ('Notification' in window && Notification.permission === 'granted') {
-    //   new Notification(pushContent.title, {
-    //     body: pushContent.body,
-    //     icon: pushContent.icon,
-    //     badge: pushContent.badge,
-    //     data: pushContent.data
-    //   });
-    // }
-    
-    return true; // Simulated success
+    console.log('Push notification prepared:', pushContent);
+
+    return true;
   }
 
-  /**
-   * Send SMS Notification
-   */
   private async sendSMS(recipientPhone: string, content: NotificationContent): Promise<boolean> {
-    console.log('📱 Sending SMS to:', recipientPhone);
-    
-    // TODO: Replace with actual SMS API
-    // Example: Twilio, AWS SNS, etc.
-    
+    console.log('Sending SMS to:', recipientPhone);
+
     const smsContent = {
       to: recipientPhone,
       message: `${content.type === 'approval' ? 'New Approval Required' : 'Update'}: ${content.documentTitle} (Priority: ${content.priority}). View in Approval Center: ${content.approvalCenterLink}`
     };
     
-    console.log('📱 SMS content prepared:', smsContent);
-    
-    // In production, replace with:
-    // const response = await fetch('/api/send-sms', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(smsContent)
-    // });
-    // return response.ok;
-    
-    return true; // Simulated success
+    console.log('SMS content prepared:', smsContent);
+
+    return true;
   }
 
-  /**
-   * Send WhatsApp Notification
-   */
   private async sendWhatsApp(recipientPhone: string, content: NotificationContent): Promise<boolean> {
-    console.log('💬 Sending WhatsApp message to:', recipientPhone);
-    
-    // TODO: Replace with actual WhatsApp Business API
-    // Example: Twilio WhatsApp, Meta WhatsApp Business API, etc.
-    
+    console.log('Sending WhatsApp message to:', recipientPhone);
+
     const whatsappContent = {
       to: recipientPhone,
       message: `*${content.type === 'approval' ? '📋 New Document for Approval' : '🔔 Document Update'}*\n\nHello ${content.recipientName},\n\n*Document:* ${content.documentTitle}\n*Submitted by:* ${content.submitter}\n*Priority:* ${content.priority.toUpperCase()}\n${content.dueDate ? `*Due Date:* ${content.dueDate}\n` : ''}\n\nView in Approval Center:\n${content.approvalCenterLink}`
     };
     
-    console.log('💬 WhatsApp content prepared:', whatsappContent);
-    
-    // In production, replace with:
-    // const response = await fetch('/api/send-whatsapp', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(whatsappContent)
-    // });
-    // return response.ok;
-    
-    return true; // Simulated success
+    console.log('WhatsApp content prepared:', whatsappContent);
+
+    return true;
   }
 
-  /**
-   * Main function to notify a recipient based on their preferences
-   */
   public async notifyRecipient(
     recipientId: string,
     recipientName: string,
     content: NotificationContent
   ): Promise<{ success: boolean; channels: string[] }> {
-    console.log(`🔔 ExternalNotificationDispatcher: Preparing to notify ${recipientName} (${recipientId})`);
+    console.log(`ExternalNotificationDispatcher: Preparing to notify ${recipientName} (${recipientId})`);
     
     const preferences = this.getRecipientPreferences(recipientId);
     
     if (!preferences) {
-      console.warn(`⚠️ No notification preferences found for ${recipientId}`);
+      console.warn(`No notification preferences found for ${recipientId}`);
       return { success: false, channels: [] };
     }
     
     const sentChannels: string[] = [];
-    const notificationTypeKey = content.type === 'approval' ? 'approvals' : 
+    const notificationTypeKey = content.type === 'approval' ? 'approvals' :
                                  content.type === 'update' ? 'updates' : 'reminders';
-    
+
     // Email
     if (preferences.email.enabled && preferences.email[notificationTypeKey]) {
       const recipientEmail = this.getRecipientEmail(recipientId);
@@ -227,14 +154,12 @@ class ExternalNotificationDispatcherClass {
         if (sent) sentChannels.push('Email');
       }
     }
-    
-    // Push
+
     if (preferences.push.enabled && preferences.push[notificationTypeKey]) {
       const sent = await this.sendPushNotification(recipientId, { ...content, recipientName });
       if (sent) sentChannels.push('Push');
     }
-    
-    // SMS
+
     if (preferences.sms.enabled && preferences.sms[notificationTypeKey]) {
       const recipientPhone = this.getRecipientPhone(recipientId);
       if (recipientPhone) {
@@ -242,8 +167,7 @@ class ExternalNotificationDispatcherClass {
         if (sent) sentChannels.push('SMS');
       }
     }
-    
-    // WhatsApp
+
     if (preferences.whatsapp.enabled && preferences.whatsapp[notificationTypeKey]) {
       const recipientPhone = this.getRecipientPhone(recipientId);
       if (recipientPhone) {
@@ -252,7 +176,7 @@ class ExternalNotificationDispatcherClass {
       }
     }
     
-    console.log(`✅ Notifications sent via: ${sentChannels.join(', ') || 'None (preferences disabled)'}`);
+    console.log(`Notifications sent via: ${sentChannels.join(', ') || 'None (preferences disabled)'}`);
     
     return {
       success: sentChannels.length > 0,
@@ -260,11 +184,7 @@ class ExternalNotificationDispatcherClass {
     };
   }
 
-  /**
-   * Get recipient email (mock implementation)
-   */
   private getRecipientEmail(recipientId: string): string | null {
-    // TODO: Replace with actual user data lookup
     const emailMap: { [key: string]: string } = {
       'principal': 'principal@institution.edu',
       'hod': 'hod@institution.edu',
@@ -276,11 +196,7 @@ class ExternalNotificationDispatcherClass {
     return emailMap[recipientId.toLowerCase()] || `${recipientId}@institution.edu`;
   }
 
-  /**
-   * Get recipient phone (mock implementation)
-   */
   private getRecipientPhone(recipientId: string): string | null {
-    // TODO: Replace with actual user data lookup
     const phoneMap: { [key: string]: string } = {
       'principal': '+1234567890',
       'hod': '+1234567891',
@@ -293,5 +209,4 @@ class ExternalNotificationDispatcherClass {
   }
 }
 
-// Export singleton instance
 export const ExternalNotificationDispatcher = new ExternalNotificationDispatcherClass();

@@ -26,14 +26,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ error, errorInfo });
-    
-    // Log error to console in development
+
     if (import.meta.env.DEV) {
       console.error('Error Boundary caught an error:', error, errorInfo);
     }
-
-    // In production, you would send this to your error reporting service
-    // Example: Sentry.captureException(error, { extra: errorInfo });
   }
 
   handleRetry = () => {
@@ -103,21 +99,20 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 // Hook for error handling in functional components
-export const useErrorHandler = () => {
-  const handleError = (error: Error, errorInfo?: any) => {
+export function useErrorHandler() {
+  function handleError(error: Error, errorInfo?: any) {
     console.error('Application Error:', error, errorInfo);
-    
-    // In production, send to error reporting service
+
     if (import.meta.env.PROD) {
       // Example: Sentry.captureException(error, { extra: errorInfo });
     }
-  };
+  }
 
   return { handleError };
-};
+}
 
 // Network error handler
-export const handleNetworkError = (error: any) => {
+export function handleNetworkError(error: any) {
   if (!navigator.onLine) {
     return {
       title: 'No Internet Connection',
@@ -155,4 +150,4 @@ export const handleNetworkError = (error: any) => {
     message: 'An unexpected error occurred. Please try again.',
     type: 'unknown' as const
   };
-};
+}

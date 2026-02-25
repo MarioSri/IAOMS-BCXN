@@ -23,49 +23,43 @@ interface EmergencySubmissionLog {
   status: string;
 }
 
-export const useEmergencyNotifications = () => {
+function loadLogsFromStorage() {
+  return {
+    notifications: JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]') as NotificationLog[],
+    submissions: JSON.parse(localStorage.getItem('emergency-submissions') || '[]') as EmergencySubmissionLog[],
+  };
+}
+
+export function useEmergencyNotifications() {
   const [notificationLogs, setNotificationLogs] = useState<NotificationLog[]>([]);
   const [submissionLogs, setSubmissionLogs] = useState<EmergencySubmissionLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load logs from localStorage
+  function refreshLogs() {
+    try {
+      const { notifications, submissions } = loadLogsFromStorage();
+      setNotificationLogs(notifications);
+      setSubmissionLogs(submissions);
+    } catch (error) {
+      console.error('Failed to load emergency notification logs:', error);
+    }
+  }
+
   useEffect(() => {
-    const loadLogs = () => {
-      try {
-        const notifications = JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]');
-        const submissions = JSON.parse(localStorage.getItem('emergency-submissions') || '[]');
-        
-        setNotificationLogs(notifications);
-        setSubmissionLogs(submissions);
-      } catch (error) {
-        console.error('Failed to load emergency notification logs:', error);
-      }
-    };
-
-    loadLogs();
-
-    // Set up interval to refresh logs
-    const interval = setInterval(loadLogs, 5000);
+    refreshLogs();
+    const interval = setInterval(refreshLogs, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Send emergency notification
-  const sendEmergencyNotification = async (
+  async function sendEmergencyNotification(
     recipients: string[],
     document: EmergencyDocument,
     settings: EmergencyNotificationSettings
-  ) => {
+  ) {
     setIsLoading(true);
     try {
       await emergencyNotificationService.sendEmergencyNotification(recipients, document, settings);
-      
-      // Refresh logs after sending
-      const notifications = JSON.parse(localStorage.getItem('emergency-notification-logs') || '[]');
-      const submissions = JSON.parse(localStorage.getItem('emergency-submissions') || '[]');
-      
-      setNotificationLogs(notifications);
-      setSubmissionLogs(submissions);
-      
+      refreshLogs();
       return { success: true };
     } catch (error) {
       console.error('Failed to send emergency notification:', error);
@@ -73,34 +67,26 @@ export const useEmergencyNotifications = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  // Stop notifications for a document
-  const stopNotifications = (documentId: string) => {
+  function stopNotifications(documentId: string) {
     emergencyNotificationService.stopNotifications(documentId);
-    
-    // Update logs to reflect stopped status
-    const updatedLogs = notificationLogs.map(log => 
-      log.documentId === documentId 
-        ? { ...log, delivered: false }
-        : log
+    setNotificationLogs(prev =>
+      prev.map(log => log.documentId === documentId ? { ...log, delivered: false } : log)
     );
-    setNotificationLogs(updatedLogs);
-  };
+  }
 
-  // Get notification statistics
-  const getNotificationStats = () => {
+  function getNotificationStats() {
     const total = notificationLogs.length;
     const delivered = notificationLogs.filter(log => log.delivered).length;
-    const byChannel = notificationLogs.reduce((acc, log) => {
-      acc[log.channel] = (acc[log.channel] || 0) + 1;
+    const byChannel = notificationLogs.reduce<Record<string, number>>((acc, log) => {
+      acc[log.channel] = (acc[log.channel] ?? 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
-    
-    const byUrgency = notificationLogs.reduce((acc, log) => {
-      acc[log.urgencyLevel] = (acc[log.urgencyLevel] || 0) + 1;
+    }, {});
+    const byUrgency = notificationLogs.reduce<Record<string, number>>((acc, log) => {
+      acc[log.urgencyLevel] = (acc[log.urgencyLevel] ?? 0) + 1;
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     return {
       total,
@@ -109,24 +95,21 @@ export const useEmergencyNotifications = () => {
       byChannel,
       byUrgency
     };
-  };
+  }
 
-  // Get recent notifications
-  const getRecentNotifications = (limit: number = 10) => {
+  function getRecentNotifications(limit: number = 10) {
     return notificationLogs
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, limit);
-  };
+  }
 
-  // Get active emergencies
-  const getActiveEmergencies = () => {
+  function getActiveEmergencies() {
     return submissionLogs.filter(log => log.status === 'sent');
-  };
+  }
 
-  // Get scheduling options
-  const getSchedulingOptions = () => {
+  function getSchedulingOptions() {
     return emergencyNotificationService.getSchedulingOptions();
-  };
+  }
 
   return {
     notificationLogs,
@@ -139,4 +122,4 @@ export const useEmergencyNotifications = () => {
     getActiveEmergencies,
     getSchedulingOptions
   };
-};
+}

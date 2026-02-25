@@ -1,8 +1,3 @@
-/**
- * Real-time recipient management component
- * Handles dynamic recipient updates across all document systems
- */
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,7 +103,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
       }
     ];
 
-    // Mark initially selected recipients
     const updatedRecipients = recipients.map(recipient => ({
       ...recipient,
       selected: initialRecipientIds.includes(recipient.id) || initialRecipients.includes(recipient.name)
@@ -118,7 +112,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
     setSelectedRecipients(updatedRecipients.filter(r => r.selected));
   }, [initialRecipients, initialRecipientIds]);
 
-  // Filter recipients based on search and role
   const filteredRecipients = availableRecipients.filter(recipient => {
     const matchesSearch = recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          recipient.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,7 +122,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
     return matchesSearch && matchesRole;
   });
 
-  // Handle recipient selection
   const handleRecipientToggle = (recipient: Recipient) => {
     const updatedRecipients = availableRecipients.map(r => 
       r.id === recipient.id ? { ...r, selected: !r.selected } : r
@@ -140,7 +132,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
     const newSelectedRecipients = updatedRecipients.filter(r => r.selected);
     setSelectedRecipients(newSelectedRecipients);
     
-    // Notify parent component
     if (onRecipientsChange) {
       const recipients = newSelectedRecipients.map(r => r.name);
       const recipientIds = newSelectedRecipients.map(r => r.id);
@@ -148,7 +139,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
     }
   };
 
-  // Handle real-time update
   const handleUpdateRecipients = async () => {
     if (!documentId) return;
     
@@ -169,8 +159,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
       
     } catch (error) {
       console.error('Failed to update recipients:', error);
-      
-      // Show error notification
       window.dispatchEvent(new CustomEvent('show-toast', {
         detail: {
           title: 'Update Failed',
@@ -181,7 +169,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
     }
   };
 
-  // Get unique roles for filter
   const uniqueRoles = [...new Set(availableRecipients.map(r => r.role))];
 
   return (
@@ -196,7 +183,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search and Filter */}
         <div className="flex gap-4">
           <div className="flex-1">
             <Label htmlFor="search">Search Recipients</Label>
@@ -225,7 +211,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
           </div>
         </div>
 
-        {/* Selected Recipients */}
         {selectedRecipients.length > 0 && (
           <div className="space-y-2">
             <Label>Selected Recipients ({selectedRecipients.length})</Label>
@@ -245,7 +230,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
           </div>
         )}
 
-        {/* Available Recipients */}
         <div className="space-y-2">
           <Label>Available Recipients</Label>
           <div className="max-h-64 overflow-y-auto space-y-2 border rounded-lg p-2">
@@ -277,7 +261,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
           </div>
         </div>
 
-        {/* Actions */}
         {mode === 'edit' && documentId && (
           <div className="flex justify-end gap-2">
             <Button
@@ -295,7 +278,6 @@ export const RealTimeRecipientManager: React.FC<RealTimeRecipientManagerProps> =
           </div>
         )}
 
-        {/* Real-time Status */}
         <div className="text-xs text-gray-500 flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           Real-time updates enabled

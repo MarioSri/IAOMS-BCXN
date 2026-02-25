@@ -10,39 +10,31 @@ import {
   NotificationStatus
 } from '@/types/meeting';
 
-// Mock backend service for development
 export class MockMeetingService {
   private meetings: Meeting[] = [];
-  
+
   constructor() {
-    // Initialize with some mock data
     this.meetings = this.generateMockMeetings();
   }
 
   private generateMockMeetings(): Meeting[] {
-    // This would normally come from the database
     return [];
   }
 
   async checkConflicts(meeting: Partial<Meeting>): Promise<ConflictCheck> {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Mock conflict checking logic
+
     const conflicts: MeetingConflict[] = [];
     const suggestions: TimeSlotSuggestion[] = [];
-    
-    // Check for time conflicts
+
     const meetingDateTime = new Date(`${meeting.date} ${meeting.time}`);
     const existingMeetings = this.meetings.filter(m => {
       const existingDateTime = new Date(`${m.date} ${m.time}`);
       const timeDiff = Math.abs(meetingDateTime.getTime() - existingDateTime.getTime());
-      return timeDiff < (meeting.duration || 60) * 60 * 1000; // Within meeting duration
+      return timeDiff < (meeting.duration || 60) * 60 * 1000;
     });
 
-    // Generate conflicts
     existingMeetings.forEach(existingMeeting => {
-      // Check if any attendees overlap
       const overlappingAttendees = meeting.attendees?.filter(attendee =>
         existingMeeting.attendees.some(existing => existing.id === attendee.id)
       ) || [];
@@ -62,16 +54,13 @@ export class MockMeetingService {
       });
     });
 
-    // Generate suggestions if conflicts exist
     if (conflicts.length > 0) {
       const currentDate = new Date(meeting.date!);
-      
-      // Suggest times for the next 5 days
+
       for (let i = 0; i < 5; i++) {
         const suggestionDate = new Date(currentDate);
         suggestionDate.setDate(currentDate.getDate() + i);
-        
-        // Suggest different time slots
+
         const timeSlots = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
         
         timeSlots.forEach(time => {
@@ -79,41 +68,35 @@ export class MockMeetingService {
             date: suggestionDate.toISOString().split('T')[0],
             time: time,
             duration: meeting.duration || 60,
-            availabilityScore: Math.random() * 0.5 + 0.5, // 50-100% availability
+            availabilityScore: Math.random() * 0.5 + 0.5,
             conflictCount: Math.floor(Math.random() * 3),
             suggestedBy: Math.random() > 0.5 ? 'ai' : 'calendar_analysis'
           });
         });
       }
-      
-      // Sort suggestions by availability score
+
       suggestions.sort((a, b) => b.availabilityScore - a.availabilityScore);
     }
 
     return {
       hasConflict: conflicts.length > 0,
       conflicts,
-      suggestions: suggestions.slice(0, 10) // Return top 10 suggestions
+      suggestions: suggestions.slice(0, 10)
     };
   }
 
   async getAISchedulingSuggestions(meeting: Partial<Meeting>): Promise<AISchedulingSuggestion> {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Mock AI suggestions
+
     const recommendedSlots: TimeSlotSuggestion[] = [];
     const currentDate = new Date();
-    
-    // Generate smart suggestions for the next 7 days
+
     for (let i = 0; i < 7; i++) {
       const suggestionDate = new Date(currentDate);
       suggestionDate.setDate(currentDate.getDate() + i + 1);
-      
-      // Skip weekends for business meetings
+
       if (suggestionDate.getDay() === 0 || suggestionDate.getDay() === 6) continue;
-      
-      // Suggest optimal time slots based on meeting type
+
       const optimalTimes = meeting.category === 'academic' 
         ? ['10:00', '11:00', '14:00', '15:00']
         : ['09:00', '10:30', '14:30', '16:00'];
@@ -123,14 +106,13 @@ export class MockMeetingService {
           date: suggestionDate.toISOString().split('T')[0],
           time: time,
           duration: meeting.duration || 60,
-          availabilityScore: Math.random() * 0.3 + 0.7, // 70-100% for AI suggestions
+          availabilityScore: Math.random() * 0.3 + 0.7,
           conflictCount: Math.floor(Math.random() * 2),
           suggestedBy: 'ai'
         });
       });
     }
 
-    // Sort by availability score
     recommendedSlots.sort((a, b) => b.availabilityScore - a.availabilityScore);
 
     return {
@@ -170,10 +152,8 @@ export class MockMeetingService {
   }
 
   async createMeeting(meeting: Meeting): Promise<CreateMeetingResponse> {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Generate meeting links based on type
     const meetingLinks: MeetingLinks = {
       primary: 'google-meet'
     };
@@ -222,7 +202,6 @@ export class MockMeetingService {
       }
     }
 
-    // Update meeting with links
     const updatedMeeting = {
       ...meeting,
       meetingLinks,
@@ -231,10 +210,8 @@ export class MockMeetingService {
       updatedAt: new Date()
     };
 
-    // Add to mock database
     this.meetings.push(updatedMeeting);
 
-    // Generate mock notifications
     const notifications: NotificationStatus[] = updatedMeeting.attendees.map(attendee => ({
       type: 'email',
       status: Math.random() > 0.1 ? 'sent' : 'failed',
@@ -287,7 +264,6 @@ export class MockMeetingService {
     const meeting = this.meetings.find(m => m.id === meetingId);
     if (!meeting) return [];
 
-    // Generate mock attendance data
     return meeting.attendees.map(attendee => ({
       attendeeId: attendee.id,
       attendeeName: attendee.name,
@@ -302,16 +278,13 @@ export class MockMeetingService {
   async generateMOM(meetingId: string): Promise<string> {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock MOM generation - would integrate with Google Docs API
     const mockDocId = `mom-${meetingId}-${Date.now()}`;
     return `https://docs.google.com/document/d/${mockDocId}/edit`;
   }
 
-  // Get meetings for calendar view
   getMeetings(): Meeting[] {
     return this.meetings;
   }
 }
 
-// Export singleton instance for development
 export const mockMeetingService = new MockMeetingService();

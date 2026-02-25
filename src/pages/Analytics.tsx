@@ -22,7 +22,6 @@ export default function Analytics() {
     activeSessions: 0
   });
 
-
   useEffect(() => {
     const allDocs = [...trackDocuments, ...approvalCards];
     const approved = allDocs.filter(d => d.status === 'approved').length;
@@ -42,7 +41,6 @@ export default function Analytics() {
       activeSessions: allDocs.filter(d => d.status === 'pending').length
     });
   }, [trackDocuments, approvalCards, user]);
-
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -317,7 +315,6 @@ export default function Analytics() {
           </TabsContent>
 
           <TabsContent value="trends" className="space-y-6">
-            {/* Today's Trends */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -364,7 +361,6 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
-            {/* Weekly Trends */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -427,7 +423,6 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
-            {/* Monthly Trends */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

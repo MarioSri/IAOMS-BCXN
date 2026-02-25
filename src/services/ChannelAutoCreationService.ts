@@ -14,19 +14,14 @@ interface DocumentSubmission {
 export class ChannelAutoCreationService {
   private static readonly STORAGE_KEY = 'document-channels';
 
-  /**
-   * Automatically create a channel when a document is submitted
-   */
   static createDocumentChannel(submission: DocumentSubmission): ChatChannel {
     const channelId = `channel-${submission.documentId}-${Date.now()}`;
-    
-    // Create channel with submitter + all recipients
+
     const members = [
       submission.submittedBy,
       ...submission.recipients
     ];
 
-    // Remove duplicates
     const uniqueMembers = Array.from(new Set(members));
 
     const channel: ChatChannel = {
@@ -35,8 +30,8 @@ export class ChannelAutoCreationService {
       description: `Auto-created channel for ${submission.source}\nCreated by: ${submission.submittedByName}\nCreated on: ${submission.submittedAt.toLocaleDateString()}`,
       type: 'document-thread',
       members: uniqueMembers,
-      admins: [submission.submittedBy], // Submitter is admin
-      isPrivate: true, // Only visible to members
+      admins: [submission.submittedBy],
+      isPrivate: true,
       documentId: submission.documentId,
       createdBy: submission.submittedBy,
       createdAt: submission.submittedAt,
@@ -52,13 +47,10 @@ export class ChannelAutoCreationService {
       }
     };
 
-    // Save to localStorage
     this.saveChannel(channel);
-
-    // Broadcast event for real-time updates
     this.broadcastChannelCreated(channel);
 
-    console.log('✅ Channel auto-created:', {
+    console.log('Channel auto-created:', {
       channelId: channel.id,
       documentId: submission.documentId,
       members: uniqueMembers,
@@ -68,23 +60,17 @@ export class ChannelAutoCreationService {
     return channel;
   }
 
-  /**
-   * Save channel to localStorage
-   */
   private static saveChannel(channel: ChatChannel): void {
     try {
       const existingChannels = this.getChannels();
-      
-      // Check if channel already exists for this document
+
       const existingIndex = existingChannels.findIndex(
         ch => ch.documentId === channel.documentId
       );
 
       if (existingIndex >= 0) {
-        // Update existing channel
         existingChannels[existingIndex] = channel;
       } else {
-        // Add new channel
         existingChannels.push(channel);
       }
 
@@ -94,9 +80,6 @@ export class ChannelAutoCreationService {
     }
   }
 
-  /**
-   * Get all channels from localStorage
-   */
   static getChannels(): ChatChannel[] {
     try {
       const channelsJson = localStorage.getItem(this.STORAGE_KEY);
@@ -107,9 +90,6 @@ export class ChannelAutoCreationService {
     }
   }
 
-  /**
-   * Get channels visible to a specific user
-   */
   static getUserChannels(userId: string): ChatChannel[] {
     const allChannels = this.getChannels();
     return allChannels.filter(channel => 
@@ -117,17 +97,11 @@ export class ChannelAutoCreationService {
     );
   }
 
-  /**
-   * Get channel by document ID
-   */
   static getChannelByDocumentId(documentId: string): ChatChannel | null {
     const channels = this.getChannels();
     return channels.find(ch => ch.documentId === documentId) || null;
   }
 
-  /**
-   * Add members to an existing channel
-   */
   static addMembersToChannel(channelId: string, newMembers: string[]): void {
     try {
       const channels = this.getChannels();
@@ -146,9 +120,6 @@ export class ChannelAutoCreationService {
     }
   }
 
-  /**
-   * Delete a channel
-   */
   static deleteChannel(channelId: string): void {
     try {
       const channels = this.getChannels();
@@ -160,16 +131,12 @@ export class ChannelAutoCreationService {
     }
   }
 
-  /**
-   * Broadcast channel-created event
-   */
   private static broadcastChannelCreated(channel: ChatChannel): void {
     const event = new CustomEvent('channel-created', {
       detail: { channel }
     });
     window.dispatchEvent(event);
 
-    // Also trigger storage event for cross-tab sync
     window.dispatchEvent(new StorageEvent('storage', {
       key: this.STORAGE_KEY,
       newValue: JSON.stringify(this.getChannels()),
@@ -177,9 +144,6 @@ export class ChannelAutoCreationService {
     }));
   }
 
-  /**
-   * Broadcast channel-updated event
-   */
   private static broadcastChannelUpdated(channel: ChatChannel): void {
     const event = new CustomEvent('channel-updated', {
       detail: { channel }
@@ -193,9 +157,6 @@ export class ChannelAutoCreationService {
     }));
   }
 
-  /**
-   * Broadcast channel-deleted event
-   */
   private static broadcastChannelDeleted(channelId: string): void {
     const event = new CustomEvent('channel-deleted', {
       detail: { channelId }
@@ -209,9 +170,6 @@ export class ChannelAutoCreationService {
     }));
   }
 
-  /**
-   * Update channel description
-   */
   static updateChannelDescription(channelId: string, description: string): void {
     try {
       const channels = this.getChannels();
@@ -229,5 +187,4 @@ export class ChannelAutoCreationService {
   }
 }
 
-// Export singleton instance
 export const channelAutoCreationService = ChannelAutoCreationService;

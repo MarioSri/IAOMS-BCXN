@@ -1,8 +1,3 @@
-/**
- * Centralized Mock Data Definitions
- * All demo data for demo-work role
- */
-
 export const MOCK_APPROVALS = [
   {
     id: 'faculty-meeting',

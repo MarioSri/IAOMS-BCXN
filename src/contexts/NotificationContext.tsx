@@ -89,13 +89,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications([]);
   }
 
-
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
-
 
   useEffect(() => {
     const saved = localStorage.getItem('iaoms-notifications');
@@ -111,7 +109,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
     }
   }, []);
-
 
   useEffect(() => {
     localStorage.setItem('iaoms-notifications', JSON.stringify(notifications));

@@ -7,7 +7,6 @@ import {
   LIVE_MEETING_PERMISSIONS
 } from '../types/liveMeeting';
 
-// Mock data for recipients (shared with AuthContext)
 const MOCK_PARTICIPANTS = [
   { id: 'principal-1', name: 'Dr. Robert Principal', role: 'principal', email: 'principal@institution.edu', department: 'Administration' },
   { id: 'registrar-1', name: 'Prof. Sarah Registrar', role: 'registrar', email: 'registrar@institution.edu', department: 'Administration' },
@@ -16,9 +15,8 @@ const MOCK_PARTICIPANTS = [
 ];
 
 class LiveMeetingService {
-  private isDevelopment = true; // Force development mode for localStorage/mock logic
+  private isDevelopment = true;
 
-  // Create a new live meeting request
   async createRequest(requestData: CreateLiveMeetingRequestDto): Promise<LiveMeetingRequest> {
     const urgencyConfig = URGENCY_CONFIGS[requestData.urgency];
     const expiresAt = new Date();
@@ -56,7 +54,6 @@ class LiveMeetingService {
       expiresAt
     };
 
-    // Save to localStorage
     const existingRequests = JSON.parse(localStorage.getItem('live_meeting_requests') || '[]');
     existingRequests.push(request);
     localStorage.setItem('live_meeting_requests', JSON.stringify(existingRequests));
@@ -65,7 +62,6 @@ class LiveMeetingService {
     return request;
   }
 
-  // Respond to a live meeting request
   async respondToRequest(response: LiveMeetingResponse): Promise<void> {
     const requests = JSON.parse(localStorage.getItem('live_meeting_requests') || '[]');
     const updatedRequests = requests.map((req: LiveMeetingRequest) => {
@@ -84,7 +80,6 @@ class LiveMeetingService {
     console.log('Responded to live meeting request:', response);
   }
 
-  // Get live meeting requests for current user
   async getMyRequests(filter?: 'pending' | 'urgent' | 'immediate' | 'all'): Promise<LiveMeetingRequest[]> {
     const requests = JSON.parse(localStorage.getItem('live_meeting_requests') || '[]');
 
@@ -106,11 +101,9 @@ class LiveMeetingService {
     return requests;
   }
 
-  // Get live meeting stats
   async getStats(userRole?: string): Promise<LiveMeetingStats> {
     const requests = JSON.parse(localStorage.getItem('live_meeting_requests') || '[]');
 
-    // Check if user is demo-work role
     const isDemoRole = userRole === 'demo-work';
 
     return {
@@ -120,17 +113,15 @@ class LiveMeetingService {
       urgentRequests: requests.filter((r: LiveMeetingRequest) => r.urgency === 'urgent').length,
       todaysMeetings: isDemoRole ? 8 : 0,
       successRate: isDemoRole ? 94 : 0,
-      averageResponseTime: isDemoRole ? 12 : 0 // minutes
+      averageResponseTime: isDemoRole ? 12 : 0
     };
   }
 
-  // Check if user can request meeting from target user
   canRequestMeeting(userRole: string, targetUserRole: string): boolean {
     const allowedRoles = LIVE_MEETING_PERMISSIONS[userRole] || [];
     return allowedRoles.includes(targetUserRole) || allowedRoles.includes('all');
   }
 
-  // Get available participants based on current user role
   async getAvailableParticipants(currentUserRole: string): Promise<typeof MOCK_PARTICIPANTS> {
     const allowedRoles = LIVE_MEETING_PERMISSIONS[currentUserRole] || [];
 

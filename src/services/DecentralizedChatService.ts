@@ -17,7 +17,6 @@ import {
   OfflineSync
 } from '@/types/chat';
 
-// Simple EventEmitter implementation for browser compatibility
 class SimpleEventEmitter {
   private events: { [key: string]: Function[] } = {};
 
@@ -57,7 +56,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   private messageQueue: ChatMessage[] = [];
   private offlineMode = false;
 
-  // Local storage keys
   private static readonly STORAGE_KEYS = {
     CHANNELS: 'chat_channels',
     MESSAGES: 'chat_messages',
@@ -74,7 +72,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     this.setupEncryption();
   }
 
-  // Connection Management
   private initializeConnection(): void {
     try {
       this.socket = io(this.wsUrl, {
@@ -112,7 +109,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-
   private handleOfflineMode(): void {
     this.offlineMode = true;
     this.emit('offline-mode');
@@ -133,7 +129,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     });
   }
 
-  // Auto-create role-based channels
   async initializeRoleBasedChannels(currentUser: ChatUser): Promise<void> {
     const channels = await this.generateRoleBasedChannels(currentUser);
 
@@ -145,7 +140,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   private async generateRoleBasedChannels(user: ChatUser): Promise<Partial<ChatChannel>[]> {
     const channels: Partial<ChatChannel>[] = [];
 
-    // HOD channels by department
     if (user.role === 'hod') {
       channels.push({
         name: `HODs - All Departments`,
@@ -175,7 +169,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       }
     }
 
-    // Program Department Head channels
     if (user.role === 'program-head') {
       channels.push({
         name: 'Program Department Heads',
@@ -200,7 +193,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       }
     }
 
-    // Administrative channels
     if (['registrar', 'principal', 'dean', 'chairman', 'director'].includes(user.role)) {
       channels.push({
         name: 'Administrative Council',
@@ -219,7 +211,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       });
     }
 
-    // Faculty and employee channels
     if (['faculty', 'employee', 'mentor'].includes(user.role)) {
       if (user.department) {
         channels.push({
@@ -233,7 +224,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       }
     }
 
-    // Special administrative roles
     const specialRoles = ['controller-examinations', 'asst-dean-iiic', 'head-operations', 'librarian', 'ssg', 'cdc-employee'];
     if (specialRoles.includes(user.role)) {
       channels.push({
@@ -245,7 +235,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       });
     }
 
-    // General channels for all users
     channels.push({
       name: 'General Announcements',
       description: 'Institution-wide announcements and updates',
@@ -265,7 +254,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     return channels;
   }
 
-  // Channel Management
   async createChannel(channelData: Partial<ChatChannel>): Promise<ChatChannel> {
     const channel: ChatChannel = {
       id: this.generateId(),
@@ -318,7 +306,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-  // Message Management
   async sendMessage(message: Partial<ChatMessage>): Promise<ChatMessage> {
     const fullMessage: ChatMessage = {
       id: this.generateId(),
@@ -379,12 +366,11 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-  // Document Integration
   async createDocumentThread(documentId: string, channelId: string, title: string): Promise<ChatThread> {
     const thread: ChatThread = {
       id: this.generateId(),
       channelId,
-      parentMessageId: '', // Will be set when first message is sent
+      parentMessageId: '',
       title,
       participants: [],
       messageCount: 0,
@@ -412,7 +398,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       }
     };
 
-    // Send to all relevant channels
     const channels = await this.getChannelsByDocument(documentId);
     for (const channel of channels) {
       await this.sendMessage({
@@ -423,7 +408,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-  // File and Media Upload
   async uploadFile(file: File, channelId: string): Promise<string> {
     const formData = new FormData();
     formData.append('file', file);
@@ -437,12 +421,10 @@ export class DecentralizedChatService extends SimpleEventEmitter {
       const result = await response.json();
       return result.url;
     } else {
-      // Store file for later upload
       return URL.createObjectURL(file);
     }
   }
 
-  // Signature Requests
   async createSignatureRequest(request: Partial<SignatureRequest>): Promise<SignatureRequest> {
     const fullRequest: SignatureRequest = {
       id: this.generateId(),
@@ -462,7 +444,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-  // Polls
   async createPoll(poll: Partial<ChatPoll>): Promise<ChatPoll> {
     const fullPoll: ChatPoll = {
       id: this.generateId(),
@@ -497,13 +478,11 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     }
   }
 
-  // AI Features
   async generateSummary(channelId: string, messageCount: number = 50): Promise<ChatSummary> {
     if (this.isConnected) {
       const response = await this.apiCall(`/ai/summarize`, 'POST', { channelId, messageCount });
       return response.data;
     } else {
-      // Generate basic summary offline
       const messages = await this.getMessages(channelId, messageCount);
       return this.generateBasicSummary(messages, channelId);
     }
@@ -535,7 +514,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     };
   }
 
-  // Search
   async searchMessages(query: ChatSearchQuery): Promise<ChatSearchResult> {
     if (this.isConnected) {
       const response = await this.apiCall('/search', 'POST', query);
@@ -564,7 +542,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     };
   }
 
-  // Notifications
   async sendNotification(notification: Partial<ChatNotification>): Promise<void> {
     const fullNotification: ChatNotification = {
       id: this.generateId(),
@@ -583,9 +560,7 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     this.emit('notification', fullNotification);
   }
 
-  // Encryption (basic implementation)
   private setupEncryption(): void {
-    // Generate or retrieve encryption keys
     const keys = localStorage.getItem(DecentralizedChatService.STORAGE_KEYS.ENCRYPTION_KEYS);
     if (!keys) {
       this.generateEncryptionKeys();
@@ -593,7 +568,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   }
 
   private generateEncryptionKeys(): void {
-    // Basic key generation - in production, use proper crypto libraries
     const keyPair = {
       publicKey: this.generateId(),
       privateKey: this.generateId()
@@ -606,17 +580,13 @@ export class DecentralizedChatService extends SimpleEventEmitter {
   }
 
   private encryptMessage(message: string, recipientPublicKey: string): string {
-    // Basic encryption implementation
-    // In production, use proper E2E encryption like Signal Protocol
     return btoa(message);
   }
 
   private decryptMessage(encryptedMessage: string, senderPublicKey: string): string {
-    // Basic decryption implementation
     return atob(encryptedMessage);
   }
 
-  // Utility methods
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
@@ -721,7 +691,6 @@ export class DecentralizedChatService extends SimpleEventEmitter {
     return channels.filter(channel => channel.documentId === documentId);
   }
 
-  // Public API methods
   public disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();

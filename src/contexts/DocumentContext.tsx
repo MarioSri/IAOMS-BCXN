@@ -30,9 +30,17 @@ interface Document {
   description?: string;
 }
 
+interface DocumentUploadData {
+  files?: File[];
+  documentTypes: string[];
+  priority: string;
+  recipients?: string[];
+  description?: string;
+}
+
 interface DocumentContextType {
   documents: Document[];
-  addDocument: (documentData: any, userRole: string, userName: string) => void;
+  addDocument: (documentData: DocumentUploadData, userRole: string, userName: string) => void;
   updateDocument: (id: string, updates: Partial<Document>) => void;
   getDocumentById: (id: string) => Document | undefined;
 }
@@ -132,7 +140,7 @@ export const DocumentProvider: React.FC<DocumentProviderProps> = ({ children }) 
     };
   }
 
-  function addDocument(documentData: any, userRole: string, userName: string) {
+  function addDocument(documentData: DocumentUploadData, userRole: string, userName: string) {
     const newDocument: Document = {
       id: generateDocumentId(),
       title: documentData.files && documentData.files.length > 0

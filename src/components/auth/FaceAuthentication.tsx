@@ -27,18 +27,6 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
     };
   }, []);
 
-  // Debug: Log video element state
-  useEffect(() => {
-    if (videoRef.current && cameraActive) {
-      console.log('Video element:', {
-        srcObject: videoRef.current.srcObject,
-        readyState: videoRef.current.readyState,
-        videoWidth: videoRef.current.videoWidth,
-        videoHeight: videoRef.current.videoHeight
-      });
-    }
-  }, [cameraActive]);
-
   const startCamera = async () => {
     try {
       setStatus('capturing');
@@ -99,7 +87,6 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
       description: "Please blink twice",
     });
 
-    // Simulate blink detection with animation
     await new Promise(resolve => setTimeout(resolve, 1500));
     setBlinkCount(1);
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -135,7 +122,7 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
       if (result.verified) {
         setStatus('success');
         toast({
-          title: "✅ Face Verified",
+          title: "Face Verified",
           description: `Identity confirmed (confidence: ${(100 - result.distance * 10).toFixed(1)}%)`,
         });
         
@@ -145,7 +132,7 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
       } else {
         setStatus('failed');
         toast({
-          title: "❌ Verification Failed",
+          title: "Verification Failed",
           description: "Face does not match. Please try again.",
           variant: "destructive"
         });
@@ -224,9 +211,7 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
                 </div>
               )}
               
-              {/* Webcam Circle Container */}
-              <div className="relative flex items-center justify-center">
-                {/* Circular Webcam Stream */}
+            <div className="relative flex items-center justify-center">
                 <div className={`relative w-80 h-80 rounded-full overflow-hidden border-8 transition-all duration-500 shadow-2xl ${
                   status === 'success'
                     ? 'border-green-500 shadow-green-500/50 bg-green-500/10' 
@@ -247,13 +232,11 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
                   />
                   <canvas ref={canvasRef} className="hidden" />
                   
-                  {/* Corner markers inside circle */}
                   <div className="absolute top-4 left-4 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg" />
                   <div className="absolute top-4 right-4 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg" />
                   <div className="absolute bottom-4 left-4 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg" />
                   <div className="absolute bottom-4 right-4 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg" />
                   
-                  {/* Verification Status Overlay */}
                   {status === 'success' && (
                     <div className="absolute inset-0 bg-green-500/30 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-500">
                       <div className="text-center bg-green-600/90 rounded-full p-8 shadow-2xl">
@@ -274,7 +257,6 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
                 </div>
               </div>
               
-              {/* Status Badge */}
               <div className="absolute top-4 left-0 right-0 flex justify-center">
                 {status === 'liveness' && (
                   <Badge className="bg-blue-600 text-white text-sm px-4 py-2 shadow-lg animate-bounce">
@@ -321,7 +303,7 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
                 <CheckCircle2 className="w-16 h-16 text-white" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-green-800 mb-2">✅ Face Verified</h3>
+            <h3 className="text-xl font-bold text-green-800 mb-2">Face Verified</h3>
             <p className="text-sm text-muted-foreground">Identity confirmed successfully</p>
           </div>
         )}
@@ -334,7 +316,7 @@ export const FaceAuthentication: React.FC<FaceAuthenticationProps> = ({ onVerifi
                 <XCircle className="w-16 h-16 text-white" />
               </div>
             </div>
-            <h3 className="text-xl font-bold text-red-800 mb-2">❌ Verification Failed</h3>
+            <h3 className="text-xl font-bold text-red-800 mb-2">Verification Failed</h3>
             <p className="text-sm text-muted-foreground mb-6">Face does not match our records</p>
             <Button onClick={retry} variant="outline" size="lg" className="border-red-300 text-red-600 hover:bg-red-50">
               <RotateCw className="w-4 h-4 mr-2" />

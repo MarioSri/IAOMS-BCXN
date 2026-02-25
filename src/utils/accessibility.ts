@@ -1,24 +1,22 @@
-// Accessibility utilities and helpers
-
-export const announceToScreenReader = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
   const announcement = document.createElement('div');
   announcement.setAttribute('aria-live', priority);
   announcement.setAttribute('aria-atomic', 'true');
   announcement.className = 'sr-only';
   announcement.textContent = message;
-  
+
   document.body.appendChild(announcement);
-  
+
   setTimeout(() => {
     document.body.removeChild(announcement);
   }, 1000);
-};
+}
 
-export const trapFocus = (element: HTMLElement) => {
+export function trapFocus(element: HTMLElement): () => void {
   const focusableElements = element.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
   );
-  
+
   const firstElement = focusableElements[0] as HTMLElement;
   const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
@@ -44,26 +42,25 @@ export const trapFocus = (element: HTMLElement) => {
   return () => {
     element.removeEventListener('keydown', handleTabKey);
   };
-};
+}
 
-export const generateId = (prefix: string = 'id'): string => {
+export function generateId(prefix: string = 'id'): string {
   return `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
-};
+}
 
-export const getAriaLabel = (element: string, action?: string, context?: string): string => {
+export function getAriaLabel(element: string, action?: string, context?: string): string {
   let label = element;
   if (action) label += ` ${action}`;
   if (context) label += ` for ${context}`;
   return label;
-};
+}
 
-// Keyboard navigation helpers
-export const handleArrowNavigation = (
+export function handleArrowNavigation(
   e: KeyboardEvent,
   items: HTMLElement[],
   currentIndex: number,
   onIndexChange: (index: number) => void
-) => {
+): void {
   let newIndex = currentIndex;
 
   switch (e.key) {
@@ -86,10 +83,9 @@ export const handleArrowNavigation = (
   e.preventDefault();
   onIndexChange(newIndex);
   items[newIndex]?.focus();
-};
+}
 
-// Color contrast checker
-export const getContrastRatio = (color1: string, color2: string): number => {
+export function getContrastRatio(color1: string, color2: string): number {
   const getLuminance = (color: string): number => {
     const rgb = parseInt(color.slice(1), 16);
     const r = (rgb >> 16) & 0xff;
@@ -110,14 +106,13 @@ export const getContrastRatio = (color1: string, color2: string): number => {
   const darkest = Math.min(lum1, lum2);
 
   return (brightest + 0.05) / (darkest + 0.05);
-};
+}
 
-export const meetsWCAGStandard = (color1: string, color2: string, level: 'AA' | 'AAA' = 'AA'): boolean => {
+export function meetsWCAGStandard(color1: string, color2: string, level: 'AA' | 'AAA' = 'AA'): boolean {
   const ratio = getContrastRatio(color1, color2);
   return level === 'AA' ? ratio >= 4.5 : ratio >= 7;
-};
+}
 
-// Focus management
 export class FocusManager {
   private static focusStack: HTMLElement[] = [];
 
@@ -138,30 +133,26 @@ export class FocusManager {
   }
 }
 
-// Screen reader utilities
-export const createLiveRegion = (priority: 'polite' | 'assertive' = 'polite'): HTMLElement => {
+export function createLiveRegion(priority: 'polite' | 'assertive' = 'polite'): HTMLElement {
   const region = document.createElement('div');
   region.setAttribute('aria-live', priority);
   region.setAttribute('aria-atomic', 'true');
   region.className = 'sr-only';
   document.body.appendChild(region);
   return region;
-};
+}
 
-export const updateLiveRegion = (region: HTMLElement, message: string) => {
+export function updateLiveRegion(region: HTMLElement, message: string): void {
   region.textContent = message;
-};
+}
 
-// Touch accessibility
-export const enhanceTouchAccessibility = (element: HTMLElement) => {
-  // Ensure minimum touch target size
+export function enhanceTouchAccessibility(element: HTMLElement): void {
   const rect = element.getBoundingClientRect();
   if (rect.width < 44 || rect.height < 44) {
     element.style.minWidth = '44px';
     element.style.minHeight = '44px';
   }
 
-  // Add touch feedback
   element.addEventListener('touchstart', () => {
     element.style.transform = 'scale(0.95)';
   });
@@ -173,4 +164,4 @@ export const enhanceTouchAccessibility = (element: HTMLElement) => {
   element.addEventListener('touchcancel', () => {
     element.style.transform = 'scale(1)';
   });
-};
+}

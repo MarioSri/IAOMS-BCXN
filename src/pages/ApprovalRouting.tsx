@@ -42,9 +42,6 @@ export default function ApprovalRouting() {
     bypassCount: isDemoRole ? '8' : '0',
     responseRate: isDemoRole ? '94%' : '0'
   };
-
-
-
   const ADMIN_ROLES = ['principal', 'demo-work', 'registrar', 'hod', 'program-head'];
   const isAdmin = user ? ADMIN_ROLES.includes(user.role) : false;
 
@@ -56,7 +53,6 @@ export default function ApprovalRouting() {
           <p className="text-base text-muted-foreground">Documents can bypass Standard Approval Steps for faster Authorization and Response.</p>
         </div>
 
-        {/* Header */}
         <Card className={`shadow-elegant ${isBypassMode ? 'border-green-500 bg-green-50' : ''}`}>
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -97,7 +93,6 @@ export default function ApprovalRouting() {
           </CardHeader>
         </Card>
 
-        {/* Quick Stats - Only show when NOT in bypass mode */}
         {!isBypassMode && (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <Card>
@@ -162,7 +157,6 @@ export default function ApprovalRouting() {
           </div>
         )}
 
-        {/* Features Overview - Only show when NOT in bypass mode */}
         {!isBypassMode && (
           <Card>
             <CardHeader className="flex flex-col space-y-1.5 p-6">
@@ -175,7 +169,6 @@ export default function ApprovalRouting() {
               </p>
             </CardHeader>
             <CardContent className="p-6 pt-0 space-y-6">
-              {/* Sequential Routing */}
               <div className="border rounded-lg p-5 bg-blue-50 border-blue-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-shrink-0 p-2.5 rounded-lg bg-white shadow-sm text-blue-500">
@@ -236,7 +229,6 @@ export default function ApprovalRouting() {
                 </div>
               </div>
 
-              {/* Parallel Routing */}
               <div className="border rounded-lg p-5 bg-green-50 border-green-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-shrink-0 p-2.5 rounded-lg bg-white shadow-sm text-green-500">
@@ -305,7 +297,6 @@ export default function ApprovalRouting() {
                 </div>
               </div>
 
-              {/* Reverse Routing */}
               <div className="border rounded-lg p-5 bg-orange-50 border-orange-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-shrink-0 p-2.5 rounded-lg bg-white shadow-sm text-orange-500">
@@ -366,7 +357,6 @@ export default function ApprovalRouting() {
                 </div>
               </div>
 
-              {/* Bi-Directional Routing */}
               <div className="border rounded-lg p-5 bg-purple-50 border-purple-200">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex-shrink-0 p-2.5 rounded-lg bg-white shadow-sm text-purple-500">
@@ -466,7 +456,6 @@ export default function ApprovalRouting() {
                 </div>
               </div>
 
-              {/* Bypass Mode Info */}
               <div className="bg-muted/50 rounded-lg p-4 border">
                 <div className="flex items-start gap-3">
                   <Zap className="w-5 h-5 text-yellow-500 mt-0.5" />
@@ -484,7 +473,6 @@ export default function ApprovalRouting() {
           </Card>
         )}
 
-        {/* Bypass Configuration - Show when bypass mode is active */}
         {isBypassMode && (
           <Card className="shadow-elegant border-green-500">
             <CardContent className="p-6">

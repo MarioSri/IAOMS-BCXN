@@ -21,7 +21,6 @@ export class BiDirectionalWorkflowEngine {
     this.initializeDefaultRules();
   }
 
-  // Route Management
   createWorkflowRoute(route: Omit<WorkflowRoute, 'id' | 'createdAt' | 'updatedAt'>): WorkflowRoute {
     const newRoute: WorkflowRoute = {
       ...route,
@@ -48,7 +47,6 @@ export class BiDirectionalWorkflowEngine {
     return updatedRoute;
   }
 
-  // Workflow Instance Management
   initiateWorkflow(documentId: string, documentType: string, department?: string, branch?: string, initiatedBy: string): WorkflowInstance | null {
     const route = this.findApplicableRoute(documentType, department, branch);
     if (!route || !route.isActive) {
@@ -74,13 +72,11 @@ export class BiDirectionalWorkflowEngine {
 
     this.instances.set(instance.id, instance);
     
-    // Send initial notification
     this.sendApprovalNotification(instance, route.steps[0]);
     
     return instance;
   }
 
-  // Core Approval Processing
   processApproval(
     instanceId: string, 
     stepId: string, 
@@ -105,12 +101,10 @@ export class BiDirectionalWorkflowEngine {
       return { success: false, message: 'Workflow step not found' };
     }
 
-    // Validate permissions
     if (!this.canUserPerformAction(performedBy, currentStep)) {
       return { success: false, message: 'User does not have permission to perform this action' };
     }
 
-    // Create workflow action
     const action: WorkflowAction = {
       id: this.generateId(),
       stepId,
@@ -123,7 +117,6 @@ export class BiDirectionalWorkflowEngine {
 
     instance.history.push(action);
 
-    // Process based on action type
     switch (actionType) {
       case 'approve':
         return this.handleApproval(instance, route, currentStep, action);
@@ -142,7 +135,6 @@ export class BiDirectionalWorkflowEngine {
     }
   }
 
-  // Counter-Approval Processing
   processCounterApproval(
     instanceId: string,
     originalActionId: string,
@@ -190,17 +182,13 @@ export class BiDirectionalWorkflowEngine {
     instance.history.push(counterAction);
 
     if (actionType === 'counter-approve') {
-      // Move to next step
       return this.moveToNextStep(instance, route, step);
     } else {
-      // Handle counter-rejection
       return this.handleRejection(instance, route, step, counterAction);
     }
   }
 
-  // Escalation Handling
   private handleApproval(instance: WorkflowInstance, route: WorkflowRoute, currentStep: WorkflowStep, action: WorkflowAction) {
-    // Check if counter-approval is required
     if (currentStep.requiresCounterApproval) {
       instance.status = 'pending';
       this.sendCounterApprovalNotification(instance, currentStep, action);
@@ -215,13 +203,11 @@ export class BiDirectionalWorkflowEngine {
   }
 
   private handleRejection(instance: WorkflowInstance, route: WorkflowRoute, currentStep: WorkflowStep, action: WorkflowAction) {
-    // Apply escalation rules for rejection
     const escalationPath = this.findEscalationPath(route, currentStep.id, 'rejection');
     
     if (escalationPath) {
       return this.escalateWorkflow(instance, route, escalationPath, action);
     } else {
-      // No escalation path - workflow terminates
       instance.status = 'rejected';
       instance.completedAt = new Date();
       this.sendRejectionNotification(instance, currentStep, action);
@@ -246,7 +232,6 @@ export class BiDirectionalWorkflowEngine {
   }
 
   private handleChangeRequest(instance: WorkflowInstance, route: WorkflowRoute, currentStep: WorkflowStep, action: WorkflowAction) {
-    // Return to initiator for changes
     instance.status = 'pending';
     this.sendChangeRequestNotification(instance, currentStep, action);
     return { 
@@ -268,7 +253,6 @@ export class BiDirectionalWorkflowEngine {
         message: `Approved. Moved to next step: ${nextStep.name}` 
       };
     } else {
-      // Workflow completed
       instance.status = 'completed';
       instance.completedAt = new Date();
       this.sendCompletionNotification(instance);
@@ -310,7 +294,6 @@ export class BiDirectionalWorkflowEngine {
     };
   }
 
-  // Timeout Handling
   checkTimeouts(): void {
     const now = new Date();
     
@@ -350,7 +333,6 @@ export class BiDirectionalWorkflowEngine {
     }
   }
 
-  // Utility Methods
   private findApplicableRoute(documentType: string, department?: string, branch?: string): WorkflowRoute | null {
     for (const route of this.routes.values()) {
       if (route.documentType === documentType || route.documentType === 'general') {
@@ -378,7 +360,6 @@ export class BiDirectionalWorkflowEngine {
   }
 
   private getStepStartTime(instance: WorkflowInstance, stepId: string): Date {
-    // Find when this step was started
     const stepActions = instance.history.filter(action => action.stepId === stepId);
     return stepActions.length > 0 ? stepActions[0].performedAt : instance.initiatedAt;
   }
@@ -388,8 +369,6 @@ export class BiDirectionalWorkflowEngine {
   }
 
   private userHasRole(userId: string, role: string): boolean {
-    // This would integrate with your user/role management system
-    // For now, returning true as placeholder
     return true;
   }
 
@@ -397,7 +376,6 @@ export class BiDirectionalWorkflowEngine {
     return `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // Notification Methods
   private sendApprovalNotification(instance: WorkflowInstance, step: WorkflowStep): void {
     const notification: NotificationPayload = {
       type: 'approval-request',
@@ -517,7 +495,6 @@ export class BiDirectionalWorkflowEngine {
     this.notificationQueue.push(notification);
   }
 
-  // Public API Methods
   getWorkflowInstance(instanceId: string): WorkflowInstance | null {
     return this.instances.get(instanceId) || null;
   }
@@ -563,13 +540,11 @@ export class BiDirectionalWorkflowEngine {
 
   getNotificationQueue(): NotificationPayload[] {
     const queue = [...this.notificationQueue];
-    this.notificationQueue = []; // Clear queue after retrieval
+    this.notificationQueue = [];
     return queue;
   }
 
-  // Initialize default routes and rules
   private initializeDefaultRoutes(): void {
-    // Academic Document Route
     const academicRoute: WorkflowRoute = {
       id: 'route_academic_default',
       name: 'Academic Document Approval',
@@ -651,6 +626,5 @@ export class BiDirectionalWorkflowEngine {
   }
 
   private initializeDefaultRules(): void {
-    // Default approval rules can be initialized here
   }
 }
